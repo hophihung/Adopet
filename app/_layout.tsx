@@ -4,7 +4,7 @@ import { StatusBar } from 'expo-status-bar';
 import { AuthProvider, useAuth } from '../contexts/AuthContext';
 
 function RootLayoutNav() {
-  const { user, profile, loading } = useAuth();
+  const { user, profile, loading, hasCompletedOnboarding } = useAuth();
   const segments = useSegments();
   const router = useRouter();
 
@@ -12,6 +12,7 @@ function RootLayoutNav() {
     if (loading) return;
 
     const inAuthGroup = segments[0] === '(auth)';
+    const currentScreen = segments[segments.length - 1];
 
     if (!user) {
       // Chưa đăng nhập -> redirect to login
@@ -22,15 +23,22 @@ function RootLayoutNav() {
       // Đã đăng nhập
       if (!profile) {
         // Chưa có profile -> redirect to select role
-        router.replace('/(auth)/select-role');
+        if (currentScreen !== 'select-role') {
+          router.replace('/(auth)/select-role');
+        }
+      } else if (!hasCompletedOnboarding) {
+        // Có profile nhưng chưa hoàn thành onboarding -> redirect to filter
+        if (currentScreen !== 'filter-pets') {
+          router.replace('/(auth)/filter-pets');
+        }
       } else {
-        // Có profile rồi -> vào main app
+        // Đã hoàn thành tất cả -> vào main app
         if (inAuthGroup) {
           router.replace('/(tabs)');
         }
       }
     }
-  }, [user, profile, loading, segments]);
+  }, [user, profile, loading, hasCompletedOnboarding, segments]);
 
   return (
     <>

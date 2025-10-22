@@ -1,5 +1,6 @@
-import React, { createContext, useContext, useEffect, useState } from 'react';
+import React, { createContext, useContext, useState, useEffect } from 'react';
 import { Session, User } from '@supabase/supabase-js';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { supabase } from '../lib/supabaseClient';
 
 interface Profile {
@@ -17,6 +18,7 @@ interface AuthContextType {
   user: User | null;
   profile: Profile | null;
   loading: boolean;
+  hasCompletedOnboarding: boolean;
   signInWithEmail: (email: string, password: string) => Promise<void>;
   signUpWithEmail: (email: string, password: string) => Promise<void>;
   signInWithGoogle: () => Promise<void>;
@@ -24,6 +26,7 @@ interface AuthContextType {
   signOut: () => Promise<void>;
   createProfile: (role: 'user' | 'seller') => Promise<void>;
   refreshProfile: () => Promise<void>;
+  completeOnboarding: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -33,8 +36,21 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [profile, setProfile] = useState<Profile | null>(null);
   const [loading, setLoading] = useState(true);
+  const [hasCompletedOnboarding, setHasCompletedOnboarding] = useState(false);
 
   useEffect(() => {
+    // Load onboarding status
+    const loadOnboardingStatus = async () => {
+      try {
+        const status = await AsyncStorage.getItem('onboarding_completed');
+        setHasCompletedOnboarding(status === 'true');
+      } catch (error) {
+        console.error('Error loading onboarding status:', error);
+      }
+    };
+
+    loadOnboardingStatus();
+
     supabase.auth.getSession().then(({ data: { session } }) => {
       setSession(session);
       setUser(session?.user ?? null);
@@ -52,6 +68,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         fetchProfile(session.user.id);
       } else {
         setProfile(null);
+        setHasCompletedOnboarding(false);
         setLoading(false);
       }
     });
@@ -103,23 +120,33 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   const signInWithGoogle = async () => {
-    const { error } = await supabase.auth.signInWithOAuth({
+    console.log('🔵 Starting Google OAuth...');
+    const { data, error } = await supabase.auth.signInWithOAuth({
       provider: 'google',
       options: {
         redirectTo: 'petadoption://auth/callback',
       },
     });
-    if (error) throw error;
+    console.log('🔵 OAuth Data:', data);
+    if (error) {
+      console.error('🔴 Google OAuth Error:', error);
+      throw error;
+    }
   };
 
   const signInWithFacebook = async () => {
-    const { error } = await supabase.auth.signInWithOAuth({
+    console.log('🔵 Starting Facebook OAuth...');
+    const { data, error } = await supabase.auth.signInWithOAuth({
       provider: 'facebook',
       options: {
         redirectTo: 'petadoption://auth/callback',
       },
     });
-    if (error) throw error;
+    console.log('🔵 OAuth Data:', data);
+    if (error) {
+      console.error('🔴 Facebook OAuth Error:', error);
+      throw error;
+    }
   };
 
   const signOut = async () => {
@@ -140,7 +167,20 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     if (error) throw error;
 
+    // Reset onboarding when creating new profile
+    await AsyncStorage.setItem('onboarding_completed', 'false');
+    setHasCompletedOnboarding(false);
+
     await refreshProfile();
+  };
+
+  const completeOnboarding = async () => {
+    try {
+      await AsyncStorage.setItem('onboarding_completed', 'true');
+      setHasCompletedOnboarding(true);
+    } catch (error) {
+      console.error('Error saving onboarding status:', error);
+    }
   };
 
   const value = {
@@ -148,6 +188,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     user,
     profile,
     loading,
+    hasCompletedOnboarding,
     signInWithEmail,
     signUpWithEmail,
     signInWithGoogle,
@@ -155,6 +196,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     signOut,
     createProfile,
     refreshProfile,
+    completeOnboarding,
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

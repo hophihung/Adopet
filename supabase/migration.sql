@@ -40,28 +40,30 @@ create policy "Users can insert own profile"
 
 -- =====================================================
 -- FUNCTION: Tự động tạo profile khi user đăng ký
+-- TẮT ĐI - Không tự động tạo profile
+-- User phải chọn role thì mới tạo profile
 -- =====================================================
-create or replace function public.handle_new_user()
-returns trigger as $$
-begin
-  insert into public.profiles (id, email, full_name, avatar_url)
-  values (
-    new.id,
-    new.email,
-    coalesce(new.raw_user_meta_data->>'full_name', new.raw_user_meta_data->>'name'),
-    new.raw_user_meta_data->>'avatar_url'
-  );
-  return new;
-end;
-$$ language plpgsql security definer;
+-- create or replace function public.handle_new_user()
+-- returns trigger as $$
+-- begin
+--   insert into public.profiles (id, email, full_name, avatar_url)
+--   values (
+--     new.id,
+--     new.email,
+--     coalesce(new.raw_user_meta_data->>'full_name', new.raw_user_meta_data->>'name'),
+--     new.raw_user_meta_data->>'avatar_url'
+--   );
+--   return new;
+-- end;
+-- $$ language plpgsql security definer;
 
 -- =====================================================
--- TRIGGER: Tự động gọi handle_new_user khi có user mới
+-- TRIGGER: TẮT - Không tự động tạo profile
 -- =====================================================
-drop trigger if exists on_auth_user_created on auth.users;
-create trigger on_auth_user_created
-  after insert on auth.users
-  for each row execute function public.handle_new_user();
+-- drop trigger if exists on_auth_user_created on auth.users;
+-- create trigger on_auth_user_created
+--   after insert on auth.users
+--   for each row execute function public.handle_new_user();
 
 -- =====================================================
 -- FUNCTION: Cập nhật updated_at timestamp

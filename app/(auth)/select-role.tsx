@@ -4,8 +4,9 @@
  */
 
 import React, { useState } from 'react';
-import { View, StyleSheet, Alert } from 'react-native';
-import { Button, Text, Card, ActivityIndicator } from 'react-native-paper';
+import { View, StyleSheet, Alert, TouchableOpacity } from 'react-native';
+import { Text, Card, ActivityIndicator } from 'react-native-paper';
+import { LinearGradient } from 'expo-linear-gradient';
 import { useAuth } from '../../contexts/AuthContext';
 import { router } from 'expo-router';
 
@@ -31,127 +32,197 @@ export default function SelectRoleScreen() {
   };
 
   return (
-    <View style={styles.container}>
-      <View style={styles.content}>
-        {/* Header */}
-        <View style={styles.header}>
-          <Text variant="headlineMedium" style={styles.title}>
-            Welcome! 👋
-          </Text>
-          <Text variant="bodyLarge" style={styles.subtitle}>
-            Tell us about yourself
-          </Text>
-        </View>
+    <LinearGradient
+      colors={['#FFE5B4', '#FFDAB9', '#FFB6C1']}
+      style={styles.gradient}
+      start={{ x: 0, y: 0 }}
+      end={{ x: 1, y: 1 }}
+    >
+      <View style={styles.container}>
+        <View style={styles.content}>
+          {/* Header */}
+          <View style={styles.header}>
+            <Text style={styles.welcomeEmoji}>🎉</Text>
+            <Text variant="headlineMedium" style={styles.title}>
+              Welcome to PawsHome!
+            </Text>
+            <Text variant="bodyLarge" style={styles.subtitle}>
+              Let's get to know you better
+            </Text>
+          </View>
 
         {/* Role Cards */}
         <View style={styles.cards}>
-          <Card
-            style={[
-              styles.card,
-              selectedRole === 'user' && styles.selectedCard,
-            ]}
+          <TouchableOpacity
             onPress={() => !loading && handleSelectRole('user')}
+            disabled={loading}
+            activeOpacity={0.9}
           >
-            <Card.Content style={styles.cardContent}>
-              <Text variant="displaySmall" style={styles.emoji}>
-                🐕
-              </Text>
-              <Text variant="titleLarge" style={styles.roleTitle}>
-                Pet Lover
-              </Text>
-              <Text variant="bodyMedium" style={styles.roleDescription}>
-                I'm looking to adopt a pet
-              </Text>
-            </Card.Content>
-          </Card>
+            <Card
+              style={[
+                styles.card,
+                selectedRole === 'user' && styles.selectedCard,
+              ]}
+            >
+              <Card.Content style={styles.cardContent}>
+                <View style={styles.emojiContainer}>
+                  <Text style={styles.emoji}>🥰</Text>
+                </View>
+                <Text variant="titleLarge" style={styles.roleTitle}>
+                  Pet Lover
+                </Text>
+                <Text variant="bodyMedium" style={styles.roleDescription}>
+                  I want to adopt and care for a pet 🐶🐱
+                </Text>
+                <View style={styles.badge}>
+                  <Text style={styles.badgeText}>Most Popular</Text>
+                </View>
+              </Card.Content>
+            </Card>
+          </TouchableOpacity>
 
-          <Card
-            style={[
-              styles.card,
-              selectedRole === 'seller' && styles.selectedCard,
-            ]}
+          <TouchableOpacity
             onPress={() => !loading && handleSelectRole('seller')}
+            disabled={loading}
+            activeOpacity={0.9}
           >
-            <Card.Content style={styles.cardContent}>
-              <Text variant="displaySmall" style={styles.emoji}>
-                🏪
-              </Text>
-              <Text variant="titleLarge" style={styles.roleTitle}>
-                Pet Seller
-              </Text>
-              <Text variant="bodyMedium" style={styles.roleDescription}>
-                I have pets to offer for adoption
-              </Text>
-            </Card.Content>
-          </Card>
+            <Card
+              style={[
+                styles.card,
+                selectedRole === 'seller' && styles.selectedCard,
+              ]}
+            >
+              <Card.Content style={styles.cardContent}>
+                <View style={styles.emojiContainer}>
+                  <Text style={styles.emoji}>🏡</Text>
+                </View>
+                <Text variant="titleLarge" style={styles.roleTitle}>
+                  Pet Care Provider
+                </Text>
+                <Text variant="bodyMedium" style={styles.roleDescription}>
+                  I help pets find loving homes ✨
+                </Text>
+              </Card.Content>
+            </Card>
+          </TouchableOpacity>
         </View>
 
         {loading && (
           <View style={styles.loadingContainer}>
-            <ActivityIndicator size="large" />
-            <Text style={styles.loadingText}>Setting up your profile...</Text>
+            <ActivityIndicator size="large" color="#FF69B4" />
+            <Text style={styles.loadingText}>🐾 Setting up your profile...</Text>
           </View>
         )}
       </View>
     </View>
+    </LinearGradient>
   );
 }
 
 const styles = StyleSheet.create({
+  gradient: {
+    flex: 1,
+  },
   container: {
     flex: 1,
-    backgroundColor: '#f5f5f5',
   },
   content: {
     flex: 1,
-    padding: 20,
+    padding: 24,
     justifyContent: 'center',
+    maxWidth: 440,
+    width: '100%',
+    alignSelf: 'center',
   },
   header: {
     alignItems: 'center',
     marginBottom: 40,
   },
+  welcomeEmoji: {
+    fontSize: 64,
+    marginBottom: 16,
+  },
   title: {
     fontWeight: 'bold',
     marginBottom: 8,
-  },
-  subtitle: {
-    color: '#666',
+    color: '#8B4513',
     textAlign: 'center',
   },
+  subtitle: {
+    color: '#8B4513',
+    textAlign: 'center',
+    fontWeight: '500',
+  },
   cards: {
-    gap: 16,
+    gap: 20,
   },
   card: {
     backgroundColor: '#fff',
-    borderWidth: 2,
-    borderColor: 'transparent',
+    borderRadius: 24,
+    elevation: 8,
+    shadowColor: '#FF69B4',
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.2,
+    shadowRadius: 16,
+    borderWidth: 3,
+    borderColor: '#FFE4E1',
   },
   selectedCard: {
-    borderColor: '#6200ee',
-    backgroundColor: '#f0e6ff',
+    borderColor: '#FF69B4',
+    backgroundColor: '#FFF0F5',
+    transform: [{ scale: 1.02 }],
   },
   cardContent: {
     alignItems: 'center',
-    paddingVertical: 24,
+    paddingVertical: 32,
+    paddingHorizontal: 20,
+  },
+  emojiContainer: {
+    width: 80,
+    height: 80,
+    borderRadius: 40,
+    backgroundColor: '#FFF0F5',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 16,
   },
   emoji: {
-    marginBottom: 12,
+    fontSize: 48,
   },
   roleTitle: {
     fontWeight: 'bold',
     marginBottom: 8,
+    color: '#8B4513',
   },
   roleDescription: {
     color: '#666',
     textAlign: 'center',
+    lineHeight: 22,
+  },
+  badge: {
+    marginTop: 12,
+    backgroundColor: '#FF69B4',
+    paddingHorizontal: 16,
+    paddingVertical: 6,
+    borderRadius: 12,
+  },
+  badgeText: {
+    color: '#fff',
+    fontSize: 12,
+    fontWeight: 'bold',
   },
   loadingContainer: {
-    marginTop: 32,
+    marginTop: 40,
     alignItems: 'center',
+    backgroundColor: '#fff',
+    padding: 24,
+    borderRadius: 20,
+    elevation: 4,
   },
   loadingText: {
-    marginTop: 12,
-    color: '#666',
+    marginTop: 16,
+    color: '#FF69B4',
+    fontSize: 16,
+    fontWeight: '600',
   },
 });

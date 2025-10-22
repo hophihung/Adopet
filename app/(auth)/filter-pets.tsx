@@ -6,6 +6,8 @@
 import React, { useState } from 'react';
 import { View, StyleSheet, ScrollView } from 'react-native';
 import { Button, Text, Chip } from 'react-native-paper';
+import { LinearGradient } from 'expo-linear-gradient';
+import { useAuth } from '../../contexts/AuthContext';
 import { router } from 'expo-router';
 
 const PET_TYPES = [
@@ -35,6 +37,7 @@ const REGIONS = [
 ];
 
 export default function FilterPetScreen() {
+  const { completeOnboarding } = useAuth();
   const [selectedTypes, setSelectedTypes] = useState<string[]>([]);
   const [selectedAges, setSelectedAges] = useState<string[]>([]);
   const [selectedRegions, setSelectedRegions] = useState<string[]>([]);
@@ -51,27 +54,38 @@ export default function FilterPetScreen() {
     }
   };
 
-  const handleContinue = () => {
-    // Không lưu vào database, chỉ navigate tới main screen
+  const handleContinue = async () => {
+    // Đánh dấu đã hoàn thành onboarding
+    await completeOnboarding();
+    // Navigate tới main screen
     router.replace('/(tabs)');
   };
 
-  const handleSkip = () => {
+  const handleSkip = async () => {
+    // Đánh dấu đã hoàn thành onboarding
+    await completeOnboarding();
     router.replace('/(tabs)');
   };
 
   return (
-    <ScrollView style={styles.container}>
-      <View style={styles.content}>
-        {/* Header */}
-        <View style={styles.header}>
-          <Text variant="headlineMedium" style={styles.title}>
-            What are you looking for? 🔍
-          </Text>
-          <Text variant="bodyMedium" style={styles.subtitle}>
-            Help us personalize your experience
-          </Text>
-        </View>
+    <LinearGradient
+      colors={['#FFE5B4', '#FFDAB9', '#FFB6C1']}
+      style={styles.gradient}
+      start={{ x: 0, y: 0 }}
+      end={{ x: 1, y: 1 }}
+    >
+      <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
+        <View style={styles.content}>
+          {/* Header */}
+          <View style={styles.header}>
+            <Text style={styles.headerEmoji}>🔍</Text>
+            <Text variant="headlineMedium" style={styles.title}>
+              Find Your Perfect Match
+            </Text>
+            <Text variant="bodyMedium" style={styles.subtitle}>
+              Tell us what kind of pet you're looking for
+            </Text>
+          </View>
 
         {/* Pet Types */}
         <View style={styles.section}>
@@ -141,33 +155,59 @@ export default function FilterPetScreen() {
         </View>
       </View>
     </ScrollView>
+    </LinearGradient>
   );
 }
 
 const styles = StyleSheet.create({
+  gradient: {
+    flex: 1,
+  },
   container: {
     flex: 1,
-    backgroundColor: '#fff',
   },
   content: {
-    padding: 20,
+    padding: 24,
+    paddingTop: 60,
+    maxWidth: 440,
+    width: '100%',
+    alignSelf: 'center',
   },
   header: {
     marginBottom: 32,
+    alignItems: 'center',
+  },
+  headerEmoji: {
+    fontSize: 48,
+    marginBottom: 12,
   },
   title: {
     fontWeight: 'bold',
     marginBottom: 8,
+    color: '#8B4513',
+    textAlign: 'center',
   },
   subtitle: {
-    color: '#666',
+    color: '#8B4513',
+    textAlign: 'center',
+    fontWeight: '500',
   },
   section: {
-    marginBottom: 32,
+    marginBottom: 28,
+    backgroundColor: '#fff',
+    padding: 20,
+    borderRadius: 20,
+    elevation: 4,
+    shadowColor: '#FF69B4',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
   },
   sectionTitle: {
     marginBottom: 16,
-    fontWeight: '600',
+    fontWeight: 'bold',
+    fontSize: 18,
+    color: '#8B4513',
   },
   chipContainer: {
     flexDirection: 'row',
@@ -179,11 +219,14 @@ const styles = StyleSheet.create({
     marginBottom: 4,
   },
   buttons: {
-    marginTop: 24,
+    marginTop: 32,
     marginBottom: 40,
   },
   button: {
-    paddingVertical: 6,
+    paddingVertical: 8,
+    borderRadius: 16,
+    elevation: 4,
+    backgroundColor: '#FF69B4',
   },
   skipButton: {
     marginTop: 12,

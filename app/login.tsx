@@ -10,6 +10,7 @@ import {
   KeyboardAvoidingView,
   Platform,
   ScrollView,
+  Pressable,
 } from 'react-native';
 import { useAuth } from '@/contexts/AuthContext';
 import * as WebBrowser from 'expo-web-browser';
@@ -24,6 +25,7 @@ export default function LoginScreen() {
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [isSignUp, setIsSignUp] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
 
   const handleEmailAuth = async () => {
     if (!email || !password) {
@@ -145,38 +147,71 @@ export default function LoginScreen() {
         </View>
 
         <View style={styles.form}>
-          <TextInput
-            style={styles.input}
-            placeholder="Email"
-            value={email}
-            onChangeText={setEmail}
-            autoCapitalize="none"
-            keyboardType="email-address"
-            editable={!loading}
-          />
+          <View style={styles.card}>
+            <Text style={styles.cardTitle}>
+              {isSignUp ? 'Tạo tài khoản' : 'Chào mừng'}
+            </Text>
+            <TextInput
+              style={styles.input}
+              placeholder="Email"
+              value={email}
+              onChangeText={setEmail}
+              autoCapitalize="none"
+              keyboardType="email-address"
+              editable={!loading}
+            />
 
-          <TextInput
-            style={styles.input}
-            placeholder="Mật khẩu"
-            value={password}
-            onChangeText={setPassword}
-            secureTextEntry
-            editable={!loading}
-          />
+            <View style={styles.passwordRow}>
+              <TextInput
+                style={[styles.input, { flex: 1 }]}
+                placeholder="Mật khẩu"
+                value={password}
+                onChangeText={setPassword}
+                secureTextEntry={!showPassword}
+                editable={!loading}
+              />
 
-          <TouchableOpacity
-            style={[styles.button, styles.primaryButton]}
-            onPress={handleEmailAuth}
-            disabled={loading}
-          >
-            {loading ? (
-              <ActivityIndicator color="#fff" />
-            ) : (
-              <Text style={styles.buttonText}>
-                {isSignUp ? 'Đăng ký' : 'Đăng nhập'}
+              <Pressable
+                onPress={() => setShowPassword((s) => !s)}
+                style={styles.showHideButton}
+                accessibilityLabel={
+                  showPassword ? 'Ẩn mật khẩu' : 'Hiện mật khẩu'
+                }
+              >
+                <Text style={styles.showHideText}>
+                  {showPassword ? 'Ẩn' : 'Hiện'}
+                </Text>
+              </Pressable>
+            </View>
+
+            <TouchableOpacity
+              style={[styles.button, styles.primaryButton]}
+              onPress={handleEmailAuth}
+              disabled={loading}
+              accessibilityLabel={
+                isSignUp ? 'Đăng ký bằng email' : 'Đăng nhập bằng email'
+              }
+            >
+              {loading ? (
+                <ActivityIndicator color="#fff" />
+              ) : (
+                <Text style={styles.buttonText}>
+                  {isSignUp ? 'Đăng ký' : 'Đăng nhập'}
+                </Text>
+              )}
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              onPress={() => setIsSignUp(!isSignUp)}
+              disabled={loading}
+            >
+              <Text style={styles.toggleText}>
+                {isSignUp
+                  ? 'Đã có tài khoản? Đăng nhập'
+                  : 'Chưa có tài khoản? Đăng ký'}
               </Text>
-            )}
-          </TouchableOpacity>
+            </TouchableOpacity>
+          </View>
 
           <TouchableOpacity
             onPress={() => setIsSignUp(!isSignUp)}
@@ -195,21 +230,31 @@ export default function LoginScreen() {
             <View style={styles.dividerLine} />
           </View>
 
-          <TouchableOpacity
-            style={[styles.button, styles.googleButton]}
-            onPress={handleGoogleSignIn}
-            disabled={loading}
-          >
-            <Text style={styles.socialButtonText}>🔍 Đăng nhập với Google</Text>
-          </TouchableOpacity>
+          <View style={styles.socialRow}>
+            <TouchableOpacity
+              style={[styles.button, styles.socialButton, styles.googleButton]}
+              onPress={handleGoogleSignIn}
+              disabled={loading}
+              accessibilityLabel="Đăng nhập với Google"
+            >
+              <Text style={styles.socialButtonText}>� Google</Text>
+            </TouchableOpacity>
 
-          <TouchableOpacity
-            style={[styles.button, styles.facebookButton]}
-            onPress={handleFacebookSignIn}
-            disabled={loading}
-          >
-            <Text style={styles.socialButtonText}>📘 Đăng nhập với Facebook</Text>
-          </TouchableOpacity>
+            <TouchableOpacity
+              style={[
+                styles.button,
+                styles.socialButton,
+                styles.facebookButton,
+              ]}
+              onPress={handleFacebookSignIn}
+              disabled={loading}
+              accessibilityLabel="Đăng nhập với Facebook"
+            >
+              <Text style={[styles.socialButtonText, { color: '#fff' }]}>
+                📘 Facebook
+              </Text>
+            </TouchableOpacity>
+          </View>
         </View>
       </ScrollView>
     </KeyboardAvoidingView>
@@ -247,6 +292,23 @@ const styles = StyleSheet.create({
   form: {
     width: '100%',
   },
+  card: {
+    backgroundColor: '#fff',
+    borderRadius: 16,
+    padding: 20,
+    shadowColor: '#000',
+    shadowOpacity: 0.05,
+    shadowRadius: 10,
+    elevation: 4,
+    marginBottom: 24,
+  },
+  cardTitle: {
+    fontSize: 20,
+    fontWeight: '700',
+    color: '#333',
+    marginBottom: 12,
+    textAlign: 'center',
+  },
   input: {
     backgroundColor: '#f5f5f5',
     borderRadius: 12,
@@ -256,6 +318,19 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: '#e0e0e0',
   },
+  passwordRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  showHideButton: {
+    marginLeft: 8,
+    paddingHorizontal: 8,
+    paddingVertical: 10,
+  },
+  showHideText: {
+    color: '#FF6B6B',
+    fontWeight: '600',
+  },
   button: {
     borderRadius: 12,
     padding: 16,
@@ -264,6 +339,17 @@ const styles = StyleSheet.create({
   },
   primaryButton: {
     backgroundColor: '#FF6B6B',
+  },
+  socialRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+  },
+  socialButton: {
+    flex: 1,
+    marginHorizontal: 4,
+    paddingVertical: 12,
+    borderRadius: 12,
+    alignItems: 'center',
   },
   googleButton: {
     backgroundColor: '#fff',
