@@ -28,7 +28,7 @@ const SAMPLE_REELS = [
     username: '@catlover_hcm',
     thumbnail: 'https://images.pexels.com/photos/1543793/pexels-photo-1543793.jpeg',
     caption: 'Luna đang ngủ say như một công chúa 👑😴',
-    likes: 2341,
+    post_likes: 2341,
     comments: 89,
   },
   {
@@ -37,7 +37,7 @@ const SAMPLE_REELS = [
     username: '@husky_adventures',
     thumbnail: 'https://images.pexels.com/photos/1108099/pexels-photo-1108099.jpeg',
     caption: 'Đi dạo buổi sáng cùng Max! 🌅',
-    likes: 3456,
+    post_likes: 3456,
     comments: 123,
   },
   {
@@ -46,7 +46,7 @@ const SAMPLE_REELS = [
     username: '@golden_milo',
     thumbnail: 'https://images.pexels.com/photos/1390361/pexels-photo-1390361.jpeg',
     caption: 'Milo thích bơi lội lắm! 🏊‍♂️',
-    likes: 1890,
+    post_likes: 1890,
     comments: 67,
   },
 ];
@@ -99,7 +99,7 @@ export default function ReelScreen() {
                     fill={likedReels.includes(reel.id) ? '#FF6B6B' : 'transparent'}
                   />
                   <Text style={styles.actionText}>
-                    {likedReels.includes(reel.id) ? reel.likes + 1 : reel.likes}
+                    {likedReels.includes(reel.id) ? reel.post_likes||1 + 1 : reel.post_likes}
                   </Text>
                 </TouchableOpacity>
 
@@ -127,7 +127,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#000',
   },
   header: {
-    paddingTop: 60,
+    paddingTop: 30,
     paddingBottom: 16,
     paddingHorizontal: 20,
     backgroundColor: '#000',

@@ -10,6 +10,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { useAuth } from '../../contexts/AuthContext';
 import { router } from 'expo-router';
 import * as WebBrowser from 'expo-web-browser';
+import { Egg, PawPrint } from 'lucide-react-native';
 
 const { width } = Dimensions.get('window');
 
@@ -73,14 +74,14 @@ export default function LoginScreen() {
     <LinearGradient
       colors={['#FFE5B4', '#FFDAB9', '#FFB6C1']}
       style={styles.gradient}
-      start={{ x: 0, y: 0 }}
+      start={{ x: 1, y: 0 }}
       end={{ x: 1, y: 1 }}
     >
       <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         style={styles.container}
       >
-        <ScrollView 
+        <ScrollView
           contentContainerStyle={styles.scrollContent}
           showsVerticalScrollIndicator={false}
         >
@@ -88,148 +89,143 @@ export default function LoginScreen() {
             {/* Header with cute pets */}
             <View style={styles.header}>
               <View style={styles.petsContainer}>
-                <Text style={styles.petEmoji}>🐶</Text>
+
                 <View style={styles.logoContainer}>
-                  <Text style={styles.logo}>❤️</Text>
+                  <Text style={styles.logo}><PawPrint size={50} color={'#FF6B6B'}/></Text>
                 </View>
-                <Text style={styles.petEmoji}>🐱</Text>
+
               </View>
-              <Text variant="headlineMedium" style={styles.title}>
-                Welcome to PawsHome
-              </Text>
-              <Text variant="bodyMedium" style={styles.subtitle}>
-                Give a pet a loving home 🏡
-              </Text>
+            
             </View>
 
-          {/* Email/Password Form */}
-          <Card style={styles.card}>
-            <Card.Content style={styles.cardContent}>
-              <View style={styles.formHeader}>
-                <Text style={styles.formTitle}>
-                  {isSignUp ? '🎉 Create Account' : '👋 Sign In'}
-                </Text>
-                <Text style={styles.formSubtitle}>
-                  {isSignUp ? 'Join our pet-loving community' : 'Welcome back, pet lover!'}
-                </Text>
-              </View>
-
-              <TextInput
-                label="Email"
-                value={email}
-                onChangeText={setEmail}
-                autoCapitalize="none"
-                keyboardType="email-address"
-                style={styles.input}
-                mode="outlined"
-                disabled={loading}
-                left={<TextInput.Icon icon="email" />}
-                outlineColor="#FFB6C1"
-                activeOutlineColor="#FF69B4"
-              />
-              <TextInput
-                label="Password"
-                value={password}
-                onChangeText={setPassword}
-                secureTextEntry
-                style={styles.input}
-                mode="outlined"
-                disabled={loading}
-                left={<TextInput.Icon icon="lock" />}
-                right={<TextInput.Icon icon="eye" />}
-                outlineColor="#FFB6C1"
-                activeOutlineColor="#FF69B4"
-              />
-
-              {loading ? (
-                <View style={styles.loaderContainer}>
-                  <ActivityIndicator size="large" color="#FF69B4" />
-                  <Text style={styles.loaderText}>🐾 Finding your way...</Text>
+            {/* Email/Password Form */}
+            <Card style={styles.card}>
+              <Card.Content style={styles.cardContent}>
+                <View style={styles.formHeader}>
+                  <Text style={styles.formTitle}>
+                    {isSignUp ? ' Create Account' : 'Sign In'}
+                  </Text>
+                  <Text style={styles.formSubtitle}>
+                    {isSignUp ? 'Join our pet-loving community' : 'Welcome back, pet lover!'}
+                  </Text>
                 </View>
-              ) : (
-                <>
-                  <Button
-                    mode="contained"
-                    onPress={handleEmailAuth}
-                    style={styles.button}
-                    buttonColor="#FF69B4"
-                    contentStyle={styles.buttonContent}
-                    icon={isSignUp ? 'account-plus' : 'paw'}
-                  >
-                    {isSignUp ? 'Start My Journey' : 'Continue'}
-                  </Button>
 
-                  <TouchableOpacity
-                    onPress={() => setIsSignUp(!isSignUp)}
-                    style={styles.toggleButton}
-                  >
-                    <Text style={styles.toggleText}>
-                      {isSignUp ? 'Already part of our family? ' : "New here? "}
-                      <Text style={styles.toggleTextBold}>
-                        {isSignUp ? 'Sign In' : 'Join Us'}
+                <TextInput
+                  label="Email"
+                  value={email}
+                  onChangeText={setEmail}
+                  autoCapitalize="none"
+                  keyboardType="email-address"
+                  style={styles.input}
+                  mode="outlined"
+                  disabled={loading}
+                  left={<TextInput.Icon icon="email" />}
+                  outlineColor="#FFB6C1"
+                  activeOutlineColor="#FF69B4"
+                />
+                <TextInput
+                  label="Password"
+                  value={password}
+                  onChangeText={setPassword}
+                  secureTextEntry
+                  style={styles.input}
+                  mode="outlined"
+                  disabled={loading}
+                  left={<TextInput.Icon icon="lock" />}
+                  right={<TextInput.Icon icon="eye" />}
+                  outlineColor="#FFB6C1"
+                  activeOutlineColor="#FF69B4"
+                />
+
+                {loading ? (
+                  <View style={styles.loaderContainer}>
+                    <ActivityIndicator size="large" color="#FF69B4" />
+                    <Text style={styles.loaderText}>🐾 Finding your way...</Text>
+                  </View>
+                ) : (
+                  <>
+                    <Button
+                      mode="contained"
+                      onPress={handleEmailAuth}
+                      style={styles.button}
+                      buttonColor="#FF69B4"
+                      contentStyle={styles.buttonContent}
+                      icon={isSignUp ? 'account-plus' : 'paw'}
+                    >
+                      {isSignUp ? 'Start My Journey' : 'Continue'}
+                    </Button>
+
+                    <TouchableOpacity
+                      onPress={() => setIsSignUp(!isSignUp)}
+                      style={styles.toggleButton}
+                    >
+                      <Text style={styles.toggleText}>
+                        {isSignUp ? 'Already part of our family? ' : "New here? "}
+                        <Text style={styles.toggleTextBold}>
+                          {isSignUp ? 'Sign In' : 'Join Us'}
+                        </Text>
                       </Text>
-                    </Text>
-                  </TouchableOpacity>
-                </>
-              )}
-            </Card.Content>
-          </Card>
+                    </TouchableOpacity>
+                  </>
+                )}
+              </Card.Content>
+            </Card>
 
-          {/* Divider */}
-          <View style={styles.divider}>
-            <View style={styles.dividerLine} />
-            <View style={styles.dividerTextContainer}>
-              <Text style={styles.dividerText}>Quick Login</Text>
+            {/* Divider */}
+            <View style={styles.divider}>
+              <View style={styles.dividerLine} />
+              <View style={styles.dividerTextContainer}>
+                <Text style={styles.dividerText}>Quick Login</Text>
+              </View>
+              <View style={styles.dividerLine} />
             </View>
-            <View style={styles.dividerLine} />
-          </View>
 
-          {/* Social Login Buttons */}
-          <View style={styles.socialButtons}>
-            <TouchableOpacity
-              onPress={handleGoogleSignIn}
-              disabled={loading}
-              style={styles.socialButton}
-              activeOpacity={0.8}
-            >
-              <View style={styles.socialButtonContent}>
-                <View style={styles.socialIconContainer}>
-                  <Text style={styles.socialIcon}>🐾</Text>
+            {/* Social Login Buttons */}
+            <View style={styles.socialButtons}>
+              <TouchableOpacity
+                onPress={handleGoogleSignIn}
+                disabled={loading}
+                style={styles.socialButton}
+                activeOpacity={0.8}
+              >
+                <View style={styles.socialButtonContent}>
+                  <View style={styles.socialIconContainer}>
+                    <Text style={styles.socialIcon}>🐾</Text>
+                  </View>
+                  <Text style={styles.socialButtonText}>Google</Text>
                 </View>
-                <Text style={styles.socialButtonText}>Google</Text>
-              </View>
-            </TouchableOpacity>
+              </TouchableOpacity>
 
-            <TouchableOpacity
-              onPress={handleFacebookSignIn}
-              disabled={loading}
-              style={styles.socialButton}
-              activeOpacity={0.8}
-            >
-              <View style={styles.socialButtonContent}>
-                <View style={styles.socialIconContainer}>
-                  <Text style={styles.socialIcon}>🐱</Text>
+              <TouchableOpacity
+                onPress={handleFacebookSignIn}
+                disabled={loading}
+                style={styles.socialButton}
+                activeOpacity={0.8}
+              >
+                <View style={styles.socialButtonContent}>
+                  <View style={styles.socialIconContainer}>
+                    <Text style={styles.socialIcon}>🐱</Text>
+                  </View>
+                  <Text style={styles.socialButtonText}>Facebook</Text>
                 </View>
-                <Text style={styles.socialButtonText}>Facebook</Text>
-              </View>
-            </TouchableOpacity>
-          </View>
+              </TouchableOpacity>
+            </View>
 
-          {/* Footer */}
-          <View style={styles.footerContainer}>
-            <Text style={styles.footerPets}>🐶 🐱 🐹 🐰 🐦</Text>
-            <Text variant="bodySmall" style={styles.footer}>
-              Every pet deserves a loving home
-            </Text>
-            <Text variant="bodySmall" style={styles.footerTerms}>
-              By continuing, you agree to our{' '}
-              <Text style={styles.footerLink}>Terms</Text> and{' '}
-              <Text style={styles.footerLink}>Privacy</Text>
-            </Text>
+            {/* Footer */}
+            <View style={styles.footerContainer}>
+              <Text style={styles.footerPets}>🐶 🐱 🐹 🐰 🐦</Text>
+              <Text variant="bodySmall" style={styles.footer}>
+                Every pet deserves a loving home
+              </Text>
+              <Text variant="bodySmall" style={styles.footerTerms}>
+                By continuing, you agree to our{' '}
+                <Text style={styles.footerLink}>Terms</Text> and{' '}
+                <Text style={styles.footerLink}>Privacy</Text>
+              </Text>
+            </View>
           </View>
-        </View>
-      </ScrollView>
-    </KeyboardAvoidingView>
+        </ScrollView>
+      </KeyboardAvoidingView>
     </LinearGradient>
   );
 }
@@ -247,6 +243,7 @@ const styles = StyleSheet.create({
     paddingBottom: 40,
   },
   content: {
+    paddingTop: 40,
     flex: 1,
     padding: 20,
     justifyContent: 'center',
@@ -265,9 +262,7 @@ const styles = StyleSheet.create({
     marginBottom: 12,
     gap: 16,
   },
-  petEmoji: {
-    fontSize: 40,
-  },
+
   logoContainer: {
     width: 70,
     height: 70,
@@ -275,23 +270,26 @@ const styles = StyleSheet.create({
     backgroundColor: '#fff',
     justifyContent: 'center',
     alignItems: 'center',
-    shadowColor: '#FF69B4',
     shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
-    elevation: 8,
-    borderWidth: 3,
-    borderColor: '#FF69B4',
   },
   logo: {
-    fontSize: 36,
+    fontSize: 56,
   },
   title: {
-    fontWeight: 'bold',
-    marginBottom: 4,
+    fontSize: 32,
+    fontWeight: '800',
     textAlign: 'center',
-    color: '#8B4513',
+    color: '#FF69B4',          // Hồng pastel tươi
+    textShadowColor: 'rgba(0,0,0,0.15)',
+    textShadowOffset: { width: 0, height: 2 },
+    textShadowRadius: 4,
+    letterSpacing: 1,
+    fontFamily: Platform.select({
+      ios: 'AvenirNext-Bold',
+      android: 'sans-serif-medium',
+    }),
   },
+
   subtitle: {
     color: '#8B4513',
     textAlign: 'center',
@@ -316,12 +314,15 @@ const styles = StyleSheet.create({
     marginBottom: 20,
   },
   formTitle: {
-    fontSize: 22,
+    fontSize: 32,
     fontWeight: 'bold',
     color: '#8B4513',
     marginBottom: 4,
+    textAlign: 'center', // ✅ căn giữa chữ theo chiều ngang
   },
+
   formSubtitle: {
+    textAlign: 'center',
     fontSize: 14,
     color: '#999',
   },
