@@ -68,3 +68,14 @@ export type Reel = {
   likes_count: number;
   created_at: string;
 };
+
+export type Subscription = {
+  id: string;
+  profile_id: string;
+  plan: 'free' | 'premium' | 'pro';
+  status: 'active' | 'canceled' | 'expired';
+  start_date: string;
+  end_date: string | null;
+  created_at: string;
+  updated_at: string;
+};

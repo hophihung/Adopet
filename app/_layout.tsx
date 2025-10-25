@@ -3,6 +3,8 @@ import { Stack, useRouter, useSegments } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { AuthProvider, useAuth } from '../contexts/AuthContext';
+import { SubscriptionProvider } from '../contexts/SubscriptionContext';
+import { ProfileProvider } from '../src/features/profile/context/ProfileContext';
 
 function RootLayoutNav() {
   const { user, profile, loading, hasCompletedOnboarding } = useAuth();
@@ -57,7 +59,11 @@ export default function RootLayout() {
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
       <AuthProvider>
-        <RootLayoutNav />
+        <SubscriptionProvider>
+          <ProfileProvider>
+            <RootLayoutNav />
+          </ProfileProvider>
+        </SubscriptionProvider>
       </AuthProvider>
     </GestureHandlerRootView>
   );
