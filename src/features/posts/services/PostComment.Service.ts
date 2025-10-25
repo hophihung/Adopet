@@ -6,19 +6,32 @@ export const PostCommentService = {
     const { data, error } = await supabase
       .from('post_comments')
       .select(`
-        id,
-        content,
-        created_at,
-        user_id,
-        profiles(full_name, avatar_url)
-      `)
+      id,
+      content,
+      created_at,
+      user_id
+    `)
       .eq('post_id', postId)
-      .order('created_at', { ascending: true })
+      .order('created_at', { ascending: true });
 
-    if (error) throw error
-    return data
+    if (error) throw error;
+    
+    // Fetch profiles separately
+    if (data && data.length > 0) {
+      const userIds = [...new Set(data.map(c => c.user_id))];
+      const { data: profiles } = await supabase
+        .from('profiles')
+        .select('id, full_name, avatar_url')
+        .in('id', userIds);
+      
+      const profileMap = new Map(profiles?.map(p => [p.id, p]) || []);
+      return data.map(c => ({
+        ...c,
+        profiles: [profileMap.get(c.user_id)].filter(Boolean)
+      }));
+    }
+    return data;
   },
-
   // ➕ Thêm comment mới
   async create(postId: string, userId: string, content: string) {
     const { data, error } = await supabase
@@ -34,7 +47,6 @@ export const PostCommentService = {
     if (error) throw error
 
     // Gọi RPC để tăng comment_count
-    await supabase.rpc('increment_comment_count', { post_id: postId })
     return data
   },
 
