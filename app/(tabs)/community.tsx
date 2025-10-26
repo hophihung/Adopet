@@ -17,7 +17,6 @@ import { Heart, MessageCircle, Plus, X } from 'lucide-react-native';
 import { useRouter } from 'expo-router';
 import { supabase } from '@/lib/supabase';
 import { PostCommentService } from '@/src/features/posts/services/PostComment.Service';
-import type { RealtimeChannel } from '@supabase/supabase-js';
 
 /* ============================================================
    🧩 1. Kiểu dữ liệu

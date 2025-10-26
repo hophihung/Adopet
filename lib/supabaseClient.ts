@@ -47,6 +47,28 @@ export type Pet = {
   is_available: boolean;
   created_at: string;
   updated_at: string;
+  // Enhanced fields
+  breed?: string | null;
+  weight_kg?: number | null;
+  color?: string | null;
+  health_status?: 'healthy' | 'sick' | 'vaccinated' | 'needs_attention' | null;
+  vaccination_status?: 'up_to_date' | 'partial' | 'not_vaccinated' | 'unknown' | null;
+  spayed_neutered?: boolean | null;
+  microchipped?: boolean | null;
+  house_trained?: boolean | null;
+  good_with_kids?: boolean | null;
+  good_with_pets?: boolean | null;
+  energy_level?: 'low' | 'medium' | 'high' | null;
+  size?: 'small' | 'medium' | 'large' | 'extra_large' | null;
+  special_needs?: string | null;
+  adoption_fee?: number | null;
+  contact_phone?: string | null;
+  contact_email?: string | null;
+  view_count?: number;
+  like_count?: number;
+  is_featured?: boolean;
+  featured_until?: string | null;
+  last_viewed_at?: string | null;
 };
 
 export type Match = {
@@ -55,6 +77,22 @@ export type Match = {
   pet_id: string;
   liked: boolean;
   created_at: string;
+};
+
+export type PetLike = {
+  id: string;
+  pet_id: string;
+  user_id: string;
+  created_at: string;
+};
+
+export type PetView = {
+  id: string;
+  pet_id: string;
+  user_id: string | null;
+  ip_address: string | null;
+  user_agent: string | null;
+  viewed_at: string;
 };
 
 export type Reel = {

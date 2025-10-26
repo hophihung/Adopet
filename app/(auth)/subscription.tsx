@@ -19,9 +19,12 @@ const PLANS = [
     description: 'Nhập môn, khám phá thú cưng',
     features: [
       'Xem 5 thú cưng mỗi ngày',
-      'Tạo tối đa 2 bài viết',
+      'Tạo tối đa 4 pet objects',
+      'Mỗi pet tối đa 4 ảnh',
       'Liên hệ cơ bản',
     ],
+    petLimit: 4,
+    imagesPerPet: 4,
   },
   {
     id: 'premium',
@@ -30,10 +33,13 @@ const PLANS = [
     description: '/tháng - Trải nghiệm nâng cao',
     features: [
       'Xem không giới hạn',
-      'Tạo tối đa 10 bài viết',
+      'Tạo tối đa 6 pet objects',
+      'Mỗi pet tối đa 4 ảnh',
       'Liên hệ ưu tiên',
       'Ẩn số điện thoại',
     ],
+    petLimit: 6,
+    imagesPerPet: 4,
   },
   {
     id: 'pro',
@@ -42,11 +48,14 @@ const PLANS = [
     description: '/tháng - Chuyên nghiệp',
     features: [
       'Mọi tính năng Premium',
-      'Bài viết không giới hạn',
+      'Tạo tối đa 9 pet objects',
+      'Mỗi pet tối đa 4 ảnh',
       'Hỗ trợ ưu tiên 24/7',
       'Badge Pro',
       'Analytics chi tiết',
     ],
+    petLimit: 9,
+    imagesPerPet: 4,
   },
 ];
 

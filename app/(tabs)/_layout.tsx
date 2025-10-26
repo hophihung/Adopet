@@ -45,7 +45,7 @@
 // }
 
 import { Tabs } from 'expo-router';
-import { Flame, Users, Sparkles, MessageCircle, User } from 'lucide-react-native';
+import { Flame, Users, Sparkles, MessageCircle, User, Heart } from 'lucide-react-native';
 import { View, Text } from 'react-native';
 
 export default function TabLayout() {
@@ -141,6 +141,17 @@ export default function TabLayout() {
                 }}
               />
             </View>
+          ),
+        }}
+      />
+
+      {/* ❤️ My Pets */}
+      <Tabs.Screen
+        name="my-pets"
+        options={{
+          title: '',
+          tabBarIcon: ({ color, size }) => (
+            <Heart size={26} color={color} />
           ),
         }}
       />

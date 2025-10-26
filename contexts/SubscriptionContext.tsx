@@ -24,6 +24,8 @@ interface SubscriptionContextType {
   cancelSubscription: () => Promise<void>;
   upgradeSubscription: (newPlan: SubscriptionPlan) => Promise<void>;
   refreshSubscription: () => Promise<void>;
+  getPetLimit: (plan?: SubscriptionPlan) => number;
+  getImagesPerPetLimit: () => number;
 }
 
 const SubscriptionContext = createContext<SubscriptionContextType | undefined>(
@@ -176,6 +178,20 @@ export function SubscriptionProvider({
     }
   };
 
+  const getPetLimit = (plan?: SubscriptionPlan): number => {
+    const currentPlan = plan || subscription?.plan || 'free';
+    const limits = {
+      'free': 4,
+      'premium': 6,
+      'pro': 9,
+    };
+    return limits[currentPlan] || 4;
+  };
+
+  const getImagesPerPetLimit = (): number => {
+    return 4; // Tất cả gói đều có giới hạn 4 ảnh/pet
+  };
+
   const value = {
     subscription,
     loading,
@@ -184,6 +200,8 @@ export function SubscriptionProvider({
     cancelSubscription,
     upgradeSubscription,
     refreshSubscription,
+    getPetLimit,
+    getImagesPerPetLimit,
   };
 
   return (
