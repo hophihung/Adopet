@@ -2,6 +2,7 @@ import React, { createContext, useContext, useState, useEffect } from 'react';
 import { Session, User } from '@supabase/supabase-js';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { supabase } from '../lib/supabaseClient';
+import { router } from 'expo-router';
 
 interface Profile {
   id: string;
@@ -51,7 +52,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     loadOnboardingStatus();
 
+    // Timeout fallback to prevent infinite loading
+    const timeout = setTimeout(() => {
+      console.warn('Auth loading timeout - setting loading to false');
+      setLoading(false);
+    }, 5000);
+
     supabase.auth.getSession().then(({ data: { session } }) => {
+      clearTimeout(timeout);
       setSession(session);
       setUser(session?.user ?? null);
       if (session?.user) {
@@ -59,6 +67,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       } else {
         setLoading(false);
       }
+    }).catch((error) => {
+      clearTimeout(timeout);
+      console.error('Error getting session:', error);
+      setLoading(false);
     });
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
@@ -89,6 +101,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       }
 
       setProfile(data);
+      
+      // Nếu là seller và chưa có subscription, đảm bảo tạo free subscription
+      if (data && data.role === 'seller') {
+        try {
+          await supabase.rpc('ensure_seller_has_subscription', {
+            user_profile_id: userId
+          });
+        } catch (subscriptionError) {
+          console.error('Error ensuring seller subscription:', subscriptionError);
+        }
+      }
     } catch (error) {
       console.error('Error fetching profile:', error);
       setProfile(null);
@@ -104,12 +127,27 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   const signInWithEmail = async (email: string, password: string) => {
-    const { error } = await supabase.auth.signInWithPassword({
+    setLoading(true);
+    const { data, error } = await supabase.auth.signInWithPassword({
       email,
       password,
     });
+    console.log('🔵 Sign-in data:', data);
+    console.log('🔵 Sign-in error:', error);
+
     if (error) throw error;
+
+    // Nếu muốn phản hồi UI ngay khi đăng nhập thành công:
+    if (data?.session?.user) {
+      setSession(data.session);
+      setUser(data.session.user);
+      await fetchProfile(data.session.user.id);
+      router.replace('/(tabs)');
+    }
+
+    setLoading(false);
   };
+
 
   const signUpWithEmail = async (email: string, password: string) => {
     const { error } = await supabase.auth.signUp({
@@ -157,6 +195,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const createProfile = async (role: 'user' | 'seller') => {
     if (!user) throw new Error('No user found');
 
+    console.log('🔵 Creating profile with role:', role);
+
     const { error } = await supabase.from('profiles').insert({
       id: user.id,
       role,
@@ -165,13 +205,22 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       avatar_url: user.user_metadata?.avatar_url || user.user_metadata?.picture || null,
     });
 
-    if (error) throw error;
+    if (error) {
+      console.error('🔴 Error creating profile:', error);
+      throw error;
+    }
+
+    console.log('🔵 Profile created successfully');
 
     // Reset onboarding when creating new profile
     await AsyncStorage.setItem('onboarding_completed', 'false');
     setHasCompletedOnboarding(false);
 
     await refreshProfile();
+    
+    console.log('🔵 Returning role:', role);
+    // Return role để component có thể xử lý redirect
+    return role;
   };
 
   const completeOnboarding = async () => {
