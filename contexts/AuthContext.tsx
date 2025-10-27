@@ -101,6 +101,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       }
 
       setProfile(data);
+      
+      // Nếu là seller và chưa có subscription, đảm bảo tạo free subscription
+      if (data && data.role === 'seller') {
+        try {
+          await supabase.rpc('ensure_seller_has_subscription', {
+            user_profile_id: userId
+          });
+        } catch (subscriptionError) {
+          console.error('Error ensuring seller subscription:', subscriptionError);
+        }
+      }
     } catch (error) {
       console.error('Error fetching profile:', error);
       setProfile(null);
@@ -184,6 +195,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const createProfile = async (role: 'user' | 'seller') => {
     if (!user) throw new Error('No user found');
 
+    console.log('🔵 Creating profile with role:', role);
+
     const { error } = await supabase.from('profiles').insert({
       id: user.id,
       role,
@@ -192,13 +205,22 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       avatar_url: user.user_metadata?.avatar_url || user.user_metadata?.picture || null,
     });
 
-    if (error) throw error;
+    if (error) {
+      console.error('🔴 Error creating profile:', error);
+      throw error;
+    }
+
+    console.log('🔵 Profile created successfully');
 
     // Reset onboarding when creating new profile
     await AsyncStorage.setItem('onboarding_completed', 'false');
     setHasCompletedOnboarding(false);
 
     await refreshProfile();
+    
+    console.log('🔵 Returning role:', role);
+    // Return role để component có thể xử lý redirect
+    return role;
   };
 
   const completeOnboarding = async () => {

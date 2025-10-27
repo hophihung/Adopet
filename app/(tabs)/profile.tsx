@@ -1,13 +1,17 @@
-import React from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Image, RefreshControl, ActivityIndicator } from 'react-native';
+import React, { useState } from 'react';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Image, RefreshControl, ActivityIndicator, Modal } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Settings, Edit, Heart, MessageCircle, Star } from 'lucide-react-native';
+import { Settings, Edit, Heart, MessageCircle, Star, Crown } from 'lucide-react-native';
 import { useProfile } from '../../src/features/profile/context/ProfileContext';
 import { useAuth } from '../../contexts/AuthContext';
+import { useSubscription } from '../../contexts/SubscriptionContext';
+import { SubscriptionManager } from '../../src/components/SubscriptionManager';
 
 export default function ProfileScreen() {
   const { profile, stats, loading, refreshing, refreshProfile } = useProfile();
   const { signOut } = useAuth();
+  const { subscription } = useSubscription();
+  const [showSubscriptionModal, setShowSubscriptionModal] = useState(false);
 
   if (loading) {
     return (
@@ -59,6 +63,25 @@ export default function ProfileScreen() {
               {profile?.role === 'seller' ? '🏪 Seller' : '👤 User'}
             </Text>
           </View>
+          
+          {/* Subscription Status */}
+          <TouchableOpacity 
+            style={styles.subscriptionCard}
+            onPress={() => setShowSubscriptionModal(true)}
+          >
+            <View style={styles.subscriptionContent}>
+              <Crown size={20} color="#FF9500" />
+              <View style={styles.subscriptionInfo}>
+                <Text style={styles.subscriptionTitle}>
+                  Gói {subscription?.plan?.toUpperCase() || 'FREE'}
+                </Text>
+                <Text style={styles.subscriptionSubtitle}>
+                  {subscription?.status === 'active' ? 'Đang hoạt động' : 'Chưa đăng ký'}
+                </Text>
+              </View>
+              <Text style={styles.subscriptionArrow}>›</Text>
+            </View>
+          </TouchableOpacity>
         </View>
 
         {/* Stats */}
@@ -104,6 +127,12 @@ export default function ProfileScreen() {
               <Text style={styles.menuText}>My Pets</Text>
             </TouchableOpacity>
           )}
+          <TouchableOpacity 
+            style={styles.menuItem}
+            onPress={() => setShowSubscriptionModal(true)}
+          >
+            <Text style={styles.menuText}>Subscription</Text>
+          </TouchableOpacity>
           <TouchableOpacity style={styles.menuItem}>
             <Text style={styles.menuText}>Favorites</Text>
           </TouchableOpacity>
@@ -121,6 +150,27 @@ export default function ProfileScreen() {
           </TouchableOpacity>
         </View>
       </ScrollView>
+
+      {/* Subscription Modal */}
+      <Modal
+        visible={showSubscriptionModal}
+        animationType="slide"
+        presentationStyle="pageSheet"
+        onRequestClose={() => setShowSubscriptionModal(false)}
+      >
+        <SafeAreaView style={styles.modalContainer}>
+          <View style={styles.modalHeader}>
+            <Text style={styles.modalTitle}>Subscription</Text>
+            <TouchableOpacity
+              style={styles.closeButton}
+              onPress={() => setShowSubscriptionModal(false)}
+            >
+              <Text style={styles.closeButtonText}>Đóng</Text>
+            </TouchableOpacity>
+          </View>
+          <SubscriptionManager onClose={() => setShowSubscriptionModal(false)} />
+        </SafeAreaView>
+      </Modal>
     </SafeAreaView>
   );
 }
@@ -268,6 +318,64 @@ const styles = StyleSheet.create({
   signOutText: {
     fontSize: 16,
     color: '#FF5A75',
+    fontWeight: '600',
+  },
+  subscriptionCard: {
+    backgroundColor: '#FFF8F0',
+    borderRadius: 12,
+    padding: 16,
+    marginTop: 16,
+    borderWidth: 1,
+    borderColor: '#FFE4CC',
+  },
+  subscriptionContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  subscriptionInfo: {
+    flex: 1,
+    marginLeft: 12,
+  },
+  subscriptionTitle: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#FF9500',
+  },
+  subscriptionSubtitle: {
+    fontSize: 14,
+    color: '#8B5A00',
+    marginTop: 2,
+  },
+  subscriptionArrow: {
+    fontSize: 20,
+    color: '#FF9500',
+    fontWeight: '300',
+  },
+  modalContainer: {
+    flex: 1,
+    backgroundColor: '#000',
+  },
+  modalHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingHorizontal: 20,
+    paddingVertical: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: '#2C2C2E',
+  },
+  modalTitle: {
+    fontSize: 20,
+    fontWeight: '700',
+    color: '#fff',
+  },
+  closeButton: {
+    paddingVertical: 8,
+    paddingHorizontal: 16,
+  },
+  closeButtonText: {
+    fontSize: 16,
+    color: '#007AFF',
     fontWeight: '600',
   },
 });
