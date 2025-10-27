@@ -20,9 +20,15 @@ export default function SelectRoleScreen() {
     setLoading(true);
 
     try {
-      await createProfile(role);
-      // Sau khi tạo profile thành công, navigate tới filter screen
-      router.replace('/(auth)/filter-pets');
+      const createdRole = await createProfile(role);
+      
+      // Nếu là seller, redirect đến subscription page
+      if (createdRole === 'seller') {
+        router.replace('/(auth)/subscription');
+      } else {
+        // Nếu là user, redirect đến filter screen
+        router.replace('/(auth)/filter-pets');
+      }
     } catch (error: any) {
       Alert.alert('Error', error.message);
       setSelectedRole(null);

@@ -101,6 +101,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       }
 
       setProfile(data);
+      
+      // Nếu là seller và chưa có subscription, đảm bảo tạo free subscription
+      if (data && data.role === 'seller') {
+        try {
+          await supabase.rpc('ensure_seller_has_subscription', {
+            user_profile_id: userId
+          });
+        } catch (subscriptionError) {
+          console.error('Error ensuring seller subscription:', subscriptionError);
+        }
+      }
     } catch (error) {
       console.error('Error fetching profile:', error);
       setProfile(null);
@@ -199,6 +210,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setHasCompletedOnboarding(false);
 
     await refreshProfile();
+    
+    // Return role để component có thể xử lý redirect
+    return role;
   };
 
   const completeOnboarding = async () => {

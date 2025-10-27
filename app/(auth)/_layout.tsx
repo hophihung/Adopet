@@ -6,6 +6,7 @@ export default function AuthLayout() {
       <Stack.Screen name="login" />
       <Stack.Screen name="select-role" />
       <Stack.Screen name="filter-pets" />
+      <Stack.Screen name="subscription" />
     </Stack>
   );
 }
