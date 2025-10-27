@@ -419,11 +419,6 @@ const styles = StyleSheet.create({
     height: 100,
     textAlignVertical: 'top',
   },
-  errorText: {
-    fontSize: 14,
-    color: '#FF3B30',
-    marginTop: 4,
-  },
   typeGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
