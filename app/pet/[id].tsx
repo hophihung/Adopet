@@ -8,10 +8,12 @@ import {
   TouchableOpacity,
   Alert,
   Image,
+  ActivityIndicator,
 } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { usePetManagement } from '../../src/features/pets/hooks/usePetManagement';
 import { PetUpdateData } from '../../src/features/pets/services/pet.service';
+import { imageUploadService, ImageUploadResult } from '../../src/services/imageUpload.service';
 
 const PET_TYPES = [
   { value: 'dog', label: 'Chó' },
@@ -47,6 +49,7 @@ export default function EditPetScreen() {
 
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [isLoading, setIsLoading] = useState(true);
+  const [uploadingImages, setUploadingImages] = useState(false);
 
   useEffect(() => {
     if (id) {
@@ -100,7 +103,41 @@ export default function EditPetScreen() {
     if (!validateForm()) return;
 
     try {
-      await updatePet(id!, formData);
+      // Upload new images first if there are any
+      if (formData.images && formData.images.length > 0) {
+        setUploadingImages(true);
+        
+        // Filter out existing URLs (already uploaded) and new URIs
+        const existingUrls = formData.images.filter(img => img.startsWith('http'));
+        const newUris = formData.images.filter(img => !img.startsWith('http'));
+        
+        if (newUris.length > 0) {
+          const uploadResults = await imageUploadService.uploadMultipleImages(
+            newUris,
+            'pet-images',
+            'pets'
+          );
+
+          if (uploadResults.length === 0) {
+            Alert.alert('Lỗi', 'Không thể upload ảnh');
+            setUploadingImages(false);
+            return;
+          }
+
+          // Combine existing URLs with new uploaded URLs
+          const updatedFormData = {
+            ...formData,
+            images: [...existingUrls, ...uploadResults.map(result => result.url)]
+          };
+
+          await updatePet(id!, updatedFormData);
+        } else {
+          await updatePet(id!, formData);
+        }
+      } else {
+        await updatePet(id!, formData);
+      }
+
       Alert.alert(
         'Thành công',
         'Đã cập nhật pet thành công!',
@@ -111,17 +148,54 @@ export default function EditPetScreen() {
         'Lỗi',
         error instanceof Error ? error.message : 'Không thể cập nhật pet'
       );
+    } finally {
+      setUploadingImages(false);
     }
   };
 
-  const handleImageAdd = () => {
+  const handleImageAdd = async () => {
     if (formData.images && formData.images.length >= 4) {
       Alert.alert('Thông báo', 'Tối đa 4 ảnh cho mỗi pet');
       return;
     }
     
-    // TODO: Implement image picker
-    Alert.alert('Thông báo', 'Tính năng chọn ảnh sẽ được implement sau');
+    try {
+      setUploadingImages(true);
+      
+      const imageUri = await imageUploadService.pickImage({
+        quality: 0.8,
+        maxWidth: 1024,
+        maxHeight: 1024,
+        allowsEditing: true,
+        aspect: [1, 1]
+      });
+
+      if (imageUri) {
+        // Validate image
+        if (!imageUploadService.validateImage(imageUri)) {
+          Alert.alert('Lỗi', 'Định dạng ảnh không được hỗ trợ. Vui lòng chọn ảnh JPG, PNG hoặc WebP');
+          return;
+        }
+
+        // Check file size
+        const fileSize = await imageUploadService.getFileSize(imageUri);
+        const maxSize = 5 * 1024 * 1024; // 5MB
+        if (fileSize > maxSize) {
+          Alert.alert('Lỗi', 'Kích thước ảnh quá lớn. Vui lòng chọn ảnh nhỏ hơn 5MB');
+          return;
+        }
+
+        setFormData(prev => ({
+          ...prev,
+          images: [...(prev.images || []), imageUri]
+        }));
+      }
+    } catch (error) {
+      console.error('Error adding image:', error);
+      Alert.alert('Lỗi', 'Không thể thêm ảnh');
+    } finally {
+      setUploadingImages(false);
+    }
   };
 
   const handleImageRemove = (index: number) => {
@@ -160,13 +234,13 @@ export default function EditPetScreen() {
         <Text style={styles.title}>Chỉnh sửa Pet</Text>
         <TouchableOpacity 
           onPress={handleSubmit}
-          disabled={loading}
+          disabled={loading || uploadingImages}
         >
           <Text style={[
             styles.saveButton,
-            loading && styles.saveButtonDisabled
+            (loading || uploadingImages) && styles.saveButtonDisabled
           ]}>
-            {loading ? 'Đang lưu...' : 'Lưu'}
+            {uploadingImages ? 'Đang upload...' : loading ? 'Đang lưu...' : 'Lưu'}
           </Text>
         </TouchableOpacity>
       </View>
