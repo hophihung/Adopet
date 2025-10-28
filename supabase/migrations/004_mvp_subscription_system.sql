@@ -250,7 +250,7 @@ BEGIN
   JOIN public.plan_features pf ON sp.id = pf.plan_id
   WHERE s.profile_id = user_profile_id 
     AND s.status = 'active'
-    AND pf.feature_key = feature_key
+    AND pf.feature_key = check_feature_limit.feature_key
   ORDER BY s.created_at DESC
   LIMIT 1;
   
@@ -268,7 +268,7 @@ BEGIN
   SELECT COALESCE(ut.feature_count, 0) INTO daily_usage
   FROM public.usage_tracking ut
   WHERE ut.user_id = user_profile_id 
-    AND ut.feature_key = feature_key
+    AND ut.feature_key = check_feature_limit.feature_key
     AND ut.reset_date = CURRENT_DATE;
   
   -- Kiểm tra giới hạn

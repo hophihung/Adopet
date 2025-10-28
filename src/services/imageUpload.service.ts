@@ -1,4 +1,5 @@
 import * as ImagePicker from 'expo-image-picker';
+import * as FileSystem from 'expo-file-system/legacy';
 import { supabase } from '../../lib/supabaseClient';
 import { Alert } from 'react-native';
 
@@ -74,12 +75,10 @@ class ImageUploadService {
       if (!source) return null;
 
       const pickerOptions: ImagePicker.ImagePickerOptions = {
-        mediaTypes: ImagePicker.MediaTypeOptions.Images,
+        mediaTypes: ['images'],
         allowsEditing: options.allowsEditing ?? true,
-        aspect: options.aspect ?? [1, 1],
+        aspect: options.aspect ?? [4, 3],
         quality: options.quality ?? 0.8,
-        maxWidth: options.maxWidth ?? 1024,
-        maxHeight: options.maxHeight ?? 1024,
       };
 
       let result: ImagePicker.ImagePickerResult;
@@ -116,14 +115,18 @@ class ImageUploadService {
       const fileName = `${timestamp}_${randomString}.${fileExtension}`;
       const filePath = `${folder}/${fileName}`;
 
-      // Convert URI to blob
-      const response = await fetch(imageUri);
-      const blob = await response.blob();
+      // Read file as base64
+      const base64 = await FileSystem.readAsStringAsync(imageUri, {
+        encoding: 'base64',
+      });
+
+      // Convert base64 to ArrayBuffer for Supabase
+      const arrayBuffer = Uint8Array.from(atob(base64), c => c.charCodeAt(0));
 
       // Upload to Supabase Storage
       const { data, error } = await supabase.storage
         .from(bucket)
-        .upload(filePath, blob, {
+        .upload(filePath, arrayBuffer, {
           contentType: `image/${fileExtension}`,
           upsert: false,
         });
@@ -139,10 +142,14 @@ class ImageUploadService {
         .from(bucket)
         .getPublicUrl(filePath);
 
+      // Get file size
+      const fileInfo = await FileSystem.getInfoAsync(imageUri);
+      const fileSize = fileInfo.exists && 'size' in fileInfo ? fileInfo.size : 0;
+
       return {
         url: urlData.publicUrl,
         path: filePath,
-        size: blob.size,
+        size: fileSize,
       };
     } catch (error) {
       console.error('Error uploading image:', error);
@@ -193,16 +200,22 @@ class ImageUploadService {
 
   // Get image size from URI
   async getImageSize(uri: string): Promise<{ width: number; height: number } | null> {
-    return new Promise((resolve) => {
-      Image.getSize(
-        uri,
-        (width, height) => resolve({ width, height }),
-        (error) => {
-          console.error('Error getting image size:', error);
-          resolve(null);
-        }
-      );
-    });
+    try {
+      const { Image } = await import('react-native');
+      return new Promise((resolve) => {
+        Image.getSize(
+          uri,
+          (width, height) => resolve({ width, height }),
+          (error) => {
+            console.error('Error getting image size:', error);
+            resolve(null);
+          }
+        );
+      });
+    } catch (error) {
+      console.error('Error loading Image component:', error);
+      return null;
+    }
   }
 
   // Compress image if needed
@@ -211,10 +224,13 @@ class ImageUploadService {
     maxSize: number = 1024 * 1024 // 1MB
   ): Promise<string> {
     try {
-      const response = await fetch(uri);
-      const blob = await response.blob();
+      const fileInfo = await FileSystem.getInfoAsync(uri);
+      
+      if (!fileInfo.exists || !('size' in fileInfo)) {
+        return uri;
+      }
 
-      if (blob.size <= maxSize) {
+      if (fileInfo.size <= maxSize) {
         return uri;
       }
 
@@ -237,9 +253,8 @@ class ImageUploadService {
   // Get file size from URI
   async getFileSize(uri: string): Promise<number> {
     try {
-      const response = await fetch(uri);
-      const blob = await response.blob();
-      return blob.size;
+      const fileInfo = await FileSystem.getInfoAsync(uri);
+      return fileInfo.exists && 'size' in fileInfo ? fileInfo.size : 0;
     } catch (error) {
       console.error('Error getting file size:', error);
       return 0;

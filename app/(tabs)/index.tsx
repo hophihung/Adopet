@@ -1,4 +1,4 @@
-import React, { useRef, useState } from 'react';
+import React, { useRef, useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -7,6 +7,7 @@ import {
   TouchableOpacity,
   Dimensions,
   Alert,
+  Animated,
 } from 'react-native';
 import { useAuth } from '@/contexts/AuthContext';
 import { Heart, X, RotateCcw, Star, Send, PawPrint } from 'lucide-react-native';
@@ -14,7 +15,6 @@ import { useRouter } from 'expo-router';
 import Swiper from 'react-native-deck-swiper';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
-const CARD_WIDTH = SCREEN_WIDTH - 40;
 
 interface Pet {
   id: string;
@@ -25,7 +25,7 @@ interface Pet {
   distance: string;
   status: string;
   verified: boolean;
-  image: string;
+  images: string[];
 }
 
 const SAMPLE_PETS: Pet[] = [
@@ -38,7 +38,11 @@ const SAMPLE_PETS: Pet[] = [
     distance: 'Cách xa 2 km',
     status: 'Có hoạt động gần đây',
     verified: true,
-    image: 'https://images.pexels.com/photos/1805164/pexels-photo-1805164.jpeg',
+    images: [
+      'https://images.pexels.com/photos/1805164/pexels-photo-1805164.jpeg',
+      'https://images.pexels.com/photos/573241/pexels-photo-573241.jpeg',
+      'https://images.pexels.com/photos/4587996/pexels-photo-4587996.jpeg',
+    ],
   },
   {
     id: '2',
@@ -49,7 +53,10 @@ const SAMPLE_PETS: Pet[] = [
     distance: 'Cách xa 5 km',
     status: 'Có hoạt động gần đây',
     verified: true,
-    image: 'https://images.pexels.com/photos/1543793/pexels-photo-1543793.jpeg',
+    images: [
+      'https://images.pexels.com/photos/1543793/pexels-photo-1543793.jpeg',
+      'https://images.pexels.com/photos/45201/kitty-cat-kitten-pet-45201.jpeg',
+    ],
   },
   {
     id: '3',
@@ -60,7 +67,10 @@ const SAMPLE_PETS: Pet[] = [
     distance: 'Cách xa 1 km',
     status: 'Có hoạt động gần đây',
     verified: true,
-    image: 'https://images.pexels.com/photos/1108099/pexels-photo-1108099.jpeg',
+    images: [
+      'https://images.pexels.com/photos/1108099/pexels-photo-1108099.jpeg',
+      'https://images.pexels.com/photos/63960/dog-puppy-on-garden-royalty-free-image-63960.jpeg',
+    ],
   },
 ];
 
@@ -68,11 +78,22 @@ export default function MatchScreen() {
   const { signOut } = useAuth();
   const router = useRouter();
   const [currentIndex, setCurrentIndex] = useState<number>(0);
+  const [imageIndices, setImageIndices] = useState<{[key: string]: number}>({}); // quản lý ảnh cho từng pet
   const swiperRef = useRef<any>(null);
+  
+  // Animation values cho từng pet
+  const imageAnimations = useRef<{[key: string]: Animated.Value}>({});
+  
+  // Initialize animation value cho mỗi pet
+  const getAnimationValue = (petId: string) => {
+    if (!imageAnimations.current[petId]) {
+      imageAnimations.current[petId] = new Animated.Value(0);
+    }
+    return imageAnimations.current[petId];
+  };
 
   const handleLike = () => swiperRef.current?.swipeRight();
   const handlePass = () => swiperRef.current?.swipeLeft();
-
 
   const handleSignOut = async () => {
     Alert.alert('Đăng xuất', 'Bạn có chắc muốn đăng xuất?', [
@@ -90,6 +111,43 @@ export default function MatchScreen() {
         },
       },
     ]);
+  };
+
+  const getCurrentImageIndex = (petId: string) => imageIndices[petId] || 0;
+
+  const handleNextImage = (petId: string) => {
+    const pet = SAMPLE_PETS.find(p => p.id === petId);
+    if (!pet) return;
+    
+    const currentImgIndex = getCurrentImageIndex(petId);
+    if (currentImgIndex < pet.images.length - 1) {
+      const nextIndex = currentImgIndex + 1;
+      
+      // Animate slide
+      Animated.timing(getAnimationValue(petId), {
+        toValue: nextIndex,
+        duration: 300,
+        useNativeDriver: true,
+      }).start();
+      
+      setImageIndices(prev => ({ ...prev, [petId]: nextIndex }));
+    }
+  };
+
+  const handlePrevImage = (petId: string) => {
+    const currentImgIndex = getCurrentImageIndex(petId);
+    if (currentImgIndex > 0) {
+      const prevIndex = currentImgIndex - 1;
+      
+      // Animate slide
+      Animated.timing(getAnimationValue(petId), {
+        toValue: prevIndex,
+        duration: 300,
+        useNativeDriver: true,
+      }).start();
+      
+      setImageIndices(prev => ({ ...prev, [petId]: prevIndex }));
+    }
   };
 
   return (
@@ -111,12 +169,67 @@ export default function MatchScreen() {
           cards={SAMPLE_PETS}
           renderCard={(pet: Pet) => (
             <View style={styles.card}>
-              <Image source={{ uri: pet.image }} style={styles.petImage} />
+              {/* Container ảnh với animated transition */}
+              <View style={styles.imageContainer}>
+                <Animated.View
+                  style={[
+                    styles.imageSlider,
+                    {
+                      transform: [
+                        {
+                          translateX: getAnimationValue(pet.id).interpolate({
+                            inputRange: pet.images.map((_, i) => i),
+                            outputRange: pet.images.map((_, i) => -i * (SCREEN_WIDTH - 40)),
+                          }),
+                        },
+                      ],
+                    },
+                  ]}
+                >
+                  {pet.images.map((imageUrl, index) => (
+                    <Image
+                      key={`${pet.id}-${index}`}
+                      source={{ uri: imageUrl }}
+                      style={styles.petImage}
+                    />
+                  ))}
+                </Animated.View>
+              </View>
+
+              {/* Tap zones - bên trái và bên phải */}
+              <View style={styles.tapZones}>
+                <TouchableOpacity
+                  activeOpacity={1}
+                  style={styles.tapZoneLeft}
+                  onPress={() => handlePrevImage(pet.id)}
+                />
+                <TouchableOpacity
+                  activeOpacity={1}
+                  style={styles.tapZoneRight}
+                  onPress={() => handleNextImage(pet.id)}
+                />
+              </View>
+
+              {/* Chỉ báo số ảnh */}
+              <View style={styles.imageIndicators}>
+                {pet.images.map((_, index) => (
+                  <View
+                    key={index}
+                    style={[
+                      styles.indicator,
+                      getCurrentImageIndex(pet.id) === index && styles.indicatorActive,
+                    ]}
+                  />
+                ))}
+              </View>
+
+              {/* Overlay thông tin */}
               <View style={styles.cardOverlay}>
                 <View style={styles.statusBadge}>
                   <View style={styles.statusDot} />
                   <Text style={styles.statusText}>{pet.status}</Text>
                 </View>
+
                 <View style={styles.petInfo}>
                   <View style={styles.petHeader}>
                     <Text style={styles.petName}>{pet.name}</Text>
@@ -135,49 +248,15 @@ export default function MatchScreen() {
               </View>
             </View>
           )}
-          onSwipedLeft={(cardIndex) => console.log('Passed', SAMPLE_PETS[cardIndex])}
-          onSwipedRight={(cardIndex) => console.log('Liked', SAMPLE_PETS[cardIndex])}
+          onSwipedLeft={(cardIndex) => console.log('❌ Denied', SAMPLE_PETS[cardIndex])}
+          onSwipedRight={(cardIndex) => console.log('❤️ Liked', SAMPLE_PETS[cardIndex])}
           cardIndex={currentIndex}
-          onSwiped={(cardIndex) => setCurrentIndex(cardIndex + 1)}
+          onSwiped={(cardIndex) => {
+            setCurrentIndex(cardIndex + 1);
+          }}
           backgroundColor="transparent"
           stackSize={3}
           stackSeparation={15}
-          overlayLabels={{
-            left: {
-              title: 'NOPE',
-              style: {
-                label: {
-                  backgroundColor: '#FF3B5C',
-                  color: 'white',
-                  fontSize: 24,
-                },
-                wrapper: {
-                  flexDirection: 'column',
-                  alignItems: 'flex-end',
-                  justifyContent: 'flex-start',
-                  marginTop: 30,
-                  marginLeft: -30,
-                },
-              },
-            },
-            right: {
-              title: 'LIKE',
-              style: {
-                label: {
-                  backgroundColor: '#00D664',
-                  color: 'white',
-                  fontSize: 24,
-                },
-                wrapper: {
-                  flexDirection: 'column',
-                  alignItems: 'flex-start',
-                  justifyContent: 'flex-start',
-                  marginTop: 30,
-                  marginLeft: 30,
-                },
-              },
-            },
-          }}
           animateCardOpacity
           verticalSwipe={false}
         />
@@ -185,30 +264,30 @@ export default function MatchScreen() {
 
       {/* Action buttons */}
       <View style={styles.actions}>
-        <TouchableOpacity style={styles.actionButton} onPress={() => swiperRef.current?.jumpToCardIndex(currentIndex - 1)}>
+        <TouchableOpacity
+          style={styles.actionButton}
+          onPress={() => swiperRef.current?.jumpToCardIndex(currentIndex - 1)}>
           <RotateCcw size={28} color="#FFB800" />
         </TouchableOpacity>
         <TouchableOpacity style={styles.actionButton} onPress={handlePass}>
           <X size={32} color="#FF3B5C" />
         </TouchableOpacity>
-        <TouchableOpacity style={[styles.actionButton, styles.starButton]} onPress={() => { }}>
+        <TouchableOpacity style={[styles.actionButton, styles.starButton]}>
           <Star size={24} color="#4ECFFF" fill="#4ECFFF" />
         </TouchableOpacity>
         <TouchableOpacity style={styles.actionButton} onPress={handleLike}>
           <Heart size={28} color="#00D664" fill="#00D664" />
         </TouchableOpacity>
-        <TouchableOpacity style={styles.actionButton} onPress={() => { }}>
+        <TouchableOpacity style={styles.actionButton}>
           <Send size={24} color="#9368FF" />
         </TouchableOpacity>
       </View>
     </View>
   );
 }
+
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#fff',
-  },
+  container: { flex: 1, backgroundColor: '#fff' },
   header: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -217,70 +296,94 @@ const styles = StyleSheet.create({
     paddingTop: 50,
     paddingBottom: 10,
   },
-  logo: {
-    fontSize: 34,
-    fontWeight: 'bold',
-    color: '#FF3B5C',
-  },
-  headerIcon: {
-    fontSize: 24,
-    color: '#9368FF',
-    paddingRight: 6,
-  },
-  cardContainer: {
-    flex: 1,
-    paddingTop: 10,
-  },
+  logo: { fontSize: 34, fontWeight: 'bold', color: '#FF3B5C' },
+  headerIcon: { fontSize: 24, color: '#9368FF', paddingRight: 6 },
+  cardContainer: { flex: 1, paddingTop: 10 },
   card: {
     height: SCREEN_WIDTH * 1.4,
     borderRadius: 12,
     overflow: 'hidden',
     backgroundColor: '#f0f0f0',
   },
+  imageContainer: {
+    width: SCREEN_WIDTH - 40,
+    height: SCREEN_WIDTH * 1.2,
+    overflow: 'hidden',
+    borderRadius: 12,
+  },
+  imageSlider: {
+    flexDirection: 'row',
+    height: SCREEN_WIDTH * 1.2,
+  },
   petImage: {
-    width: '100%',
-    height: '100%',
+    width: SCREEN_WIDTH - 40,
+    height: SCREEN_WIDTH * 1.2,
+    resizeMode: 'cover',
+  },
+  tapZones: {
     position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    height: SCREEN_WIDTH * 1.2,
+    flexDirection: 'row',
+  },
+  tapZoneLeft: {
+    flex: 1,
+    backgroundColor: 'transparent',
+  },
+  tapZoneRight: {
+    flex: 1,
+    backgroundColor: 'transparent',
+  },
+  imageIndicators: {
+    position: 'absolute',
+    top: 20,
+    width: '100%',
+    flexDirection: 'row',
+    justifyContent: 'center',
+    gap: 6,
+  },
+  indicator: {
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+    backgroundColor: 'rgba(255,255,255,0.5)',
+  },
+  indicatorActive: {
+    backgroundColor: '#fff',
+    width: 20,
   },
   cardOverlay: {
     flex: 1,
     justifyContent: 'space-between',
     padding: 16,
+    position: 'absolute',
+    top: 0,
+    bottom: 0,
+    left: 0,
+    right: 0,
   },
   statusBadge: {
     flexDirection: 'row',
     alignItems: 'center',
     alignSelf: 'flex-start',
-    backgroundColor: 'rgba(0, 0, 0, 0.4)',
+    backgroundColor: 'rgba(0,0,0,0.4)',
     paddingHorizontal: 12,
     paddingVertical: 6,
     borderRadius: 20,
     gap: 6,
+    margin: 12,
   },
-  statusDot: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-    backgroundColor: '#00D664',
-  },
-  statusText: {
-    color: '#fff',
-    fontSize: 12,
-    fontWeight: '500',
-  },
-  petInfo: {
-    backgroundColor: 'transparent',
-  },
-  petHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 8,
-  },
+  statusDot: { width: 8, height: 8, borderRadius: 4, backgroundColor: '#00D664' },
+  statusText: { color: '#fff', fontSize: 12, fontWeight: '500' },
+  petInfo: { backgroundColor: 'transparent', margin: 12 },
+  petHeader: { flexDirection: 'row', alignItems: 'center', marginBottom: 8 },
   petName: {
     fontSize: 36,
     fontWeight: 'bold',
     color: '#fff',
-    textShadowColor: 'rgba(0, 0, 0, 0.5)',
+    textShadowColor: 'rgba(0,0,0,0.5)',
     textShadowOffset: { width: 0, height: 1 },
     textShadowRadius: 4,
   },
@@ -288,7 +391,7 @@ const styles = StyleSheet.create({
     fontSize: 32,
     color: '#fff',
     fontWeight: '400',
-    textShadowColor: 'rgba(0, 0, 0, 0.5)',
+    textShadowColor: 'rgba(0,0,0,0.5)',
     textShadowOffset: { width: 0, height: 1 },
     textShadowRadius: 4,
   },
@@ -296,24 +399,17 @@ const styles = StyleSheet.create({
     fontSize: 20,
     color: '#4ECFFF',
     marginLeft: 6,
-    textShadowColor: 'rgba(0, 0, 0, 0.5)',
+    textShadowColor: 'rgba(0,0,0,0.5)',
     textShadowOffset: { width: 0, height: 1 },
     textShadowRadius: 4,
   },
-  infoRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 6,
-  },
-  infoIcon: {
-    fontSize: 16,
-    marginRight: 8,
-  },
+  infoRow: { flexDirection: 'row', alignItems: 'center', marginBottom: 6 },
+  infoIcon: { fontSize: 16, marginRight: 8 },
   infoText: {
     fontSize: 16,
     color: '#fff',
     fontWeight: '500',
-    textShadowColor: 'rgba(0, 0, 0, 0.5)',
+    textShadowColor: 'rgba(0,0,0,0.5)',
     textShadowOffset: { width: 0, height: 1 },
     textShadowRadius: 4,
   },
@@ -338,9 +434,5 @@ const styles = StyleSheet.create({
     shadowRadius: 8,
     elevation: 3,
   },
-  starButton: {
-    width: 50,
-    height: 50,
-    borderRadius: 25,
-  },
+  starButton: { width: 50, height: 50, borderRadius: 25 },
 });
