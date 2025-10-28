@@ -25,7 +25,8 @@ export function PetLimitBanner({
     if (onUpgrade) {
       onUpgrade();
     } else {
-      router.push('/(auth)/subscription');
+      // Redirect đến subscription page trong app (không phải auth flow)
+      router.push('/subscription');
     }
   };
 

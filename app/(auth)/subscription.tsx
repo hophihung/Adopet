@@ -26,15 +26,18 @@ export default function SubscriptionScreen() {
 
   const loadPlans = async () => {
     try {
+      console.log('🔵 Loading subscription plans...');
       const availablePlans = await paymentService.getSubscriptionPlans();
+      console.log('🔵 Loaded plans:', availablePlans.length);
       setPlans(availablePlans);
       // Mặc định chọn free plan
       const freePlan = availablePlans.find(p => p.name === 'free');
       if (freePlan) {
+        console.log('🔵 Selected free plan:', freePlan.id);
         setSelectedPlan(freePlan.id);
       }
     } catch (error) {
-      console.error('Error loading plans:', error);
+      console.error('🔴 Error loading plans:', error);
       Alert.alert('Error', 'Failed to load subscription plans');
     } finally {
       setLoading(false);
@@ -42,12 +45,16 @@ export default function SubscriptionScreen() {
   };
 
   const handleContinue = async () => {
+    console.log('🔵 Continue clicked, selectedPlan:', selectedPlan);
+    
     if (!selectedPlan) {
       Alert.alert('Error', 'Please select a subscription plan');
       return;
     }
 
     const plan = plans.find(p => p.id === selectedPlan);
+    console.log('🔵 Selected plan:', plan);
+    
     if (!plan) {
       Alert.alert('Error', 'Invalid plan selected');
       return;
@@ -55,6 +62,7 @@ export default function SubscriptionScreen() {
 
     // Nếu chọn free plan, tiếp tục luôn
     if (plan.name === 'free') {
+      console.log('🔵 Continuing with free plan');
       router.replace('/(auth)/filter-pets');
       return;
     }
@@ -66,7 +74,10 @@ export default function SubscriptionScreen() {
       [
         {
           text: 'Continue with Free',
-          onPress: () => router.replace('/(auth)/filter-pets')
+          onPress: () => {
+            console.log('🔵 User chose to continue with free plan');
+            router.replace('/(auth)/filter-pets');
+          }
         },
         {
           text: 'Cancel',

@@ -9,10 +9,12 @@ import {
   Alert,
   Image,
   Alert as RNAlert,
+  ActivityIndicator,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { usePetManagement } from '../../src/features/pets/hooks/usePetManagement';
 import { PetCreateData } from '../../src/features/pets/services/pet.service';
+import { imageUploadService, ImageUploadResult } from '../../src/services/imageUpload.service';
 
 const PET_TYPES = [
   { value: 'dog', label: 'Chó' },
@@ -45,6 +47,8 @@ export default function CreatePetScreen() {
   });
 
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [uploadingImages, setUploadingImages] = useState(false);
+  const [uploadedImages, setUploadedImages] = useState<ImageUploadResult[]>([]);
 
   const validateForm = (): boolean => {
     const newErrors: Record<string, string> = {};
@@ -73,7 +77,33 @@ export default function CreatePetScreen() {
     if (!validateForm()) return;
 
     try {
-      await createPet(formData);
+      // Upload images first if there are any
+      if (formData.images.length > 0) {
+        setUploadingImages(true);
+        
+        const uploadResults = await imageUploadService.uploadMultipleImages(
+          formData.images,
+          'pet-images',
+          'pets'
+        );
+
+        if (uploadResults.length === 0) {
+          RNAlert.alert('Lỗi', 'Không thể upload ảnh');
+          setUploadingImages(false);
+          return;
+        }
+
+        // Update form data with uploaded image URLs
+        const updatedFormData = {
+          ...formData,
+          images: uploadResults.map(result => result.url)
+        };
+
+        await createPet(updatedFormData);
+      } else {
+        await createPet(formData);
+      }
+
       RNAlert.alert(
         'Thành công',
         'Đã tạo pet thành công!',
@@ -84,17 +114,54 @@ export default function CreatePetScreen() {
         'Lỗi',
         error instanceof Error ? error.message : 'Không thể tạo pet'
       );
+    } finally {
+      setUploadingImages(false);
     }
   };
 
-  const handleImageAdd = () => {
+  const handleImageAdd = async () => {
     if (formData.images.length >= 4) {
       RNAlert.alert('Thông báo', 'Tối đa 4 ảnh cho mỗi pet');
       return;
     }
     
-    // TODO: Implement image picker
-    RNAlert.alert('Thông báo', 'Tính năng chọn ảnh sẽ được implement sau');
+    try {
+      setUploadingImages(true);
+      
+      const imageUri = await imageUploadService.pickImage({
+        quality: 0.8,
+        maxWidth: 1024,
+        maxHeight: 1024,
+        allowsEditing: true,
+        aspect: [1, 1]
+      });
+
+      if (imageUri) {
+        // Validate image
+        if (!imageUploadService.validateImage(imageUri)) {
+          RNAlert.alert('Lỗi', 'Định dạng ảnh không được hỗ trợ. Vui lòng chọn ảnh JPG, PNG hoặc WebP');
+          return;
+        }
+
+        // Check file size
+        const fileSize = await imageUploadService.getFileSize(imageUri);
+        const maxSize = 5 * 1024 * 1024; // 5MB
+        if (fileSize > maxSize) {
+          RNAlert.alert('Lỗi', 'Kích thước ảnh quá lớn. Vui lòng chọn ảnh nhỏ hơn 5MB');
+          return;
+        }
+
+        setFormData(prev => ({
+          ...prev,
+          images: [...prev.images, imageUri]
+        }));
+      }
+    } catch (error) {
+      console.error('Error adding image:', error);
+      RNAlert.alert('Lỗi', 'Không thể thêm ảnh');
+    } finally {
+      setUploadingImages(false);
+    }
   };
 
   const handleImageRemove = (index: number) => {
@@ -114,13 +181,13 @@ export default function CreatePetScreen() {
         <Text style={styles.title}>Tạo Pet mới</Text>
         <TouchableOpacity 
           onPress={handleSubmit}
-          disabled={loading}
+          disabled={loading || uploadingImages}
         >
           <Text style={[
             styles.saveButton,
-            loading && styles.saveButtonDisabled
+            (loading || uploadingImages) && styles.saveButtonDisabled
           ]}>
-            {loading ? 'Đang tạo...' : 'Tạo'}
+            {uploadingImages ? 'Đang upload...' : loading ? 'Đang tạo...' : 'Tạo'}
           </Text>
         </TouchableOpacity>
       </View>
@@ -276,10 +343,15 @@ export default function CreatePetScreen() {
             
             {formData.images.length < 4 && (
               <TouchableOpacity
-                style={styles.addImageButton}
+                style={[styles.addImageButton, uploadingImages && styles.addImageButtonDisabled]}
                 onPress={handleImageAdd}
+                disabled={uploadingImages}
               >
-                <Text style={styles.addImageText}>+</Text>
+                {uploadingImages ? (
+                  <ActivityIndicator size="small" color="#666" />
+                ) : (
+                  <Text style={styles.addImageText}>+</Text>
+                )}
               </TouchableOpacity>
             )}
           </View>
@@ -465,5 +537,8 @@ const styles = StyleSheet.create({
   addImageText: {
     fontSize: 24,
     color: '#666',
+  },
+  addImageButtonDisabled: {
+    opacity: 0.5,
   },
 });

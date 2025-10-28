@@ -21,15 +21,19 @@ export default function SelectRoleScreen() {
 
     try {
       const createdRole = await createProfile(role);
+      console.log('🔵 Created role:', createdRole);
       
       // Nếu là seller, redirect đến subscription page
       if (createdRole === 'seller') {
+        console.log('🔵 Redirecting seller to subscription page');
         router.replace('/(auth)/subscription');
       } else {
+        console.log('🔵 Redirecting user to filter screen');
         // Nếu là user, redirect đến filter screen
         router.replace('/(auth)/filter-pets');
       }
     } catch (error: any) {
+      console.error('🔴 Error creating profile:', error);
       Alert.alert('Error', error.message);
       setSelectedRole(null);
     } finally {
