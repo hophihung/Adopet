@@ -4,3 +4,6 @@ export * from './forms';
 export * from './layout';
 export * from './ui';
 
+// Export chat components
+export { ChatList, ChatScreen } from '../features/chat';
+

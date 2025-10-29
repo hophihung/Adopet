@@ -261,7 +261,17 @@ export const PetService = {
       await supabase.from('pet_likes').delete().eq('id', existing.id);
       return { liked: false };
     } else {
-      await supabase.from('pet_likes').insert({ pet_id: petId, user_id: userId });
+      const { data: likeData, error: likeError } = await supabase
+        .from('pet_likes')
+        .insert({ pet_id: petId, user_id: userId })
+        .select()
+        .single();
+
+      if (likeError) throw likeError;
+
+      // The trigger will automatically create conversation and notification
+      // when a new like is inserted
+      
       return { liked: true };
     }
   },
