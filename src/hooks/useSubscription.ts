@@ -178,17 +178,17 @@ export function useSubscription(): UseSubscriptionReturn {
   // Feature checks (synchronous based on current plan data)
   const canAddPet = userPlan ? 
     (userPlan.features.find(f => f.key === 'pet_limit')?.value === 'unlimited' || 
-     (userPlan.features.find(f => f.key === 'pet_limit')?.value || '0') > (userPlan.usage_today.pet_created || 0)) : 
+     parseInt(userPlan.features.find(f => f.key === 'pet_limit')?.value || '0') > (userPlan.usage_today.pet_created || 0)) : 
     false;
 
   const canMakeMatch = userPlan ? 
     (userPlan.features.find(f => f.key === 'daily_matches')?.value === 'unlimited' || 
-     (userPlan.features.find(f => f.key === 'daily_matches')?.value || '0') > (userPlan.usage_today.daily_matches || 0)) : 
+     parseInt(userPlan.features.find(f => f.key === 'daily_matches')?.value || '0') > (userPlan.usage_today.daily_matches || 0)) : 
     false;
 
   const canPostReel = userPlan ? 
     (userPlan.features.find(f => f.key === 'reel_posts')?.value === 'unlimited' || 
-     (userPlan.features.find(f => f.key === 'reel_posts')?.value || '0') > (userPlan.usage_today.reel_posts || 0)) : 
+     parseInt(userPlan.features.find(f => f.key === 'reel_posts')?.value || '0') > (userPlan.usage_today.reel_posts || 0)) : 
     false;
 
   const hasFeaturedPets = userPlan?.features.find(f => f.key === 'featured_pets')?.value === 'true';

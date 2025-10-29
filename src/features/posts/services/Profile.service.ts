@@ -115,7 +115,7 @@ export class ProfileService {
 
       // Upload to Supabase Storage
       const { error: uploadError } = await supabase.storage
-        .from('profiles')
+        .from('profile')
         .upload(filePath, blob, {
           contentType: file.type,
           upsert: false,
@@ -125,7 +125,7 @@ export class ProfileService {
 
       // Get public URL
       const { data } = supabase.storage
-        .from('profiles')
+        .from('profile')
         .getPublicUrl(filePath);
 
       return data.publicUrl;

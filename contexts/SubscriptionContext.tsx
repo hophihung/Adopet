@@ -179,7 +179,9 @@ export function SubscriptionProvider({
   };
 
   const getPetLimit = (plan?: SubscriptionPlan): number => {
-    const currentPlan = plan || subscription?.plan || 'free';
+    // Nếu subscription bị canceled hoặc không có, treat như free plan
+    const currentPlan = (subscription?.status === 'active') ? 
+      (plan || subscription?.plan || 'free') : 'free';
     const limits = {
       'free': 4,
       'premium': 6,

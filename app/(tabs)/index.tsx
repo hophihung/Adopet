@@ -8,77 +8,49 @@ import {
   Dimensions,
   Alert,
   Animated,
+  ActivityIndicator,
 } from 'react-native';
 import { useAuth } from '@/contexts/AuthContext';
 import { Heart, X, RotateCcw, Star, Send, PawPrint } from 'lucide-react-native';
 import { useRouter } from 'expo-router';
 import Swiper from 'react-native-deck-swiper';
+import { PetService } from '@/src/features/pets/services/pet.service';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
 interface Pet {
   id: string;
   name: string;
-  age: number;
-  breed: string;
-  location: string;
-  distance: string;
-  status: string;
-  verified: boolean;
+  type: string;
+  age_months?: number;
+  breed?: string;
+  location?: string;
+  description?: string;
+  price?: number;
   images: string[];
+  seller_id: string;
+  is_available: boolean;
+  like_count: number;
+  view_count: number;
+  profiles?: {
+    id: string;
+    full_name: string | null;
+    avatar_url: string | null;
+  };
+  energy_level?: string;
+  size?: string;
 }
 
-const SAMPLE_PETS: Pet[] = [
-  {
-    id: '1',
-    name: 'Husky',
-    age: 10,
-    breed: 'Husky',
-    location: 'Sống tại TP. Qui Nhơn',
-    distance: 'Cách xa 2 km',
-    status: 'Có hoạt động gần đây',
-    verified: true,
-    images: [
-      'https://images.pexels.com/photos/1805164/pexels-photo-1805164.jpeg',
-      'https://images.pexels.com/photos/573241/pexels-photo-573241.jpeg',
-      'https://images.pexels.com/photos/4587996/pexels-photo-4587996.jpeg',
-    ],
-  },
-  {
-    id: '2',
-    name: 'Luna',
-    age: 2,
-    breed: 'British Shorthair',
-    location: 'Sống tại TP. Hồ Chí Minh',
-    distance: 'Cách xa 5 km',
-    status: 'Có hoạt động gần đây',
-    verified: true,
-    images: [
-      'https://images.pexels.com/photos/1543793/pexels-photo-1543793.jpeg',
-      'https://images.pexels.com/photos/45201/kitty-cat-kitten-pet-45201.jpeg',
-    ],
-  },
-  {
-    id: '3',
-    name: 'Buddy',
-    age: 3,
-    breed: 'Golden Retriever',
-    location: 'Sống tại Hà Nội',
-    distance: 'Cách xa 1 km',
-    status: 'Có hoạt động gần đây',
-    verified: true,
-    images: [
-      'https://images.pexels.com/photos/1108099/pexels-photo-1108099.jpeg',
-      'https://images.pexels.com/photos/63960/dog-puppy-on-garden-royalty-free-image-63960.jpeg',
-    ],
-  },
-];
+// No mock data - will be fetched from Supabase
 
 export default function MatchScreen() {
-  const { signOut } = useAuth();
+  const { signOut, user } = useAuth();
   const router = useRouter();
   const [currentIndex, setCurrentIndex] = useState<number>(0);
   const [imageIndices, setImageIndices] = useState<{[key: string]: number}>({}); // quản lý ảnh cho từng pet
+  const [pets, setPets] = useState<Pet[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [likedPets, setLikedPets] = useState<Set<string>>(new Set());
   const swiperRef = useRef<any>(null);
   
   // Animation values cho từng pet
@@ -92,8 +64,74 @@ export default function MatchScreen() {
     return imageAnimations.current[petId];
   };
 
-  const handleLike = () => swiperRef.current?.swipeRight();
-  const handlePass = () => swiperRef.current?.swipeLeft();
+  // Load available pets from Supabase
+  useEffect(() => {
+    loadPets();
+  }, []);
+
+  const loadPets = async () => {
+    try {
+      setLoading(true);
+      const availablePets = await PetService.getAvailablePets(user?.id);
+      
+      // Parse images if they're stored as JSON strings
+      const parsedPets = availablePets.map((pet: any) => ({
+        ...pet,
+        images: Array.isArray(pet.images) ? pet.images : (
+          typeof pet.images === 'string' ? JSON.parse(pet.images) : []
+        ),
+      }));
+      
+      setPets(parsedPets);
+    } catch (error) {
+      console.error('Error loading pets:', error);
+      Alert.alert('Lỗi', 'Không thể tải danh sách pet');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const trackPetView = async (petId: string) => {
+    try {
+      await PetService.trackView(petId, user?.id);
+    } catch (error) {
+      console.error('Error tracking view:', error);
+    }
+  };
+
+  const handleToggleLike = async (petId: string) => {
+    if (!user?.id) return;
+    
+    try {
+      const result = await PetService.toggleLike(petId, user.id);
+      
+      if (result.liked) {
+        setLikedPets(prev => new Set(prev).add(petId));
+      } else {
+        setLikedPets(prev => {
+          const newSet = new Set(prev);
+          newSet.delete(petId);
+          return newSet;
+        });
+      }
+    } catch (error) {
+      console.error('Error toggling like:', error);
+    }
+  };
+
+  const handleLike = () => {
+    if (currentIndex < pets.length) {
+      trackPetView(pets[currentIndex].id);
+    }
+    swiperRef.current?.swipeRight();
+  };
+  
+  const handlePass = () => {
+    if (currentIndex < pets.length) {
+      trackPetView(pets[currentIndex].id);
+    }
+    swiperRef.current?.swipeLeft();
+  };
 
   const handleSignOut = async () => {
     Alert.alert('Đăng xuất', 'Bạn có chắc muốn đăng xuất?', [
@@ -116,7 +154,7 @@ export default function MatchScreen() {
   const getCurrentImageIndex = (petId: string) => imageIndices[petId] || 0;
 
   const handleNextImage = (petId: string) => {
-    const pet = SAMPLE_PETS.find(p => p.id === petId);
+    const pet = pets.find(p => p.id === petId);
     if (!pet) return;
     
     const currentImgIndex = getCurrentImageIndex(petId);
@@ -150,6 +188,29 @@ export default function MatchScreen() {
     }
   };
 
+  if (loading) {
+    return (
+      <View style={[styles.container, { justifyContent: 'center', alignItems: 'center' }]}>
+        <ActivityIndicator size="large" color="#FF5A75" />
+        <Text style={{ marginTop: 16, fontSize: 16, color: '#666' }}>Đang tải pets...</Text>
+      </View>
+    );
+  }
+
+  if (pets.length === 0) {
+    return (
+      <View style={[styles.container, { justifyContent: 'center', alignItems: 'center' }]}>
+        <Text style={{ fontSize: 18, fontWeight: '600', color: '#333' }}>Không có pet để hiển thị</Text>
+        <TouchableOpacity
+          style={{ marginTop: 20, backgroundColor: '#FF5A75', paddingHorizontal: 24, paddingVertical: 12, borderRadius: 8 }}
+          onPress={loadPets}
+        >
+          <Text style={{ color: '#fff', fontWeight: '600' }}>Làm mới</Text>
+        </TouchableOpacity>
+      </View>
+    );
+  }
+
   return (
     <View style={styles.container}>
       {/* Header */}
@@ -166,7 +227,7 @@ export default function MatchScreen() {
       <View style={styles.cardContainer}>
         <Swiper
           ref={swiperRef}
-          cards={SAMPLE_PETS}
+          cards={pets}
           renderCard={(pet: Pet) => (
             <View style={styles.card}>
               {/* Container ảnh với animated transition */}
@@ -174,7 +235,7 @@ export default function MatchScreen() {
                 <Animated.View
                   style={[
                     styles.imageSlider,
-                    {
+                    pet.images.length > 1 && {
                       transform: [
                         {
                           translateX: getAnimationValue(pet.id).interpolate({
@@ -184,8 +245,8 @@ export default function MatchScreen() {
                         },
                       ],
                     },
-                  ]}
-                >
+                  ]
+                }>
                   {pet.images.map((imageUrl, index) => (
                     <Image
                       key={`${pet.id}-${index}`}
@@ -225,31 +286,73 @@ export default function MatchScreen() {
 
               {/* Overlay thông tin */}
               <View style={styles.cardOverlay}>
-                <View style={styles.statusBadge}>
-                  <View style={styles.statusDot} />
-                  <Text style={styles.statusText}>{pet.status}</Text>
-                </View>
+                {/* Top: Seller info */}
+                {pet.profiles && (
+                  <View style={styles.sellerInfo}>
+                    {pet.profiles.avatar_url && (
+                      <Image
+                        source={{ uri: pet.profiles.avatar_url }}
+                        style={styles.sellerAvatar}
+                      />
+                    )}
+                    <View>
+                      <Text style={styles.sellerName}>{pet.profiles.full_name || 'Người bán'}</Text>
+                      <View style={styles.statsBadge}>
+                        <Text style={styles.statText}>👍 {pet.like_count}</Text>
+                        <Text style={styles.statSeparator}>|</Text>
+                        <Text style={styles.statText}>👁 {pet.view_count}</Text>
+                      </View>
+                    </View>
+                  </View>
+                )}
 
+                {/* Bottom: Pet info */}
                 <View style={styles.petInfo}>
                   <View style={styles.petHeader}>
                     <Text style={styles.petName}>{pet.name}</Text>
-                    <Text style={styles.petAge}> {pet.age}</Text>
-                    {pet.verified && <Text style={styles.verified}>✓</Text>}
+                    <Text style={styles.petAge}>{pet.age_months ? Math.floor(pet.age_months / 12) : '?'}</Text>
                   </View>
-                  <View style={styles.infoRow}>
-                    <Text style={styles.infoIcon}>🏠</Text>
-                    <Text style={styles.infoText}>{pet.location}</Text>
-                  </View>
-                  <View style={styles.infoRow}>
-                    <Text style={styles.infoIcon}>📍</Text>
-                    <Text style={styles.infoText}>{pet.distance}</Text>
-                  </View>
+                  {pet.breed && (
+                    <View style={styles.infoRow}>
+                      <Text style={styles.infoIcon}>🐶</Text>
+                      <Text style={styles.infoText}>{pet.breed}</Text>
+                    </View>
+                  )}
+                  {pet.location && (
+                    <View style={styles.infoRow}>
+                      <Text style={styles.infoIcon}>📄</Text>
+                      <Text style={styles.infoText}>{pet.location}</Text>
+                    </View>
+                  )}
+                  {pet.size && (
+                    <View style={styles.infoRow}>
+                      <Text style={styles.infoIcon}>💰</Text>
+                      <Text style={styles.infoText}>Size: {pet.size}</Text>
+                    </View>
+                  )}
+                  {pet.energy_level && (
+                    <View style={styles.infoRow}>
+                      <Text style={styles.infoIcon}>⚡</Text>
+                      <Text style={styles.infoText}>{pet.energy_level}</Text>
+                    </View>
+                  )}
                 </View>
               </View>
             </View>
           )}
-          onSwipedLeft={(cardIndex) => console.log('❌ Denied', SAMPLE_PETS[cardIndex])}
-          onSwipedRight={(cardIndex) => console.log('❤️ Liked', SAMPLE_PETS[cardIndex])}
+          onSwipedLeft={(cardIndex) => {
+            if (cardIndex < pets.length) {
+              console.log('❌ Pass', pets[cardIndex].name);
+            }
+            setCurrentIndex(cardIndex + 1);
+          }}
+          onSwipedRight={(cardIndex) => {
+            if (cardIndex < pets.length) {
+              console.log('❤️ Like', pets[cardIndex].name);
+              handleToggleLike(pets[cardIndex].id);
+            }
+            setCurrentIndex(cardIndex + 1);
+          }}
           cardIndex={currentIndex}
           onSwiped={(cardIndex) => {
             setCurrentIndex(cardIndex + 1);
@@ -266,7 +369,7 @@ export default function MatchScreen() {
       <View style={styles.actions}>
         <TouchableOpacity
           style={styles.actionButton}
-          onPress={() => swiperRef.current?.jumpToCardIndex(currentIndex - 1)}>
+          onPress={() => swiperRef.current?.jumpToCardIndex(Math.max(currentIndex - 1, 0))}>
           <RotateCcw size={28} color="#FFB800" />
         </TouchableOpacity>
         <TouchableOpacity style={styles.actionButton} onPress={handlePass}>
@@ -275,8 +378,15 @@ export default function MatchScreen() {
         <TouchableOpacity style={[styles.actionButton, styles.starButton]}>
           <Star size={24} color="#4ECFFF" fill="#4ECFFF" />
         </TouchableOpacity>
-        <TouchableOpacity style={styles.actionButton} onPress={handleLike}>
-          <Heart size={28} color="#00D664" fill="#00D664" />
+        <TouchableOpacity
+          style={styles.actionButton}
+          onPress={handleLike}
+        >
+          <Heart
+            size={28}
+            color={currentIndex < pets.length && likedPets.has(pets[currentIndex]?.id) ? "#FF3B5C" : "#00D664"}
+            fill={currentIndex < pets.length && likedPets.has(pets[currentIndex]?.id) ? "#FF3B5C" : "#00D664"}
+          />
         </TouchableOpacity>
         <TouchableOpacity style={styles.actionButton}>
           <Send size={24} color="#9368FF" />
@@ -412,6 +522,50 @@ const styles = StyleSheet.create({
     textShadowColor: 'rgba(0,0,0,0.5)',
     textShadowOffset: { width: 0, height: 1 },
     textShadowRadius: 4,
+  },
+  sellerInfo: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(0,0,0,0.4)',
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 12,
+    gap: 10,
+    alignSelf: 'flex-start',
+    margin: 12,
+  },
+  sellerAvatar: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    borderWidth: 2,
+    borderColor: '#fff',
+  },
+  sellerName: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#fff',
+    textShadowColor: 'rgba(0,0,0,0.5)',
+    textShadowOffset: { width: 0, height: 1 },
+    textShadowRadius: 2,
+  },
+  statsBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: 4,
+    gap: 6,
+  },
+  statText: {
+    fontSize: 12,
+    color: '#fff',
+    fontWeight: '500',
+    textShadowColor: 'rgba(0,0,0,0.5)',
+    textShadowOffset: { width: 0, height: 1 },
+    textShadowRadius: 2,
+  },
+  statSeparator: {
+    color: 'rgba(255,255,255,0.6)',
+    fontSize: 12,
   },
   actions: {
     flexDirection: 'row',
