@@ -6,10 +6,8 @@
   <component name="ChangeListManager">
     <list default="true" id="9fcd68c1-d0d0-4c8c-a8ff-2b8e56742dc1" name="Changes" comment="">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/(tabs)/chat.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/app/(tabs)/chat.tsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/(tabs)/community.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/app/(tabs)/community.tsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/pet/create-pet.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/app/pet/create-pet.tsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/features/posts/services/PostComment.Service.ts" beforeDir="false" afterPath="$PROJECT_DIR$/src/features/posts/services/PostComment.Service.ts" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/features/chat/components/ChatScreen.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/src/features/chat/components/ChatScreen.tsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/features/chat/services/chat.service.ts" beforeDir="false" afterPath="$PROJECT_DIR$/src/features/chat/services/chat.service.ts" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />

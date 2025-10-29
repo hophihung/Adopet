@@ -37,6 +37,7 @@ export interface Message {
   created_at: string;
   is_read: boolean;
   read_at: string | null;
+  meta?: any;
   sender?: {
     id: string;
     full_name: string;
@@ -202,6 +203,19 @@ export const ChatService = {
 
     if (error) throw error;
     return data;
+  },
+
+  // Archive conversation (soft delete)
+  async archiveConversation(conversationId: string, userId: string): Promise<void> {
+    const { error } = await supabase
+      .from('conversations')
+      .update({ is_active: false, updated_at: new Date().toISOString() })
+      .eq('id', conversationId)
+      .or(`buyer_id.eq.${userId},seller_id.eq.${userId}`)
+      .select()
+      .single();
+
+    if (error) throw error;
   },
 
   // Mark notification as read

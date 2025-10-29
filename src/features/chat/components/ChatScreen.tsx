@@ -12,6 +12,7 @@ import {
   Alert,
 } from 'react-native';
 import { Send, ArrowLeft, Heart } from 'lucide-react-native';
+import { useRouter } from 'expo-router';
 import { ChatService, Message, Conversation } from '../services/chat.service';
 import { useAuth } from '../../../../contexts/AuthContext';
 
@@ -22,6 +23,7 @@ interface ChatScreenProps {
 
 export function ChatScreen({ conversation, onBack }: ChatScreenProps) {
   const { user } = useAuth();
+  const router = useRouter();
   const [messages, setMessages] = useState<Message[]>([]);
   const [newMessage, setNewMessage] = useState('');
   const [loading, setLoading] = useState(true);
@@ -128,6 +130,42 @@ export function ChatScreen({ conversation, onBack }: ChatScreenProps) {
   const renderMessage = ({ item }: { item: Message }) => {
     const isMe = item.sender_id === user?.id;
     
+    // Special rendering for pet_like with meta
+    if (item.message_type === 'pet_like' && item.meta) {
+      const meta = item.meta as any;
+      return (
+        <View style={[styles.messageContainer, isMe ? styles.myMessage : styles.otherMessage]}>
+          {!isMe && (
+            <Image
+              source={{ uri: item.sender?.avatar_url || 'https://via.placeholder.com/30' }}
+              style={styles.messageAvatar}
+            />
+          )}
+          <View style={[styles.messageBubble, isMe ? styles.otherMessageBubble : styles.otherMessageBubble]}> 
+            <Text style={styles.otherMessageText}>
+              {item.sender?.full_name || 'Người dùng'} {item.content}
+            </Text>
+            <TouchableOpacity
+              style={styles.petPreviewCard}
+              onPress={() => meta?.pet_id && router.push(`/pet/${meta.pet_id}`)}
+              activeOpacity={0.8}
+            >
+              {meta?.thumb ? (
+                <Image source={{ uri: meta.thumb }} style={styles.petThumb} />
+              ) : null}
+              <View style={{ flex: 1 }}>
+                <Text style={styles.petTitle}>{meta?.name || 'Thú cưng'}</Text>
+                <Text style={styles.petSubtitle}>
+                  {(meta?.type || '').toString()} {meta?.price ? `• ${meta.price}` : ''}
+                </Text>
+              </View>
+            </TouchableOpacity>
+            <Text style={styles.otherMessageTime}>{formatTime(item.created_at)}</Text>
+          </View>
+        </View>
+      );
+    }
+
     return (
       <View style={[
         styles.messageContainer,
@@ -319,6 +357,31 @@ const styles = StyleSheet.create({
   otherMessageBubble: {
     backgroundColor: '#f0f0f0',
     borderBottomLeftRadius: 4,
+  },
+  petPreviewCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#fff',
+    borderRadius: 12,
+    padding: 10,
+    marginTop: 8,
+  },
+  petThumb: {
+    width: 56,
+    height: 56,
+    borderRadius: 8,
+    backgroundColor: '#eee',
+    marginRight: 10,
+  },
+  petTitle: {
+    fontSize: 15,
+    fontWeight: '600',
+    color: '#333',
+  },
+  petSubtitle: {
+    fontSize: 12,
+    color: '#666',
+    marginTop: 2,
   },
   messageText: {
     fontSize: 16,
