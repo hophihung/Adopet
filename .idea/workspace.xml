@@ -4,12 +4,7 @@
     <option name="autoReloadType" value="NONE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="9fcd68c1-d0d0-4c8c-a8ff-2b8e56742dc1" name="Changes" comment="">
-      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/(tabs)/community.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/app/(tabs)/community.tsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/(tabs)/my-pets.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/app/(tabs)/my-pets.tsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/pet/create-pet.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/app/pet/create-pet.tsx" afterDir="false" />
-    </list>
+    <list default="true" id="9fcd68c1-d0d0-4c8c-a8ff-2b8e56742dc1" name="Changes" comment="" />
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
@@ -39,7 +34,7 @@
     "RunOnceActivity.readMode.enableVisualFormatting": "true",
     "cf.first.check.clang-format": "false",
     "cidr.known.project.marker": "true",
-    "git-widget-placeholder": "Merging Change",
+    "git-widget-placeholder": "Rebasing Change",
     "last_opened_file_path": "/Users/thanvinh/Desktop/Adopet/Adopet"
   }
 }]]></component>
