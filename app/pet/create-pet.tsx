@@ -8,23 +8,17 @@ import {
   TouchableOpacity,
   Alert,
   Image,
-  Alert as RNAlert,
+  ActivityIndicator,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { usePetManagement } from '../../src/features/pets/hooks/usePetManagement';
 import { PetCreateData } from '../../src/features/pets/services/pet.service';
+import { imageUploadService } from '../../src/services/imageUpload.service';
 import { LinearGradient } from 'expo-linear-gradient';
 import {
   X,
   Check,
-  Plus,
-  Trash2,
   Camera,
-  MapPin,
-  DollarSign,
-  FileText,
-  Calendar,
-  Users2,
 } from 'lucide-react-native';
 
 const PET_TYPES = [
@@ -58,6 +52,8 @@ export default function CreatePetScreen() {
   });
 
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [uploadingImages, setUploadingImages] = useState(false);
+  const [selectedImages, setSelectedImages] = useState<string[]>([]); // Local image URIs
 
   const validateForm = (): boolean => {
     const newErrors: Record<string, string> = {};
@@ -66,11 +62,11 @@ export default function CreatePetScreen() {
       newErrors.name = 'Tên pet là bắt buộc';
     }
 
-    if (formData.images.length === 0) {
+    if (selectedImages.length === 0) {
       newErrors.images = 'Vui lòng thêm ít nhất 1 ảnh';
     }
 
-    if (formData.images.length > 4) {
+    if (selectedImages.length > 4) {
       newErrors.images = 'Tối đa 4 ảnh cho mỗi pet';
     }
 
@@ -86,33 +82,84 @@ export default function CreatePetScreen() {
     if (!validateForm()) return;
 
     try {
-      await createPet(formData);
-      RNAlert.alert('Thành công', 'Đã tạo pet thành công!', [
-        { text: 'OK', onPress: () => router.back() },
-      ]);
+      setUploadingImages(true);
+      
+      // Upload all images to Supabase Storage
+      const uploadResults = await imageUploadService.uploadMultipleImages(
+        selectedImages,
+        'pet-images',
+        'pets'
+      );
+
+      if (uploadResults.length === 0) {
+        Alert.alert('Lỗi', 'Không thể upload ảnh');
+        return;
+      }
+
+      // Create pet with uploaded image URLs
+      const petDataWithImages: PetCreateData = {
+        ...formData,
+        images: uploadResults.map(result => result.url)
+      };
+
+      await createPet(petDataWithImages);
+
+      Alert.alert(
+        'Thành công',
+        'Đã tạo pet thành công!',
+        [{ text: 'OK', onPress: () => router.back() }]
+      );
     } catch (error) {
-      RNAlert.alert(
+      console.error('Create pet error:', error);
+      Alert.alert(
         'Lỗi',
         error instanceof Error ? error.message : 'Không thể tạo pet'
       );
+    } finally {
+      setUploadingImages(false);
     }
   };
 
-  const handleImageAdd = () => {
-    if (formData.images.length >= 4) {
-      RNAlert.alert('Thông báo', 'Tối đa 4 ảnh cho mỗi pet');
+  const handleImageAdd = async () => {
+    if (selectedImages.length >= 4) {
+      Alert.alert('Thông báo', 'Tối đa 4 ảnh cho mỗi pet');
       return;
     }
+    
+    try {
+      const imageUri = await imageUploadService.pickImage({
+        quality: 0.8,
+        maxWidth: 1024,
+        maxHeight: 1024,
+        allowsEditing: true,
+        aspect: [1, 1]
+      });
 
-    // TODO: Implement image picker
-    RNAlert.alert('Thông báo', 'Tính năng chọn ảnh sẽ được implement sau');
+      if (imageUri) {
+        // Validate image
+        if (!imageUploadService.validateImage(imageUri)) {
+          Alert.alert('Lỗi', 'Định dạng ảnh không được hỗ trợ. Vui lòng chọn ảnh JPG, PNG hoặc WebP');
+          return;
+        }
+
+        // Check file size
+        const fileSize = await imageUploadService.getFileSize(imageUri);
+        const maxSize = 5 * 1024 * 1024; // 5MB
+        if (fileSize > maxSize) {
+          Alert.alert('Lỗi', 'Kích thước ảnh quá lớn. Vui lòng chọn ảnh nhỏ hơn 5MB');
+          return;
+        }
+
+        setSelectedImages(prev => [...prev, imageUri]);
+      }
+    } catch (error) {
+      console.error('Error adding image:', error);
+      Alert.alert('Lỗi', 'Không thể thêm ảnh');
+    }
   };
 
   const handleImageRemove = (index: number) => {
-    setFormData((prev) => ({
-      ...prev,
-      images: prev.images.filter((_, i) => i !== index),
-    }));
+    setSelectedImages(prev => prev.filter((_, i) => i !== index));
   };
 
   return (
@@ -132,12 +179,12 @@ export default function CreatePetScreen() {
           <Text style={styles.title}>Tạo Pet mới</Text>
           <TouchableOpacity
             onPress={handleSubmit}
-            disabled={loading}
+            disabled={loading || uploadingImages}
             style={styles.headerButton}
           >
             <Check
               size={24}
-              color={loading ? 'rgba(255,255,255,0.5)' : '#fff'}
+              color={loading || uploadingImages ? 'rgba(255,255,255,0.5)' : '#fff'}
             />
           </TouchableOpacity>
         </View>
@@ -306,11 +353,11 @@ export default function CreatePetScreen() {
           <View style={styles.inputGroup}>
             <Text style={styles.label}>Ảnh *</Text>
             <Text style={styles.imageLimitText}>
-              Tối đa 4 ảnh ({formData.images.length}/4)
+              Tối đa 4 ảnh ({selectedImages.length}/4)
             </Text>
 
             <View style={styles.imageContainer}>
-              {formData.images.map((image, index) => (
+              {selectedImages.map((image, index) => (
                 <View key={index} style={styles.imageItem}>
                   <Image source={{ uri: image }} style={styles.image} />
                   <TouchableOpacity
@@ -322,10 +369,11 @@ export default function CreatePetScreen() {
                 </View>
               ))}
 
-              {formData.images.length < 4 && (
+              {selectedImages.length < 4 && (
                 <TouchableOpacity
                   style={styles.addImageButton}
                   onPress={handleImageAdd}
+                  disabled={loading || uploadingImages}
                 >
                   <Camera size={32} color="#999" />
                 </TouchableOpacity>
@@ -553,5 +601,8 @@ const styles = StyleSheet.create({
     fontSize: 32,
     color: '#999',
     fontWeight: '300',
+  },
+  addImageButtonDisabled: {
+    opacity: 0.5,
   },
 });

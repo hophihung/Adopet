@@ -26,6 +26,7 @@
     "expo-camera": "~17.0.8",
     "expo-constants": "~18.0.9",
     "expo-crypto": "^15.0.7",
+    "expo-file-system": "~19.0.17",
     "expo-font": "~14.0.8",
     "expo-haptics": "~15.0.7",
     "expo-image-picker": "^17.0.8",
@@ -64,6 +65,7 @@
     "@react-native/metro-config": "^0.82.1",
     "@types/react": "~19.1.10",
     "@types/react-native": "^0.72.8",
+    "supabase": "^2.54.10",
     "typescript": "~5.9.2"
   }
 }
