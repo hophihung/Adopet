@@ -9,6 +9,7 @@ import {
   Alert,
   Animated,
   ActivityIndicator,
+  FlatList,
 } from 'react-native';
 import { useAuth } from '@/contexts/AuthContext';
 import { Heart, X, RotateCcw, Star, Send, PawPrint } from 'lucide-react-native';
@@ -48,6 +49,7 @@ export default function MatchScreen() {
   const router = useRouter();
   const [currentIndex, setCurrentIndex] = useState<number>(0);
   const [imageIndices, setImageIndices] = useState<{[key: string]: number}>({}); // quản lý ảnh cho từng pet
+  const imageListRefs = useRef<{ [key: string]: FlatList<string> | null }>({});
   const [pets, setPets] = useState<Pet[]>([]);
   const [loading, setLoading] = useState(true);
   const [likedPets, setLikedPets] = useState<Set<string>>(new Set());
@@ -56,7 +58,7 @@ export default function MatchScreen() {
   // Animation values cho từng pet
   const imageAnimations = useRef<{[key: string]: Animated.Value}>({});
   
-  // Initialize animation value cho mỗi pet
+  // Initialize animation value cho mỗi pet (giữ lại cho overlay/indicator nếu cần)
   const getAnimationValue = (petId: string) => {
     if (!imageAnimations.current[petId]) {
       imageAnimations.current[petId] = new Animated.Value(0);
@@ -156,35 +158,25 @@ export default function MatchScreen() {
   const handleNextImage = (petId: string) => {
     const pet = pets.find(p => p.id === petId);
     if (!pet) return;
-    
+
     const currentImgIndex = getCurrentImageIndex(petId);
-    if (currentImgIndex < pet.images.length - 1) {
-      const nextIndex = currentImgIndex + 1;
-      
-      // Animate slide
-      Animated.timing(getAnimationValue(petId), {
-        toValue: nextIndex,
-        duration: 300,
-        useNativeDriver: true,
-      }).start();
-      
+    const nextIndex = Math.min(currentImgIndex + 1, Math.max(0, pet.images.length - 1));
+
+    if (nextIndex !== currentImgIndex) {
+      imageListRefs.current[petId]?.scrollToIndex({ index: nextIndex, animated: true });
       setImageIndices(prev => ({ ...prev, [petId]: nextIndex }));
+      Animated.timing(getAnimationValue(petId), { toValue: nextIndex, duration: 200, useNativeDriver: true }).start();
     }
   };
 
   const handlePrevImage = (petId: string) => {
     const currentImgIndex = getCurrentImageIndex(petId);
-    if (currentImgIndex > 0) {
-      const prevIndex = currentImgIndex - 1;
-      
-      // Animate slide
-      Animated.timing(getAnimationValue(petId), {
-        toValue: prevIndex,
-        duration: 300,
-        useNativeDriver: true,
-      }).start();
-      
+    const prevIndex = Math.max(0, currentImgIndex - 1);
+
+    if (prevIndex !== currentImgIndex) {
+      imageListRefs.current[petId]?.scrollToIndex({ index: prevIndex, animated: true });
       setImageIndices(prev => ({ ...prev, [petId]: prevIndex }));
+      Animated.timing(getAnimationValue(petId), { toValue: prevIndex, duration: 200, useNativeDriver: true }).start();
     }
   };
 
@@ -230,31 +222,28 @@ export default function MatchScreen() {
           cards={pets}
           renderCard={(pet: Pet) => (
             <View style={styles.card}>
-              {/* Container ảnh với animated transition */}
+              {/* Container ảnh - FlatList paging */}
               <View style={styles.imageContainer}>
-                <Animated.View
-                  style={[
-                    styles.imageSlider,
-                    pet.images.length > 1 && {
-                      transform: [
-                        {
-                          translateX: getAnimationValue(pet.id).interpolate({
-                            inputRange: pet.images.map((_, i) => i),
-                            outputRange: pet.images.map((_, i) => -i * (SCREEN_WIDTH - 40)),
-                          }),
-                        },
-                      ],
-                    },
-                  ]
-                }>
-                  {pet.images.map((imageUrl, index) => (
-                    <Image
-                      key={`${pet.id}-${index}`}
-                      source={{ uri: imageUrl }}
-                      style={styles.petImage}
-                    />
-                  ))}
-                </Animated.View>
+                <FlatList
+                  ref={(ref) => { imageListRefs.current[pet.id] = ref as any; }}
+                  data={pet.images}
+                  keyExtractor={(uri, idx) => `${pet.id}-${idx}`}
+                  horizontal
+                  pagingEnabled
+                  showsHorizontalScrollIndicator={false}
+                  initialScrollIndex={getCurrentImageIndex(pet.id)}
+                  getItemLayout={(_, index) => ({ length: SCREEN_WIDTH - 40, offset: (SCREEN_WIDTH - 40) * index, index })}
+                  onMomentumScrollEnd={(e) => {
+                    const offsetX = e.nativeEvent.contentOffset.x;
+                    const width = SCREEN_WIDTH - 40;
+                    const idx = Math.round(offsetX / width);
+                    setImageIndices(prev => ({ ...prev, [pet.id]: idx }));
+                    Animated.timing(getAnimationValue(pet.id), { toValue: idx, duration: 150, useNativeDriver: true }).start();
+                  }}
+                  renderItem={({ item: imageUrl }) => (
+                    <Image source={{ uri: imageUrl }} style={styles.petImage} />
+                  )}
+                />
               </View>
 
               {/* Tap zones - bên trái và bên phải */}
