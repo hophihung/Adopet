@@ -54,7 +54,14 @@ export function ChatScreen({ conversation, onBack }: ChatScreenProps) {
     const subscription = ChatService.subscribeToConversation(
       conversation.id,
       (message) => {
-        setMessages(prev => [...prev, message]);
+        setMessages(prev => {
+          // Prevent duplicate messages
+          const exists = prev.find(m => m.id === message.id);
+          if (exists) {
+            return prev;
+          }
+          return [...prev, message];
+        });
         // Auto scroll to bottom
         setTimeout(() => {
           flatListRef.current?.scrollToEnd({ animated: true });
@@ -88,7 +95,14 @@ export function ChatScreen({ conversation, onBack }: ChatScreenProps) {
         newMessage.trim()
       );
       
-      setMessages(prev => [...prev, message]);
+      setMessages(prev => {
+        // Prevent duplicate messages
+        const exists = prev.find(m => m.id === message.id);
+        if (exists) {
+          return prev;
+        }
+        return [...prev, message];
+      });
       setNewMessage('');
       
       // Auto scroll to bottom

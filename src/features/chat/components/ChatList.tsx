@@ -100,13 +100,13 @@ export function ChatList({ onConversationSelect }: ChatListProps) {
             }}
             style={styles.avatar}
           />
-          {item.unread_count && item.unread_count > 0 && (
+          {item.unread_count && item.unread_count > 0 ? (
             <View style={styles.unreadBadge}>
               <Text style={styles.unreadText}>
-                {item.unread_count > 99 ? '99+' : item.unread_count}
+                {item.unread_count > 99 ? '99+' : String(item.unread_count)}
               </Text>
             </View>
-          )}
+          ) : null}
         </View>
 
         <View style={styles.conversationContent}>
@@ -122,7 +122,7 @@ export function ChatList({ onConversationSelect }: ChatListProps) {
           <View style={styles.petInfo}>
             <Heart size={12} color="#FF5A75" />
             <Text style={styles.petName}>
-              {pet?.name || 'Unknown Pet'} • {pet?.type || 'Pet'}
+              {`${pet?.name || 'Unknown Pet'} • ${pet?.type || 'Pet'}`}
             </Text>
           </View>
 
