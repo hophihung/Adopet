@@ -1,4 +1,4 @@
-import React, { useRef, useState, useEffect } from 'react';
+﻿import React, { useRef, useState, useEffect, useCallback } from 'react';
 import {
   View,
   Text,
@@ -11,8 +11,8 @@ import {
   ActivityIndicator,
 } from 'react-native';
 import { useAuth } from '@/contexts/AuthContext';
-import { Heart, X, RotateCcw, Star, Send, PawPrint } from 'lucide-react-native';
-import { useRouter } from 'expo-router';
+import { Heart, X, RotateCcw, Star, Send, PawPrint, Video } from 'lucide-react-native';
+import { useRouter, usePathname } from 'expo-router';
 import Swiper from 'react-native-deck-swiper';
 import { PetService } from '@/src/features/pets/services/pet.service';
 
@@ -41,22 +41,20 @@ interface Pet {
   size?: string;
 }
 
-// No mock data - will be fetched from Supabase
-
 export default function MatchScreen() {
-  const { signOut, user } = useAuth();
+  const { user } = useAuth();
   const router = useRouter();
+  const pathname = usePathname();
   const [currentIndex, setCurrentIndex] = useState<number>(0);
-  const [imageIndices, setImageIndices] = useState<{[key: string]: number}>({}); // quản lý ảnh cho từng pet
+  const [imageIndices, setImageIndices] = useState<{ [key: string]: number }>({});
   const [pets, setPets] = useState<Pet[]>([]);
   const [loading, setLoading] = useState(true);
   const [likedPets, setLikedPets] = useState<Set<string>>(new Set());
+  const [activeTopTab, setActiveTopTab] = useState<'match' | 'explore'>('match');
   const swiperRef = useRef<any>(null);
-  
-  // Animation values cho từng pet
-  const imageAnimations = useRef<{[key: string]: Animated.Value}>({});
-  
-  // Initialize animation value cho mỗi pet
+
+  const imageAnimations = useRef<{ [key: string]: Animated.Value }>({});
+
   const getAnimationValue = (petId: string) => {
     if (!imageAnimations.current[petId]) {
       imageAnimations.current[petId] = new Animated.Value(0);
@@ -64,24 +62,49 @@ export default function MatchScreen() {
     return imageAnimations.current[petId];
   };
 
-  // Load available pets from Supabase
   useEffect(() => {
     loadPets();
   }, []);
+
+  useEffect(() => {
+    if (!pathname) return;
+    if (pathname.includes('/explore')) {
+      setActiveTopTab('explore');
+    } else {
+      setActiveTopTab('match');
+    }
+  }, [pathname]);
+
+  const navigateTopTab = useCallback(
+    (destination: 'match' | 'explore') => {
+      setActiveTopTab(destination);
+      if (destination === 'match') {
+        router.replace('/(tabs)');
+      } else {
+        router.replace('/explore');
+      }
+    },
+    [router]
+  );
+
+  const handleOpenReel = useCallback(() => {
+    router.push('/reel');
+  }, [router]);
 
   const loadPets = async () => {
     try {
       setLoading(true);
       const availablePets = await PetService.getAvailablePets(user?.id);
-      
-      // Parse images if they're stored as JSON strings
+
       const parsedPets = availablePets.map((pet: any) => ({
         ...pet,
-        images: Array.isArray(pet.images) ? pet.images : (
-          typeof pet.images === 'string' ? JSON.parse(pet.images) : []
-        ),
+        images: Array.isArray(pet.images)
+          ? pet.images
+          : typeof pet.images === 'string'
+            ? JSON.parse(pet.images)
+            : [],
       }));
-      
+
       setPets(parsedPets);
     } catch (error) {
       console.error('Error loading pets:', error);
@@ -101,17 +124,17 @@ export default function MatchScreen() {
 
   const handleToggleLike = async (petId: string) => {
     if (!user?.id) return;
-    
+
     try {
       const result = await PetService.toggleLike(petId, user.id);
-      
+
       if (result.liked) {
-        setLikedPets(prev => new Set(prev).add(petId));
+        setLikedPets((prev) => new Set(prev).add(petId));
       } else {
-        setLikedPets(prev => {
-          const newSet = new Set(prev);
-          newSet.delete(petId);
-          return newSet;
+        setLikedPets((prev) => {
+          const next = new Set(prev);
+          next.delete(petId);
+          return next;
         });
       }
     } catch (error) {
@@ -125,7 +148,7 @@ export default function MatchScreen() {
     }
     swiperRef.current?.swipeRight();
   };
-  
+
   const handlePass = () => {
     if (currentIndex < pets.length) {
       trackPetView(pets[currentIndex].id);
@@ -133,42 +156,23 @@ export default function MatchScreen() {
     swiperRef.current?.swipeLeft();
   };
 
-  const handleSignOut = async () => {
-    Alert.alert('Đăng xuất', 'Bạn có chắc muốn đăng xuất?', [
-      { text: 'Hủy', style: 'cancel' },
-      {
-        text: 'Đăng xuất',
-        style: 'destructive',
-        onPress: async () => {
-          try {
-            await signOut();
-            router.replace('/login');
-          } catch (error: any) {
-            Alert.alert('Lỗi', error.message);
-          }
-        },
-      },
-    ]);
-  };
-
   const getCurrentImageIndex = (petId: string) => imageIndices[petId] || 0;
 
   const handleNextImage = (petId: string) => {
-    const pet = pets.find(p => p.id === petId);
+    const pet = pets.find((p) => p.id === petId);
     if (!pet) return;
-    
+
     const currentImgIndex = getCurrentImageIndex(petId);
     if (currentImgIndex < pet.images.length - 1) {
       const nextIndex = currentImgIndex + 1;
-      
-      // Animate slide
+
       Animated.timing(getAnimationValue(petId), {
         toValue: nextIndex,
         duration: 300,
         useNativeDriver: true,
       }).start();
-      
-      setImageIndices(prev => ({ ...prev, [petId]: nextIndex }));
+
+      setImageIndices((prev) => ({ ...prev, [petId]: nextIndex }));
     }
   };
 
@@ -176,33 +180,50 @@ export default function MatchScreen() {
     const currentImgIndex = getCurrentImageIndex(petId);
     if (currentImgIndex > 0) {
       const prevIndex = currentImgIndex - 1;
-      
-      // Animate slide
+
       Animated.timing(getAnimationValue(petId), {
         toValue: prevIndex,
         duration: 300,
         useNativeDriver: true,
       }).start();
-      
-      setImageIndices(prev => ({ ...prev, [petId]: prevIndex }));
+
+      setImageIndices((prev) => ({ ...prev, [petId]: prevIndex }));
     }
   };
 
   if (loading) {
     return (
-      <View style={[styles.container, { justifyContent: 'center', alignItems: 'center' }]}>
+      <View
+        style={[
+          styles.container,
+          { justifyContent: 'center', alignItems: 'center' },
+        ]}>
         <ActivityIndicator size="large" color="#FF5A75" />
-        <Text style={{ marginTop: 16, fontSize: 16, color: '#666' }}>Đang tải pets...</Text>
+        <Text style={{ marginTop: 16, fontSize: 16, color: '#666' }}>
+          Đang tải pets...
+        </Text>
       </View>
     );
   }
 
   if (pets.length === 0) {
     return (
-      <View style={[styles.container, { justifyContent: 'center', alignItems: 'center' }]}>
-        <Text style={{ fontSize: 18, fontWeight: '600', color: '#333' }}>Không có pet để hiển thị</Text>
+      <View
+        style={[
+          styles.container,
+          { justifyContent: 'center', alignItems: 'center' },
+        ]}>
+        <Text style={{ fontSize: 18, fontWeight: '600', color: '#333' }}>
+          Không có pet để hiển thị
+        </Text>
         <TouchableOpacity
-          style={{ marginTop: 20, backgroundColor: '#FF5A75', paddingHorizontal: 24, paddingVertical: 12, borderRadius: 8 }}
+          style={{
+            marginTop: 20,
+            backgroundColor: '#FF5A75',
+            paddingHorizontal: 24,
+            paddingVertical: 12,
+            borderRadius: 8,
+          }}
           onPress={loadPets}
         >
           <Text style={{ color: '#fff', fontWeight: '600' }}>Làm mới</Text>
@@ -213,24 +234,56 @@ export default function MatchScreen() {
 
   return (
     <View style={styles.container}>
-      {/* Header */}
       <View style={styles.header}>
-        <Text style={styles.logo}>
-          <PawPrint size={36} color="#FF6B6B" /> Adopet
-        </Text>
-        <TouchableOpacity onPress={handleSignOut}>
-          <Text style={styles.headerIcon}>⚡</Text>
+        <View style={styles.brand}>
+          <PawPrint size={32} color="#FF6B6B" />
+          <Text style={styles.brandText}>Adopet</Text>
+        </View>
+
+        <View style={styles.topNav}>
+          <TouchableOpacity
+            style={[
+              styles.topNavButton,
+              activeTopTab === 'match' && styles.topNavButtonActive,
+            ]}
+            onPress={() => navigateTopTab('match')}
+          >
+            <Text
+              style={[
+                styles.topNavText,
+                activeTopTab === 'match' && styles.topNavTextActive,
+              ]}>
+              Match
+            </Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={[
+              styles.topNavButton,
+              activeTopTab === 'explore' && styles.topNavButtonActive,
+            ]}
+            onPress={() => navigateTopTab('explore')}
+          >
+            <Text
+              style={[
+                styles.topNavText,
+                activeTopTab === 'explore' && styles.topNavTextActive,
+              ]}>
+              Explore
+            </Text>
+          </TouchableOpacity>
+        </View>
+
+        <TouchableOpacity style={styles.headerActionButton} onPress={handleOpenReel}>
+          <Video size={22} color="#FF3B5C" />
         </TouchableOpacity>
       </View>
 
-      {/* Swiper */}
       <View style={styles.cardContainer}>
         <Swiper
           ref={swiperRef}
           cards={pets}
           renderCard={(pet: Pet) => (
             <View style={styles.card}>
-              {/* Container ảnh với animated transition */}
               <View style={styles.imageContainer}>
                 <Animated.View
                   style={[
@@ -240,13 +293,14 @@ export default function MatchScreen() {
                         {
                           translateX: getAnimationValue(pet.id).interpolate({
                             inputRange: pet.images.map((_, i) => i),
-                            outputRange: pet.images.map((_, i) => -i * (SCREEN_WIDTH - 40)),
+                            outputRange: pet.images.map(
+                              (_, i) => -i * (SCREEN_WIDTH - 40)
+                            ),
                           }),
                         },
                       ],
                     },
-                  ]
-                }>
+                  ]}>
                   {pet.images.map((imageUrl, index) => (
                     <Image
                       key={`${pet.id}-${index}`}
@@ -257,7 +311,6 @@ export default function MatchScreen() {
                 </Animated.View>
               </View>
 
-              {/* Tap zones - bên trái và bên phải */}
               <View style={styles.tapZones}>
                 <TouchableOpacity
                   activeOpacity={1}
@@ -271,7 +324,6 @@ export default function MatchScreen() {
                 />
               </View>
 
-              {/* Chỉ báo số ảnh */}
               <View style={styles.imageIndicators}>
                 {pet.images.map((_, index) => (
                   <View
@@ -284,9 +336,7 @@ export default function MatchScreen() {
                 ))}
               </View>
 
-              {/* Overlay thông tin */}
               <View style={styles.cardOverlay}>
-                {/* Top: Seller info */}
                 {pet.profiles && (
                   <View style={styles.sellerInfo}>
                     {pet.profiles.avatar_url && (
@@ -296,43 +346,46 @@ export default function MatchScreen() {
                       />
                     )}
                     <View>
-                      <Text style={styles.sellerName}>{pet.profiles.full_name || 'Người bán'}</Text>
+                      <Text style={styles.sellerName}>
+                        {pet.profiles.full_name || 'Người bán'}
+                      </Text>
                       <View style={styles.statsBadge}>
-                        <Text style={styles.statText}>👍 {pet.like_count}</Text>
+                        <Text style={styles.statText}>Likes {pet.like_count}</Text>
                         <Text style={styles.statSeparator}>|</Text>
-                        <Text style={styles.statText}>👁 {pet.view_count}</Text>
+                        <Text style={styles.statText}>Views {pet.view_count}</Text>
                       </View>
                     </View>
                   </View>
                 )}
 
-                {/* Bottom: Pet info */}
                 <View style={styles.petInfo}>
                   <View style={styles.petHeader}>
                     <Text style={styles.petName}>{pet.name}</Text>
-                    <Text style={styles.petAge}>{pet.age_months ? Math.floor(pet.age_months / 12) : '?'}</Text>
+                    <Text style={styles.petAge}>
+                      {pet.age_months ? Math.floor(pet.age_months / 12) : '?'}
+                    </Text>
                   </View>
                   {pet.breed && (
                     <View style={styles.infoRow}>
-                      <Text style={styles.infoIcon}>🐶</Text>
+                      <Text style={styles.infoIcon}>Breed</Text>
                       <Text style={styles.infoText}>{pet.breed}</Text>
                     </View>
                   )}
                   {pet.location && (
                     <View style={styles.infoRow}>
-                      <Text style={styles.infoIcon}>📄</Text>
+                      <Text style={styles.infoIcon}>Location</Text>
                       <Text style={styles.infoText}>{pet.location}</Text>
                     </View>
                   )}
                   {pet.size && (
                     <View style={styles.infoRow}>
-                      <Text style={styles.infoIcon}>💰</Text>
+                      <Text style={styles.infoIcon}>Size</Text>
                       <Text style={styles.infoText}>Size: {pet.size}</Text>
                     </View>
                   )}
                   {pet.energy_level && (
                     <View style={styles.infoRow}>
-                      <Text style={styles.infoIcon}>⚡</Text>
+                      <Text style={styles.infoIcon}>Energy</Text>
                       <Text style={styles.infoText}>{pet.energy_level}</Text>
                     </View>
                   )}
@@ -342,13 +395,13 @@ export default function MatchScreen() {
           )}
           onSwipedLeft={(cardIndex) => {
             if (cardIndex < pets.length) {
-              console.log('❌ Pass', pets[cardIndex].name);
+              console.log(' Pass', pets[cardIndex].name);
             }
             setCurrentIndex(cardIndex + 1);
           }}
           onSwipedRight={(cardIndex) => {
             if (cardIndex < pets.length) {
-              console.log('❤️ Like', pets[cardIndex].name);
+              console.log(' Like', pets[cardIndex].name);
               handleToggleLike(pets[cardIndex].id);
             }
             setCurrentIndex(cardIndex + 1);
@@ -365,11 +418,13 @@ export default function MatchScreen() {
         />
       </View>
 
-      {/* Action buttons */}
       <View style={styles.actions}>
         <TouchableOpacity
           style={styles.actionButton}
-          onPress={() => swiperRef.current?.jumpToCardIndex(Math.max(currentIndex - 1, 0))}>
+          onPress={() =>
+            swiperRef.current?.jumpToCardIndex(Math.max(currentIndex - 1, 0))
+          }
+        >
           <RotateCcw size={28} color="#FFB800" />
         </TouchableOpacity>
         <TouchableOpacity style={styles.actionButton} onPress={handlePass}>
@@ -378,14 +433,21 @@ export default function MatchScreen() {
         <TouchableOpacity style={[styles.actionButton, styles.starButton]}>
           <Star size={24} color="#4ECFFF" fill="#4ECFFF" />
         </TouchableOpacity>
-        <TouchableOpacity
-          style={styles.actionButton}
-          onPress={handleLike}
-        >
+        <TouchableOpacity style={styles.actionButton} onPress={handleLike}>
           <Heart
             size={28}
-            color={currentIndex < pets.length && likedPets.has(pets[currentIndex]?.id) ? "#FF3B5C" : "#00D664"}
-            fill={currentIndex < pets.length && likedPets.has(pets[currentIndex]?.id) ? "#FF3B5C" : "#00D664"}
+            color={
+              currentIndex < pets.length &&
+              likedPets.has(pets[currentIndex]?.id)
+                ? '#FF3B5C'
+                : '#00D664'
+            }
+            fill={
+              currentIndex < pets.length &&
+              likedPets.has(pets[currentIndex]?.id)
+                ? '#FF3B5C'
+                : '#00D664'
+            }
           />
         </TouchableOpacity>
         <TouchableOpacity style={styles.actionButton}>
@@ -400,14 +462,50 @@ const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#fff' },
   header: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
     alignItems: 'center',
+    justifyContent: 'space-between',
     paddingHorizontal: 20,
     paddingTop: 50,
-    paddingBottom: 10,
+    paddingBottom: 16,
   },
-  logo: { fontSize: 34, fontWeight: 'bold', color: '#FF3B5C' },
-  headerIcon: { fontSize: 24, color: '#9368FF', paddingRight: 6 },
+  brand: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+  },
+  brandText: { fontSize: 26, fontWeight: '700', color: '#FF3B5C' },
+  topNav: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#F7F9FC',
+    borderRadius: 24,
+    padding: 4,
+    marginHorizontal: 16,
+  },
+  topNavButton: {
+    paddingVertical: 6,
+    paddingHorizontal: 18,
+    borderRadius: 20,
+  },
+  topNavButtonActive: {
+    backgroundColor: '#FFE4EC',
+  },
+  topNavText: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#7A7F85',
+  },
+  topNavTextActive: {
+    color: '#FF3B5C',
+  },
+  headerActionButton: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: '#FFE8F0',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
   cardContainer: { flex: 1, paddingTop: 10 },
   card: {
     height: SCREEN_WIDTH * 1.4,
@@ -590,3 +688,20 @@ const styles = StyleSheet.create({
   },
   starButton: { width: 50, height: 50, borderRadius: 25 },
 });
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

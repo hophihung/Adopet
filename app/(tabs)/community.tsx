@@ -135,16 +135,17 @@ const CommunityScreen: React.FC = () => {
     }
   };
 
-  // 🔄 Update comment count cho post
+  // 🔄 Update comment count theo giá trị trên bảng posts (DB truth)
   const updatePostCommentCount = async (postId: string): Promise<void> => {
-    const { count, error } = await supabase
-      .from('post_comments')
-      .select('*', { count: 'exact', head: true })
-      .eq('post_id', postId);
+    const { data, error } = await supabase
+      .from('posts')
+      .select('comment_count')
+      .eq('id', postId)
+      .maybeSingle();
 
-    if (!error && count !== null) {
+    if (!error && data) {
       setPosts((prev) =>
-        prev.map((p) => (p.id === postId ? { ...p, comment_count: count } : p))
+        prev.map((p) => (p.id === postId ? { ...p, comment_count: data.comment_count ?? 0 } : p))
       );
     }
   };
@@ -289,10 +290,19 @@ const CommunityScreen: React.FC = () => {
       .channel('public:post_comments')
       .on(
         'postgres_changes',
-        { event: '*', schema: 'public', table: 'post_comments' },
+        { event: 'INSERT', schema: 'public', table: 'post_comments' },
         (payload) => {
-          const obj = (payload.new ?? payload.old) as CommentPayload | null;
-          const postId = obj?.post_id;
+          const newComment = payload.new as CommentPayload | null;
+          const postId = newComment?.post_id;
+          if (postId) void updatePostCommentCount(postId);
+        }
+      )
+      .on(
+        'postgres_changes',
+        { event: 'DELETE', schema: 'public', table: 'post_comments' },
+        (payload) => {
+          const oldComment = payload.old as CommentPayload | null;
+          const postId = oldComment?.post_id;
           if (postId) void updatePostCommentCount(postId);
         }
       )
@@ -449,9 +459,14 @@ const CommunityScreen: React.FC = () => {
                     }}
                     style={styles.avatar}
                   />
-                  <Text style={styles.username}>
-                    {profile?.full_name || 'Ẩn danh'}
-                  </Text>
+                  <View style={styles.userInfo}>
+                    <Text style={styles.username}>
+                      {profile?.full_name || 'Ẩn danh'}
+                    </Text>
+                    <Text style={styles.timestamp}>
+                      {new Date(item.created_at).toLocaleDateString('vi-VN')}
+                    </Text>
+                  </View>
                 </View>
                 {item.image_url && (
                   <Image
@@ -460,6 +475,29 @@ const CommunityScreen: React.FC = () => {
                   />
                 )}
                 <Text style={styles.caption}>{item.content}</Text>
+
+                {/* Actions: Like & Comment */}
+                <View style={styles.actions}>
+                  <TouchableOpacity
+                    style={styles.actionBtn}
+                    onPress={() => void handleLike(item.id)}
+                  >
+                    <Heart
+                      color="#FF6B6B"
+                      size={24}
+                      fill={item.like_count > 0 ? '#FF6B6B' : 'transparent'}
+                    />
+                    <Text style={styles.count}>{item.like_count}</Text>
+                  </TouchableOpacity>
+
+                  <TouchableOpacity
+                    style={styles.actionBtn}
+                    onPress={() => void handleOpenComments(item.id)}
+                  >
+                    <MessageCircle color="#4A90E2" size={24} />
+                    <Text style={styles.count}>{item.comment_count}</Text>
+                  </TouchableOpacity>
+                </View>
               </View>
             );
           }}

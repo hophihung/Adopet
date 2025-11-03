@@ -7,7 +7,9 @@ import {
   TouchableOpacity,
   Image,
   ActivityIndicator,
+  Animated,
 } from 'react-native';
+import { Swipeable } from 'react-native-gesture-handler';
 import { MessageCircle, Heart } from 'lucide-react-native';
 import { ChatService, Conversation } from '../services/chat.service';
 import { useAuth } from '../../../../contexts/AuthContext';
@@ -88,52 +90,75 @@ export function ChatList({ onConversationSelect }: ChatListProps) {
     const otherUser = user?.id === item.buyer_id ? item.seller : item.buyer;
     const pet = item.pet;
 
-    return (
-      <TouchableOpacity
-        style={styles.conversationItem}
-        onPress={() => onConversationSelect(item)}
-      >
-        <View style={styles.avatarContainer}>
-          <Image
-            source={{ 
-              uri: otherUser?.avatar_url || 'https://via.placeholder.com/50'
+    const renderRightActions = (_: any, dragX: Animated.AnimatedInterpolation<number>) => {
+      return (
+        <View style={styles.rightActions}>
+          <TouchableOpacity
+            style={styles.deleteButton}
+            onPress={async () => {
+              if (!user?.id) return;
+              try {
+                await ChatService.archiveConversation(item.id, user.id);
+                setConversations(prev => prev.filter(c => c.id !== item.id));
+              } catch (e) {
+                console.error('Error archiving conversation', e);
+              }
             }}
-            style={styles.avatar}
-          />
-          {item.unread_count && item.unread_count > 0 ? (
-            <View style={styles.unreadBadge}>
-              <Text style={styles.unreadText}>
-                {item.unread_count > 99 ? '99+' : String(item.unread_count)}
+          >
+            <Text style={styles.deleteText}>Xóa</Text>
+          </TouchableOpacity>
+        </View>
+      );
+    };
+
+    return (
+      <Swipeable renderRightActions={renderRightActions} overshootRight={false}>
+        <TouchableOpacity
+          style={styles.conversationItem}
+          onPress={() => onConversationSelect(item)}
+        >
+          <View style={styles.avatarContainer}>
+            <Image
+              source={{ 
+                uri: otherUser?.avatar_url || 'https://via.placeholder.com/50'
+              }}
+              style={styles.avatar}
+            />
+            {item.unread_count && item.unread_count > 0 ? (
+              <View style={styles.unreadBadge}>
+                <Text style={styles.unreadText}>
+                  {item.unread_count > 99 ? '99+' : String(item.unread_count)}
+                </Text>
+              </View>
+            ) : null}
+          </View>
+
+          <View style={styles.conversationContent}>
+            <View style={styles.conversationHeader}>
+              <Text style={styles.userName}>
+                {otherUser?.full_name || 'Unknown User'}
+              </Text>
+              <Text style={styles.timeText}>
+                {formatTime(item.last_message_at)}
               </Text>
             </View>
-          ) : null}
-        </View>
 
-        <View style={styles.conversationContent}>
-          <View style={styles.conversationHeader}>
-            <Text style={styles.userName}>
-              {otherUser?.full_name || 'Unknown User'}
-            </Text>
-            <Text style={styles.timeText}>
-              {formatTime(item.last_message_at)}
-            </Text>
-          </View>
+            <View style={styles.petInfo}>
+              <Heart size={12} color="#FF5A75" />
+              <Text style={styles.petName}>
+                {`${pet?.name || 'Unknown Pet'} • ${pet?.type || 'Pet'}`}
+              </Text>
+            </View>
 
-          <View style={styles.petInfo}>
-            <Heart size={12} color="#FF5A75" />
-            <Text style={styles.petName}>
-              {`${pet?.name || 'Unknown Pet'} • ${pet?.type || 'Pet'}`}
+            <Text style={styles.lastMessage} numberOfLines={1}>
+              {item.unread_count && item.unread_count > 0 
+                ? `${item.unread_count} tin nhắn mới`
+                : 'Nhấn để xem cuộc trò chuyện'
+              }
             </Text>
           </View>
-
-          <Text style={styles.lastMessage} numberOfLines={1}>
-            {item.unread_count && item.unread_count > 0 
-              ? `${item.unread_count} tin nhắn mới`
-              : 'Nhấn để xem cuộc trò chuyện'
-            }
-          </Text>
-        </View>
-      </TouchableOpacity>
+        </TouchableOpacity>
+      </Swipeable>
     );
   };
 

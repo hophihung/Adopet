@@ -3,10 +3,10 @@ import {
   View,
   Text,
   StyleSheet,
-  SafeAreaView,
   TouchableOpacity,
   ActivityIndicator,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { MessageCircle, Bell } from 'lucide-react-native';
 import { ChatList } from '../../src/features/chat/components/ChatList';
 import { ChatScreen } from '../../src/features/chat/components/ChatScreen';

@@ -132,7 +132,7 @@ export default function CreatePetScreen() {
         maxWidth: 1024,
         maxHeight: 1024,
         allowsEditing: true,
-        aspect: [1, 1]
+        aspect: [3, 4]
       });
 
       if (imageUri) {

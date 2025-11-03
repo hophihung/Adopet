@@ -46,7 +46,7 @@ export const PostCommentService = {
 
     if (error) throw error
 
-    // Gọi RPC để tăng comment_count
+    // comment_count tự động cập nhật qua trigger
     return data
   },
 
@@ -58,8 +58,6 @@ export const PostCommentService = {
       .eq('id', commentId)
 
     if (error) throw error
-
-    // Giảm comment_count khi xóa
-    await supabase.rpc('decrement_comment_count', { post_id: postId })
+    // comment_count tự động giảm qua trigger
   },
 }
