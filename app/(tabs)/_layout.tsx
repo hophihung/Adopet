@@ -6,6 +6,7 @@ import {
   Heart,
   PawPrint,
   Bell,
+  Sparkles,
 } from 'lucide-react-native';
 import { View } from 'react-native';
 
@@ -100,6 +101,14 @@ export default function TabLayout() {
         options={{
           title: '',
           tabBarIcon: ({ color, size }) => <PawPrint size={26} color={color} />,
+        }}
+      />
+
+      <Tabs.Screen
+        name="virtual-pet"
+        options={{
+          title: '',
+          tabBarIcon: ({ color, size }) => <Sparkles size={26} color={color} />,
         }}
       />
 
