@@ -8,14 +8,20 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { MessageCircle, Bell } from 'lucide-react-native';
+import { LinearGradient } from 'expo-linear-gradient';
 import { ChatList } from '../../src/features/chat/components/ChatList';
 import { ChatScreen } from '../../src/features/chat/components/ChatScreen';
-import { ChatService, Conversation, Notification } from '../../src/features/chat/services/chat.service';
+import {
+  ChatService,
+  Conversation,
+  Notification,
+} from '../../src/features/chat/services/chat.service';
 import { useAuth } from '../../contexts/AuthContext';
 
 export default function ChatTabScreen() {
   const { user } = useAuth();
-  const [selectedConversation, setSelectedConversation] = useState<Conversation | null>(null);
+  const [selectedConversation, setSelectedConversation] =
+    useState<Conversation | null>(null);
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [unreadCount, setUnreadCount] = useState(0);
   const [loading, setLoading] = useState(true);
@@ -48,7 +54,7 @@ export default function ChatTabScreen() {
     const subscription = ChatService.subscribeToNotifications(
       user.id,
       (notification) => {
-        setNotifications(prev => [notification, ...prev]);
+        setNotifications((prev) => [notification, ...prev]);
         loadUnreadCount(); // Refresh unread count
       }
     );
@@ -82,59 +88,69 @@ export default function ChatTabScreen() {
     // Mark notification as read
     try {
       await ChatService.markNotificationAsRead(notification.id);
-      setNotifications(prev => 
-        prev.map(n => n.id === notification.id ? { ...n, is_read: true } : n)
+      setNotifications((prev) =>
+        prev.map((n) =>
+          n.id === notification.id ? { ...n, is_read: true } : n
+        )
       );
     } catch (error) {
       console.error('Error marking notification as read:', error);
     }
 
     // Navigate to conversation if it's a message notification
-    if (notification.type === 'new_message' && notification.data?.conversation_id) {
+    if (
+      notification.type === 'new_message' &&
+      notification.data?.conversation_id
+    ) {
       // You would need to load the conversation here
       // For now, just show a placeholder
-      console.log('Navigate to conversation:', notification.data.conversation_id);
+      console.log(
+        'Navigate to conversation:',
+        notification.data.conversation_id
+      );
     }
   };
 
   if (selectedConversation) {
     return (
-      <ChatScreen 
-        conversation={selectedConversation} 
-        onBack={handleBack}
-      />
+      <ChatScreen conversation={selectedConversation} onBack={handleBack} />
     );
   }
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
-      {/* Header */}
-      <View style={styles.header}>
-        <View style={styles.headerLeft}>
-          <MessageCircle size={24} color="#FF5A75" />
-          <Text style={styles.headerTitle}>Tin nhắn</Text>
-          {unreadCount > 0 && (
-            <View style={styles.unreadBadge}>
-              <Text style={styles.unreadText}>
-                {unreadCount > 99 ? '99+' : unreadCount}
-              </Text>
-            </View>
-          )}
+      {/* Header with Gradient */}
+      <LinearGradient
+        colors={['#FF6B6B', '#FF8E53']}
+        style={styles.headerGradient}
+      >
+        <View style={styles.headerRow}>
+          <View style={styles.headerLeft}>
+            <MessageCircle size={28} color="#fff" />
+            <Text style={styles.headerTitle}>Tin nhắn</Text>
+            {unreadCount > 0 && (
+              <View style={styles.unreadBadge}>
+                <Text style={styles.unreadText}>
+                  {unreadCount > 99 ? '99+' : unreadCount}
+                </Text>
+              </View>
+            )}
+          </View>
+
+          <TouchableOpacity
+            style={styles.notificationButton}
+            onPress={() => {
+              // Show notifications modal or navigate to notifications screen
+              console.log('Show notifications');
+            }}
+          >
+            <Bell size={22} color="#fff" />
+            {notifications.some((n) => !n.is_read) && (
+              <View style={styles.notificationDot} />
+            )}
+          </TouchableOpacity>
         </View>
-        
-        <TouchableOpacity 
-          style={styles.notificationButton}
-          onPress={() => {
-            // Show notifications modal or navigate to notifications screen
-            console.log('Show notifications');
-          }}
-        >
-          <Bell size={24} color="#333" />
-          {notifications.some(n => !n.is_read) && (
-            <View style={styles.notificationDot} />
-          )}
-        </TouchableOpacity>
-      </View>
+      </LinearGradient>
 
       {/* Chat List */}
       <ChatList onConversationSelect={handleConversationSelect} />
@@ -145,29 +161,30 @@ export default function ChatTabScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#fff',
+    backgroundColor: '#F5F7FA',
   },
-  header: {
+  headerGradient: {
+    paddingTop: 48,
+    paddingBottom: 16,
+    paddingHorizontal: 20,
+  },
+  headerRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    paddingHorizontal: 20,
-    paddingVertical: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: '#f0f0f0',
   },
   headerLeft: {
     flexDirection: 'row',
     alignItems: 'center',
+    gap: 12,
   },
   headerTitle: {
     fontSize: 24,
     fontWeight: '700',
-    color: '#333',
-    marginLeft: 12,
+    color: '#fff',
   },
   unreadBadge: {
-    backgroundColor: '#FF5A75',
+    backgroundColor: 'rgba(255, 255, 255, 0.9)',
     borderRadius: 10,
     minWidth: 20,
     height: 20,
@@ -176,21 +193,28 @@ const styles = StyleSheet.create({
     marginLeft: 8,
   },
   unreadText: {
-    color: '#fff',
+    color: '#FF6B6B',
     fontSize: 12,
     fontWeight: '700',
   },
   notificationButton: {
-    padding: 8,
+    backgroundColor: 'rgba(255, 255, 255, 0.25)',
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 2,
+    borderColor: 'rgba(255, 255, 255, 0.4)',
     position: 'relative',
   },
   notificationDot: {
     position: 'absolute',
-    top: 6,
-    right: 6,
+    top: 8,
+    right: 8,
     width: 8,
     height: 8,
     borderRadius: 4,
-    backgroundColor: '#FF5A75',
+    backgroundColor: '#fff',
   },
 });

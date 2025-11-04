@@ -27,40 +27,38 @@ const PLANS = [
       'Xem 5 thú cưng mỗi ngày',
       'Liên hệ cơ bản',
     ],
-    limitations: [
-      'Không có tính năng nổi bật',
-      'Không có analytics',
-    ],
+    limitations: ['Không có tính năng nổi bật', 'Không có analytics'],
     petLimit: 4,
     imagesPerPet: 4,
     popular: false,
   },
-  {
-    id: 'premium',
-    name: 'Premium',
-    price: 99000,
-    originalPrice: 149000,
-    period: '/tháng',
-    description: 'Trải nghiệm nâng cao',
-    color: '#007AFF',
-    gradient: ['#007AFF', '#5856D6'],
-    features: [
-      'Tạo tối đa 6 pet objects',
-      'Mỗi pet tối đa 4 ảnh',
-      'Xem không giới hạn',
-      'Liên hệ ưu tiên',
-      'Pet nổi bật',
-    ],
-    limitations: [],
-    petLimit: 6,
-    imagesPerPet: 4,
-    popular: true,
-  },
+  // Premium plan - hidden for now
+  // {
+  //   id: 'premium',
+  //   name: 'Premium',
+  //   price: 99000,
+  //   originalPrice: 149000,
+  //   period: '/tháng',
+  //   description: 'Trải nghiệm nâng cao',
+  //   color: '#007AFF',
+  //   gradient: ['#007AFF', '#5856D6'],
+  //   features: [
+  //     'Tạo tối đa 6 pet objects',
+  //     'Mỗi pet tối đa 4 ảnh',
+  //     'Xem không giới hạn',
+  //     'Liên hệ ưu tiên',
+  //     'Pet nổi bật',
+  //   ],
+  //   limitations: [],
+  //   petLimit: 6,
+  //   imagesPerPet: 4,
+  //   popular: true,
+  // },
   {
     id: 'pro',
     name: 'Pro',
-    price: 299000,
-    originalPrice: 399000,
+    price: 149000,
+    originalPrice: 299000,
     period: '/tháng',
     description: 'Chuyên nghiệp',
     color: '#FF9500',
@@ -76,7 +74,7 @@ const PLANS = [
     limitations: [],
     petLimit: 9,
     imagesPerPet: 4,
-    popular: false,
+    popular: true,
   },
 ];
 
@@ -86,7 +84,8 @@ interface SubscriptionManagerProps {
 
 export function SubscriptionManager({ onClose }: SubscriptionManagerProps) {
   const router = useRouter();
-  const { subscription, loading, upgradeSubscription, cancelSubscription } = useSubscription();
+  const { subscription, loading, upgradeSubscription, cancelSubscription } =
+    useSubscription();
   const [isProcessing, setIsProcessing] = useState(false);
 
   const handleSelectPlan = async (planId: string) => {
@@ -158,14 +157,16 @@ export function SubscriptionManager({ onClose }: SubscriptionManagerProps) {
               </Text>
             </View>
           </View>
-          
+
           <View style={styles.currentSubscriptionDetails}>
             <Text style={styles.currentSubscriptionDate}>
-              Bắt đầu: {new Date(subscription.start_date).toLocaleDateString('vi-VN')}
+              Bắt đầu:{' '}
+              {new Date(subscription.start_date).toLocaleDateString('vi-VN')}
             </Text>
             {subscription.end_date && (
               <Text style={styles.currentSubscriptionDate}>
-                Kết thúc: {new Date(subscription.end_date).toLocaleDateString('vi-VN')}
+                Kết thúc:{' '}
+                {new Date(subscription.end_date).toLocaleDateString('vi-VN')}
               </Text>
             )}
           </View>
@@ -177,7 +178,7 @@ export function SubscriptionManager({ onClose }: SubscriptionManagerProps) {
             >
               <Text style={styles.manageButtonText}>Quản lý gói</Text>
             </TouchableOpacity>
-            
+
             {subscription.plan !== 'free' && (
               <TouchableOpacity
                 style={styles.cancelButton}
@@ -193,7 +194,10 @@ export function SubscriptionManager({ onClose }: SubscriptionManagerProps) {
       {/* Available Plans */}
       <View style={styles.plansSection}>
         <Text style={styles.plansTitle}>Các gói có sẵn</Text>
-        <ScrollView style={styles.plansContainer} showsVerticalScrollIndicator={false}>
+        <ScrollView
+          style={styles.plansContainer}
+          showsVerticalScrollIndicator={false}
+        >
           {PLANS.map((plan) => (
             <SubscriptionCard
               key={plan.id}
@@ -355,4 +359,3 @@ const styles = StyleSheet.create({
     flex: 1,
   },
 });
-

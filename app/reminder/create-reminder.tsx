@@ -1,7 +1,18 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, Alert, ScrollView } from 'react-native';
+import {
+  View,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  Alert,
+  ScrollView,
+  StyleSheet,
+} from 'react-native';
 import { useAuth } from '@/contexts/AuthContext';
-import { ReminderType, ReminderFrequency } from '@/src/features/reminders/types';
+import {
+  ReminderType,
+  ReminderFrequency,
+} from '@/src/features/reminders/types';
 import { ReminderTypeSelector } from '@/src/features/reminders/components/ReminderTypeSelector';
 import { TimePicker } from '@/src/features/reminders/components/TimePicker';
 import { FrequencyPicker } from '@/src/features/reminders/components/FrequencyPicker';
@@ -9,6 +20,8 @@ import { PetSelector } from '@/src/features/reminders/components/PetSelector';
 import { PetService } from '@/src/features/pets/services/pet.service';
 import { ReminderService } from '@/src/features/reminders/services/reminder.service';
 import { router } from 'expo-router';
+import { LinearGradient } from 'expo-linear-gradient';
+import { ArrowLeft } from 'lucide-react-native';
 
 export default function CreateReminderScreen() {
   const { user } = useAuth();
@@ -19,7 +32,9 @@ export default function CreateReminderScreen() {
   const [time, setTime] = useState('07:00');
   const [frequency, setFrequency] = useState<ReminderFrequency>('daily');
   const [daysOfWeek, setDaysOfWeek] = useState<number[] | undefined>(undefined);
-  const [customInterval, setCustomInterval] = useState<number | undefined>(undefined);
+  const [customInterval, setCustomInterval] = useState<number | undefined>(
+    undefined
+  );
   const [pets, setPets] = useState<{ id: string; name: string }[]>([]);
 
   useEffect(() => {
@@ -37,7 +52,8 @@ export default function CreateReminderScreen() {
   const onSave = async () => {
     if (!user) return;
     if (!petId) return Alert.alert('Thiếu thông tin', 'Vui lòng chọn thú cưng');
-    if (!title.trim()) return Alert.alert('Thiếu thông tin', 'Vui lòng nhập tiêu đề');
+    if (!title.trim())
+      return Alert.alert('Thiếu thông tin', 'Vui lòng nhập tiêu đề');
 
     try {
       await ReminderService.createReminder(user.id, {
@@ -58,55 +74,164 @@ export default function CreateReminderScreen() {
   };
 
   return (
-    <View style={{ flex: 1, backgroundColor: '#fff' }}>
-      <View style={{ paddingHorizontal: 16, paddingTop: 14, paddingBottom: 8, borderBottomWidth: 1, borderBottomColor: '#f0f0f0', flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
-        <TouchableOpacity onPress={() => router.back()}><Text>Hủy</Text></TouchableOpacity>
-        <Text style={{ fontSize: 18, fontWeight: '800' }}>Tạo nhắc nhở</Text>
-        <TouchableOpacity onPress={onSave} style={{ backgroundColor: '#FF5A75', paddingVertical: 8, paddingHorizontal: 14, borderRadius: 8 }}>
-          <Text style={{ color: '#fff', fontWeight: '700' }}>Lưu</Text>
-        </TouchableOpacity>
-      </View>
+    <View style={styles.container}>
+      {/* Header with Gradient */}
+      <LinearGradient
+        colors={['#FF6B6B', '#FF8E53']}
+        style={styles.headerGradient}
+      >
+        <View style={styles.headerRow}>
+          <TouchableOpacity
+            onPress={() => router.back()}
+            style={styles.backButton}
+          >
+            <ArrowLeft size={24} color="#fff" />
+          </TouchableOpacity>
+          <Text style={styles.headerTitle}>Tạo nhắc nhở</Text>
+          <TouchableOpacity onPress={onSave} style={styles.saveButton}>
+            <Text style={styles.saveButtonText}>Lưu</Text>
+          </TouchableOpacity>
+        </View>
+      </LinearGradient>
 
-      <ScrollView contentContainerStyle={{ padding: 16, gap: 16 }}>
-        <View>
-          <Text style={{ marginBottom: 8, fontWeight: '700' }}>Loại nhắc nhở</Text>
+      <ScrollView contentContainerStyle={styles.content}>
+        <View style={styles.section}>
+          <Text style={styles.label}>Loại nhắc nhở</Text>
           <ReminderTypeSelector selected={type} onSelect={setType} />
         </View>
 
-        <View>
-          <Text style={{ marginBottom: 8, fontWeight: '700' }}>Chọn thú cưng</Text>
-          <PetSelector pets={pets} selectedPetId={petId} onSelect={setPetId as any} />
+        <View style={styles.section}>
+          <Text style={styles.label}>Chọn thú cưng</Text>
+          <PetSelector
+            pets={pets}
+            selectedPetId={petId}
+            onSelect={setPetId as any}
+          />
         </View>
 
-        <View>
-          <Text style={{ marginBottom: 8, fontWeight: '700' }}>Tiêu đề</Text>
-          <View style={{ borderWidth: 1, borderColor: '#eee', borderRadius: 8, paddingHorizontal: 12 }}>
-            <TextInput placeholder="Ví dụ: Cho ăn sáng" value={title} onChangeText={setTitle} style={{ height: 40 }} />
+        <View style={styles.section}>
+          <Text style={styles.label}>Tiêu đề</Text>
+          <View style={styles.inputWrapper}>
+            <TextInput
+              placeholder="Ví dụ: Cho ăn sáng"
+              value={title}
+              onChangeText={setTitle}
+              style={styles.input}
+            />
           </View>
         </View>
 
-        <View>
-          <Text style={{ marginBottom: 8, fontWeight: '700' }}>Mô tả</Text>
-          <View style={{ borderWidth: 1, borderColor: '#eee', borderRadius: 8, paddingHorizontal: 12 }}>
-            <TextInput placeholder="200g thức ăn hạt + nước" value={description} onChangeText={setDescription} multiline style={{ minHeight: 80, paddingTop: 8 }} />
+        <View style={styles.section}>
+          <Text style={styles.label}>Mô tả</Text>
+          <View style={styles.inputWrapper}>
+            <TextInput
+              placeholder="200g thức ăn hạt + nước"
+              value={description}
+              onChangeText={setDescription}
+              multiline
+              style={[styles.input, styles.textArea]}
+            />
           </View>
         </View>
 
-        <View>
-          <Text style={{ marginBottom: 8, fontWeight: '700' }}>Thời gian</Text>
+        <View style={styles.section}>
+          <Text style={styles.label}>Thời gian</Text>
           <TimePicker value={time} onChange={setTime} />
         </View>
 
-        <View>
-          <Text style={{ marginBottom: 8, fontWeight: '700' }}>Tần suất</Text>
+        <View style={styles.section}>
+          <Text style={styles.label}>Tần suất</Text>
           <FrequencyPicker
             frequency={frequency}
             daysOfWeek={daysOfWeek as any}
             customInterval={customInterval}
-            onChange={(v) => { setFrequency(v.frequency); setDaysOfWeek(v.daysOfWeek); setCustomInterval(v.customInterval); }}
+            onChange={(v) => {
+              setFrequency(v.frequency);
+              setDaysOfWeek(v.daysOfWeek);
+              setCustomInterval(v.customInterval);
+            }}
           />
         </View>
       </ScrollView>
     </View>
   );
 }
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: '#F5F7FA',
+  },
+  headerGradient: {
+    paddingTop: 48,
+    paddingBottom: 16,
+    paddingHorizontal: 20,
+  },
+  headerRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  backButton: {
+    width: 44,
+    height: 44,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  headerTitle: {
+    fontSize: 20,
+    fontWeight: '700',
+    color: '#fff',
+    flex: 1,
+    textAlign: 'center',
+  },
+  saveButton: {
+    backgroundColor: 'rgba(255, 255, 255, 0.25)',
+    paddingVertical: 8,
+    paddingHorizontal: 16,
+    borderRadius: 20,
+    borderWidth: 2,
+    borderColor: 'rgba(255, 255, 255, 0.4)',
+  },
+  saveButtonText: {
+    color: '#fff',
+    fontWeight: '700',
+    fontSize: 15,
+  },
+  content: {
+    padding: 16,
+    gap: 20,
+  },
+  section: {
+    gap: 8,
+  },
+  label: {
+    fontSize: 15,
+    fontWeight: '700',
+    color: '#333',
+    marginBottom: 8,
+  },
+  inputWrapper: {
+    backgroundColor: '#fff',
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: '#E0E0E0',
+    paddingHorizontal: 16,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 2,
+    elevation: 1,
+  },
+  input: {
+    height: 48,
+    fontSize: 15,
+    color: '#333',
+  },
+  textArea: {
+    minHeight: 100,
+    paddingTop: 12,
+    paddingBottom: 12,
+    textAlignVertical: 'top',
+  },
+});
