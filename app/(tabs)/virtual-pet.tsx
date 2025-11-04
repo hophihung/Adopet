@@ -14,6 +14,7 @@ import { useVirtualPet } from '@/src/features/virtualPet/hooks/useVirtualPet';
 import { LevelUpModal, petColors, petEmojis, PetSelectionModal, PetType } from '@/src/features/virtualPet';
 import { CheckinCalendar } from '@/src/features/virtualPet/components/CheckinCalendar';
 import { PixelPetAnimation } from '@/src/features/virtualPet/components/PixelPetAnimation';
+import { getEvolutionStageName, getEvolutionStage } from '@/src/config/virtualPet/animations';
 
 
 
@@ -136,7 +137,7 @@ export default function VirtualPetScreen() {
           <View>
             <Text style={styles.headerTitle}>{virtualPet.name}</Text>
             <Text style={styles.headerSubtitle}>
-              {petEmojis[virtualPet.pet_type]} Level {virtualPet.level}
+              {petEmojis[virtualPet.pet_type]} Level {virtualPet.level} • {getEvolutionStageName(getEvolutionStage(virtualPet.level))}
             </Text>
           </View>
           <TouchableOpacity
@@ -158,6 +159,7 @@ export default function VirtualPetScreen() {
             <PixelPetAnimation
               petType={virtualPet.pet_type}
               mood={currentMoodState}
+              level={virtualPet.level}
               size={180}
             />
           </View>
@@ -218,6 +220,27 @@ export default function VirtualPetScreen() {
             {daysSinceLastCheckin > 0 && (
               <Text style={styles.warningText}>
                 {daysSinceLastCheckin} ngày chưa điểm danh
+              </Text>
+            )}
+          </View>
+
+          {/* Evolution Info */}
+          <View style={styles.statCard}>
+            <View style={styles.statHeader}>
+              <Sparkles size={20} color={colors.primary} />
+              <Text style={styles.statTitle}>Tiến hóa</Text>
+            </View>
+            <Text style={styles.evolutionText}>
+              {getEvolutionStageName(getEvolutionStage(virtualPet.level))}
+            </Text>
+            {virtualPet.level < 50 && (
+              <Text style={styles.evolutionNextText}>
+                Tiến hóa tiếp: Level {virtualPet.level < 10 ? 10 : virtualPet.level < 30 ? 30 : 50}
+              </Text>
+            )}
+            {virtualPet.level >= 50 && (
+              <Text style={styles.evolutionMaxText}>
+                ✨ Đã đạt level tối đa!
               </Text>
             )}
           </View>
@@ -435,6 +458,23 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: '#FF3B30',
     marginTop: 4,
+  },
+  evolutionText: {
+    fontSize: 18,
+    fontWeight: '700',
+    color: '#333',
+    marginTop: 8,
+  },
+  evolutionNextText: {
+    fontSize: 14,
+    color: '#666',
+    marginTop: 4,
+  },
+  evolutionMaxText: {
+    fontSize: 14,
+    color: '#FFD700',
+    marginTop: 4,
+    fontWeight: '600',
   },
   checkinButton: {
     marginHorizontal: 20,

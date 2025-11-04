@@ -15,6 +15,38 @@
 export type PetType = 'cat' | 'dog' | 'bird';
 export type PetMood = 'idle' | 'happy' | 'sad' | 'eating' | 'sleeping' | 'playing' | 'levelUp';
 
+/**
+ * Evolution stages - Pet sẽ tiến hóa ở các level này
+ */
+export type EvolutionStage = 1 | 2 | 3 | 4;
+
+export const EVOLUTION_LEVELS: EvolutionStage[] = [1, 10, 30, 50];
+
+/**
+ * Get evolution stage từ level
+ */
+export function getEvolutionStage(level: number): EvolutionStage {
+  if (level >= 50) return 4;
+  if (level >= 30) return 3;
+  if (level >= 10) return 2;
+  return 1;
+}
+
+export function getEvolutionStageName(stage: EvolutionStage): string {
+  switch (stage) {
+    case 1:
+      return 'Baby';
+    case 2:
+      return 'Adult';
+    case 3:
+      return 'Mature';
+    case 4:
+      return 'Legendary';
+    default:
+      return 'Baby';
+  }
+}
+
 export interface AnimationConfig {
   duration: number;
   easing: string;

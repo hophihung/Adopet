@@ -8,91 +8,25 @@ import Animated, {
   withSequence,
   Easing,
 } from 'react-native-reanimated';
-import { PetType, PetMood, getAnimationConfig } from '../../../config/virtualPet/animations';
+import {
+  PetType,
+  PetMood,
+  getAnimationConfig,
+  getEvolutionStage,
+} from '../../../config/virtualPet/animations';
+import { PET_MODELS } from './PixelPetModels';
 
 interface PixelPetAnimationProps {
   petType: PetType;
   mood: PetMood;
+  level: number;
   size?: number;
 }
-
-// Pixel art component cho từng loại pet
-const PixelCat = () => (
-  <View style={styles.pixelContainer}>
-    {/* Ears */}
-    <View style={[styles.pixel, { top: 0, left: 8, width: 12, height: 12, backgroundColor: '#FFB347' }]} />
-    <View style={[styles.pixel, { top: 0, right: 8, width: 12, height: 12, backgroundColor: '#FFB347' }]} />
-    {/* Head */}
-    <View style={[styles.pixel, { top: 8, left: 10, width: 40, height: 32, backgroundColor: '#FFB347' }]} />
-    {/* Eyes */}
-    <View style={[styles.pixel, { top: 16, left: 20, width: 6, height: 6, backgroundColor: '#000' }]} />
-    <View style={[styles.pixel, { top: 16, right: 20, width: 6, height: 6, backgroundColor: '#000' }]} />
-    {/* Nose */}
-    <View style={[styles.pixel, { top: 24, left: 27, width: 6, height: 4, backgroundColor: '#FF6B9D' }]} />
-    {/* Body */}
-    <View style={[styles.pixel, { top: 40, left: 12, width: 36, height: 40, backgroundColor: '#FFB347' }]} />
-    {/* Legs */}
-    <View style={[styles.pixel, { top: 80, left: 16, width: 8, height: 16, backgroundColor: '#FF9500' }]} />
-    <View style={[styles.pixel, { top: 80, left: 28, width: 8, height: 16, backgroundColor: '#FF9500' }]} />
-    <View style={[styles.pixel, { top: 80, right: 28, width: 8, height: 16, backgroundColor: '#FF9500' }]} />
-    <View style={[styles.pixel, { top: 80, right: 16, width: 8, height: 16, backgroundColor: '#FF9500' }]} />
-    {/* Tail */}
-    <View style={[styles.pixel, { top: 48, right: -4, width: 12, height: 8, backgroundColor: '#FFB347' }]} />
-  </View>
-);
-
-const PixelDog = () => (
-  <View style={styles.pixelContainer}>
-    {/* Ears */}
-    <View style={[styles.pixel, { top: 4, left: 4, width: 16, height: 20, backgroundColor: '#2E5C8A' }]} />
-    <View style={[styles.pixel, { top: 4, right: 4, width: 16, height: 20, backgroundColor: '#2E5C8A' }]} />
-    {/* Head */}
-    <View style={[styles.pixel, { top: 8, left: 10, width: 40, height: 32, backgroundColor: '#4A90E2' }]} />
-    {/* Eyes */}
-    <View style={[styles.pixel, { top: 16, left: 20, width: 6, height: 6, backgroundColor: '#000' }]} />
-    <View style={[styles.pixel, { top: 16, right: 20, width: 6, height: 6, backgroundColor: '#000' }]} />
-    {/* Nose */}
-    <View style={[styles.pixel, { top: 24, left: 27, width: 6, height: 4, backgroundColor: '#000' }]} />
-    {/* Body */}
-    <View style={[styles.pixel, { top: 40, left: 12, width: 36, height: 40, backgroundColor: '#4A90E2' }]} />
-    {/* Legs */}
-    <View style={[styles.pixel, { top: 80, left: 16, width: 8, height: 16, backgroundColor: '#2E5C8A' }]} />
-    <View style={[styles.pixel, { top: 80, left: 28, width: 8, height: 16, backgroundColor: '#2E5C8A' }]} />
-    <View style={[styles.pixel, { top: 80, right: 28, width: 8, height: 16, backgroundColor: '#2E5C8A' }]} />
-    <View style={[styles.pixel, { top: 80, right: 16, width: 8, height: 16, backgroundColor: '#2E5C8A' }]} />
-    {/* Tail */}
-    <View style={[styles.pixel, { top: 48, right: -4, width: 10, height: 24, backgroundColor: '#4A90E2' }]} />
-  </View>
-);
-
-const PixelBird = () => (
-  <View style={styles.pixelContainer}>
-    {/* Head */}
-    <View style={[styles.pixel, { top: 0, left: 18, width: 24, height: 20, backgroundColor: '#FFD700', borderRadius: 12 }]} />
-    {/* Beak */}
-    <View style={[styles.pixel, { top: 8, left: 12, width: 8, height: 6, backgroundColor: '#FFB347' }]} />
-    {/* Eyes */}
-    <View style={[styles.pixel, { top: 4, left: 24, width: 4, height: 4, backgroundColor: '#000' }]} />
-    {/* Body */}
-    <View style={[styles.pixel, { top: 20, left: 16, width: 28, height: 28, backgroundColor: '#FFB347', borderRadius: 14 }]} />
-    {/* Wings */}
-    <View style={[styles.pixel, { top: 24, left: 4, width: 14, height: 18, backgroundColor: '#FF9500', borderRadius: 7 }]} />
-    <View style={[styles.pixel, { top: 24, right: 4, width: 14, height: 18, backgroundColor: '#FF9500', borderRadius: 7 }]} />
-    {/* Legs */}
-    <View style={[styles.pixel, { top: 48, left: 22, width: 3, height: 10, backgroundColor: '#FF9500' }]} />
-    <View style={[styles.pixel, { top: 48, right: 22, width: 3, height: 10, backgroundColor: '#FF9500' }]} />
-  </View>
-);
-
-const PIXEL_PETS: Record<PetType, () => React.ReactNode> = {
-  cat: PixelCat,
-  dog: PixelDog,
-  bird: PixelBird,
-};
 
 export function PixelPetAnimation({
   petType,
   mood,
+  level,
   size = 120,
 }: PixelPetAnimationProps) {
   const scale = useSharedValue(1);
@@ -315,11 +249,20 @@ export function PixelPetAnimation({
     };
   });
 
-  const scaleFactor = size / 120;
-  const PixelComponent = PIXEL_PETS[petType];
+  // Get evolution stage from level
+  const evolutionStage = getEvolutionStage(level);
+  const PixelComponent = PET_MODELS[petType][evolutionStage];
+
+  // Scale factor based on evolution stage (higher stage = bigger)
+  const baseScale = size / 120;
+  const stageScale = [0.8, 1.0, 1.2, 1.5][evolutionStage - 1]; // Scale multipliers for each stage
+  const scaleFactor = baseScale * stageScale;
+
+  // Container size adjusts based on stage
+  const containerHeight = size * 1.2 * stageScale;
 
   return (
-    <View style={[styles.container, { width: size, height: size * 1.2 }]}>
+    <View style={[styles.container, { width: size, height: containerHeight }]}>
       <Animated.View style={[styles.petContainer, animatedStyle, { transform: [{ scale: scaleFactor }] }]}>
         <PixelComponent />
       </Animated.View>
@@ -339,15 +282,6 @@ const styles = StyleSheet.create({
     position: 'relative',
     justifyContent: 'center',
     alignItems: 'center',
-  },
-  pixelContainer: {
-    width: 60,
-    height: 96,
-    position: 'relative',
-  },
-  pixel: {
-    position: 'absolute',
-    borderRadius: 2,
   },
 });
 
