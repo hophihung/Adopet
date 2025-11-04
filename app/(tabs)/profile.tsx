@@ -1,7 +1,26 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Image, RefreshControl, ActivityIndicator, Modal } from 'react-native';
+import {
+  View,
+  Text,
+  StyleSheet,
+  ScrollView,
+  TouchableOpacity,
+  Image,
+  RefreshControl,
+  ActivityIndicator,
+  Modal,
+} from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Settings, Edit, Heart, MessageCircle, Star, Crown } from 'lucide-react-native';
+import {
+  Settings,
+  Edit,
+  Heart,
+  MessageCircle,
+  Star,
+  Crown,
+  User,
+} from 'lucide-react-native';
+import { LinearGradient } from 'expo-linear-gradient';
 import { useProfile } from '../../src/features/profile/context/ProfileContext';
 import { useAuth } from '../../contexts/AuthContext';
 import { useSubscription } from '../../contexts/SubscriptionContext';
@@ -25,26 +44,34 @@ export default function ProfileScreen() {
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
-      <ScrollView 
+      <ScrollView
         style={styles.scrollView}
         refreshControl={
           <RefreshControl refreshing={refreshing} onRefresh={refreshProfile} />
         }
       >
-        {/* Header */}
-        <View style={styles.header}>
-          <Text style={styles.headerTitle}>Profile</Text>
-          <TouchableOpacity style={styles.settingsButton}>
-            <Settings size={24} color="#333" />
-          </TouchableOpacity>
-        </View>
+        {/* Header with Gradient */}
+        <LinearGradient
+          colors={['#FF6B6B', '#FF8E53']}
+          style={styles.headerGradient}
+        >
+          <View style={styles.headerRow}>
+            <View style={styles.headerLeft}>
+              <User size={28} color="#fff" />
+              <Text style={styles.headerTitle}>Profile</Text>
+            </View>
+            <TouchableOpacity style={styles.settingsButton}>
+              <Settings size={22} color="#fff" />
+            </TouchableOpacity>
+          </View>
+        </LinearGradient>
 
         {/* Profile Info */}
         <View style={styles.profileSection}>
           <View style={styles.avatarContainer}>
             <Image
-              source={{ 
-                uri: profile?.avatar_url || 'https://via.placeholder.com/120'
+              source={{
+                uri: profile?.avatar_url || 'https://via.placeholder.com/120',
               }}
               style={styles.avatar}
             />
@@ -55,17 +82,15 @@ export default function ProfileScreen() {
           <Text style={styles.name}>
             {profile?.full_name || 'Unknown User'}
           </Text>
-          <Text style={styles.bio}>
-            {profile?.email || 'No email'}
-          </Text>
+          <Text style={styles.bio}>{profile?.email || 'No email'}</Text>
           <View style={styles.roleTag}>
             <Text style={styles.roleText}>
               {profile?.role === 'seller' ? '🏪 Seller' : '👤 User'}
             </Text>
           </View>
-          
+
           {/* Subscription Status */}
-          <TouchableOpacity 
+          <TouchableOpacity
             style={styles.subscriptionCard}
             onPress={() => setShowSubscriptionModal(true)}
           >
@@ -76,7 +101,9 @@ export default function ProfileScreen() {
                   Gói {subscription?.plan?.toUpperCase() || 'FREE'}
                 </Text>
                 <Text style={styles.subscriptionSubtitle}>
-                  {subscription?.status === 'active' ? 'Đang hoạt động' : 'Chưa đăng ký'}
+                  {subscription?.status === 'active'
+                    ? 'Đang hoạt động'
+                    : 'Chưa đăng ký'}
                 </Text>
               </View>
               <Text style={styles.subscriptionArrow}>›</Text>
@@ -107,12 +134,16 @@ export default function ProfileScreen() {
         <View style={styles.detailsContainer}>
           <View style={styles.detailItem}>
             <Text style={styles.detailLabel}>ID</Text>
-            <Text style={styles.detailValue}>{profile?.id.substring(0, 8)}...</Text>
+            <Text style={styles.detailValue}>
+              {profile?.id.substring(0, 8)}...
+            </Text>
           </View>
           <View style={styles.detailItem}>
             <Text style={styles.detailLabel}>Member since</Text>
             <Text style={styles.detailValue}>
-              {profile?.created_at ? new Date(profile.created_at).toLocaleDateString() : 'N/A'}
+              {profile?.created_at
+                ? new Date(profile.created_at).toLocaleDateString()
+                : 'N/A'}
             </Text>
           </View>
         </View>
@@ -127,7 +158,7 @@ export default function ProfileScreen() {
               <Text style={styles.menuText}>My Pets</Text>
             </TouchableOpacity>
           )}
-          <TouchableOpacity 
+          <TouchableOpacity
             style={styles.menuItem}
             onPress={() => setShowSubscriptionModal(true)}
           >
@@ -142,8 +173,8 @@ export default function ProfileScreen() {
           <TouchableOpacity style={styles.menuItem}>
             <Text style={styles.menuText}>Help & Support</Text>
           </TouchableOpacity>
-          <TouchableOpacity 
-            style={[styles.menuItem, styles.signOutButton]} 
+          <TouchableOpacity
+            style={[styles.menuItem, styles.signOutButton]}
             onPress={signOut}
           >
             <Text style={styles.signOutText}>Sign Out</Text>
@@ -168,7 +199,9 @@ export default function ProfileScreen() {
               <Text style={styles.closeButtonText}>Đóng</Text>
             </TouchableOpacity>
           </View>
-          <SubscriptionManager onClose={() => setShowSubscriptionModal(false)} />
+          <SubscriptionManager
+            onClose={() => setShowSubscriptionModal(false)}
+          />
         </SafeAreaView>
       </Modal>
     </SafeAreaView>
@@ -178,7 +211,7 @@ export default function ProfileScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#fff',
+    backgroundColor: '#F5F7FA',
   },
   loadingContainer: {
     flex: 1,
@@ -188,24 +221,40 @@ const styles = StyleSheet.create({
   scrollView: {
     flex: 1,
   },
-  header: {
+  headerGradient: {
+    paddingTop: 48,
+    paddingBottom: 16,
+    paddingHorizontal: 20,
+  },
+  headerRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    paddingHorizontal: 20,
-    paddingVertical: 16,
+  },
+  headerLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
   },
   headerTitle: {
     fontSize: 24,
     fontWeight: '700',
-    color: '#333',
+    color: '#fff',
   },
   settingsButton: {
-    padding: 8,
+    backgroundColor: 'rgba(255, 255, 255, 0.25)',
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 2,
+    borderColor: 'rgba(255, 255, 255, 0.4)',
   },
   profileSection: {
     alignItems: 'center',
     paddingVertical: 20,
+    backgroundColor: '#fff',
   },
   avatarContainer: {
     position: 'relative',
@@ -221,7 +270,7 @@ const styles = StyleSheet.create({
     position: 'absolute',
     bottom: 0,
     right: 0,
-    backgroundColor: '#FF5A75',
+    backgroundColor: '#FF6B6B',
     width: 36,
     height: 36,
     borderRadius: 18,
@@ -379,4 +428,3 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
 });
-

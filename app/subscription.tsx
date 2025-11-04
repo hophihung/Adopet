@@ -12,7 +12,10 @@ import {
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { LinearGradient } from 'expo-linear-gradient';
-import { useSubscription, SubscriptionPlan } from '../contexts/SubscriptionContext';
+import {
+  useSubscription,
+  SubscriptionPlan,
+} from '../contexts/SubscriptionContext';
 import { useAuth } from '../contexts/AuthContext';
 
 const { width } = Dimensions.get('window');
@@ -34,42 +37,40 @@ const PLANS = [
       'Liên hệ cơ bản',
       'Hỗ trợ email',
     ],
-    limitations: [
-      'Không có tính năng nổi bật',
-      'Không có analytics',
-    ],
+    limitations: ['Không có tính năng nổi bật', 'Không có analytics'],
     petLimit: 4,
     imagesPerPet: 4,
     popular: false,
   },
-  {
-    id: 'premium',
-    name: 'Premium',
-    price: 99000,
-    originalPrice: 149000,
-    period: '/tháng',
-    description: 'Trải nghiệm nâng cao',
-    color: '#007AFF',
-    gradient: ['#007AFF', '#5856D6'],
-    features: [
-      'Tạo tối đa 6 pet objects',
-      'Mỗi pet tối đa 4 ảnh',
-      'Xem không giới hạn',
-      'Liên hệ ưu tiên',
-      'Ẩn số điện thoại',
-      'Pet nổi bật',
-      'Hỗ trợ ưu tiên',
-    ],
-    limitations: [],
-    petLimit: 6,
-    imagesPerPet: 4,
-    popular: true,
-  },
+  // Premium plan - hidden for now
+  // {
+  //   id: 'premium',
+  //   name: 'Premium',
+  //   price: 99000,
+  //   originalPrice: 149000,
+  //   period: '/tháng',
+  //   description: 'Trải nghiệm nâng cao',
+  //   color: '#007AFF',
+  //   gradient: ['#007AFF', '#5856D6'],
+  //   features: [
+  //     'Tạo tối đa 6 pet objects',
+  //     'Mỗi pet tối đa 4 ảnh',
+  //     'Xem không giới hạn',
+  //     'Liên hệ ưu tiên',
+  //     'Ẩn số điện thoại',
+  //     'Pet nổi bật',
+  //     'Hỗ trợ ưu tiên',
+  //   ],
+  //   limitations: [],
+  //   petLimit: 6,
+  //   imagesPerPet: 4,
+  //   popular: true,
+  // },
   {
     id: 'pro',
     name: 'Pro',
-    price: 299000,
-    originalPrice: 399000,
+    price: 149000,
+    originalPrice: 299000,
     period: '/tháng',
     description: 'Chuyên nghiệp',
     color: '#FF9500',
@@ -87,15 +88,18 @@ const PLANS = [
     limitations: [],
     petLimit: 9,
     imagesPerPet: 4,
-    popular: false,
+    popular: true,
   },
 ];
 
 export default function SubscriptionScreen() {
   const router = useRouter();
   const { user } = useAuth();
-  const { subscription, loading, createSubscription, upgradeSubscription } = useSubscription();
-  const [selectedPlan, setSelectedPlan] = useState<SubscriptionPlan | null>(null);
+  const { subscription, loading, createSubscription, upgradeSubscription } =
+    useSubscription();
+  const [selectedPlan, setSelectedPlan] = useState<SubscriptionPlan | null>(
+    null
+  );
   const [isProcessing, setIsProcessing] = useState(false);
 
   const handleSelectPlan = async (plan: SubscriptionPlan) => {
@@ -149,16 +153,13 @@ export default function SubscriptionScreen() {
   return (
     <View style={styles.container}>
       <StatusBar barStyle="light-content" backgroundColor="#1C1C1E" />
-      
+
       {/* Header */}
-      <LinearGradient
-        colors={['#1C1C1E', '#2C2C2E']}
-        style={styles.header}
-      >
+      <LinearGradient colors={['#1C1C1E', '#2C2C2E']} style={styles.header}>
         <TouchableOpacity onPress={handleSkip} style={styles.skipButton}>
           <Text style={styles.skipButtonText}>Bỏ qua</Text>
         </TouchableOpacity>
-        
+
         <View style={styles.headerContent}>
           <Text style={styles.headerTitle}>Nâng cấp tài khoản</Text>
           <Text style={styles.headerSubtitle}>
@@ -172,16 +173,19 @@ export default function SubscriptionScreen() {
         <View style={styles.currentSubscription}>
           <View style={styles.currentSubscriptionContent}>
             <Text style={styles.currentLabel}>Gói hiện tại:</Text>
-            <Text style={styles.currentPlan}>{subscription.plan.toUpperCase()}</Text>
+            <Text style={styles.currentPlan}>
+              {subscription.plan.toUpperCase()}
+            </Text>
             <Text style={styles.currentDate}>
-              Từ: {new Date(subscription.start_date).toLocaleDateString('vi-VN')}
+              Từ:{' '}
+              {new Date(subscription.start_date).toLocaleDateString('vi-VN')}
             </Text>
           </View>
         </View>
       )}
 
       {/* Plans */}
-      <ScrollView 
+      <ScrollView
         style={styles.plansContainer}
         showsVerticalScrollIndicator={false}
         contentContainerStyle={styles.plansContent}
@@ -198,7 +202,7 @@ export default function SubscriptionScreen() {
                   <Text style={styles.popularBadgeText}>PHỔ BIẾN NHẤT</Text>
                 </View>
               )}
-              
+
               <TouchableOpacity
                 style={[
                   styles.planCard,
@@ -211,7 +215,11 @@ export default function SubscriptionScreen() {
                 activeOpacity={0.8}
               >
                 <LinearGradient
-                  colors={isCurrentPlan ? ['#34C759', '#30D158'] : plan.gradient}
+                  colors={
+                    isCurrentPlan
+                      ? (['#34C759', '#30D158'] as const)
+                      : (plan.gradient as any)
+                  }
                   style={styles.planGradient}
                 >
                   <View style={styles.planHeader}>
@@ -238,7 +246,11 @@ export default function SubscriptionScreen() {
                       </Text>
                       <View style={styles.discountBadge}>
                         <Text style={styles.discountText}>
-                          -{Math.round((1 - plan.price / plan.originalPrice) * 100)}%
+                          -
+                          {Math.round(
+                            (1 - plan.price / plan.originalPrice) * 100
+                          )}
+                          %
                         </Text>
                       </View>
                     </View>
@@ -255,14 +267,16 @@ export default function SubscriptionScreen() {
                       <Text style={styles.featureText}>{feature}</Text>
                     </View>
                   ))}
-                  
+
                   {plan.limitations.length > 0 && (
                     <>
                       <Text style={styles.limitationsTitle}>Hạn chế:</Text>
                       {plan.limitations.map((limitation, idx) => (
                         <View key={idx} style={styles.limitationItem}>
                           <Text style={styles.limitationIcon}>✗</Text>
-                          <Text style={styles.limitationText}>{limitation}</Text>
+                          <Text style={styles.limitationText}>
+                            {limitation}
+                          </Text>
                         </View>
                       ))}
                     </>
@@ -281,10 +295,12 @@ export default function SubscriptionScreen() {
                   {isProcessing && selectedPlan === plan.id ? (
                     <ActivityIndicator color="#fff" size="small" />
                   ) : (
-                    <Text style={[
-                      styles.selectButtonText,
-                      isCurrentPlan && styles.selectButtonTextDisabled,
-                    ]}>
+                    <Text
+                      style={[
+                        styles.selectButtonText,
+                        isCurrentPlan && styles.selectButtonTextDisabled,
+                      ]}
+                    >
                       {isCurrentPlan
                         ? 'Gói hiện tại'
                         : subscription?.status === 'active'
@@ -338,21 +354,28 @@ export default function SubscriptionScreen() {
           <Text style={styles.faqTitle}>Câu hỏi thường gặp</Text>
           <View style={styles.faqItems}>
             <View style={styles.faqItem}>
-              <Text style={styles.faqQuestion}>Có thể hủy gói bất cứ lúc nào không?</Text>
+              <Text style={styles.faqQuestion}>
+                Có thể hủy gói bất cứ lúc nào không?
+              </Text>
               <Text style={styles.faqAnswer}>
-                Có, bạn có thể hủy gói subscription bất cứ lúc nào. Gói sẽ hết hạn vào cuối chu kỳ thanh toán.
+                Có, bạn có thể hủy gói subscription bất cứ lúc nào. Gói sẽ hết
+                hạn vào cuối chu kỳ thanh toán.
               </Text>
             </View>
             <View style={styles.faqItem}>
               <Text style={styles.faqQuestion}>Có được hoàn tiền không?</Text>
               <Text style={styles.faqAnswer}>
-                Chúng tôi cung cấp chính sách hoàn tiền trong vòng 7 ngày đầu tiên.
+                Chúng tôi cung cấp chính sách hoàn tiền trong vòng 7 ngày đầu
+                tiên.
               </Text>
             </View>
             <View style={styles.faqItem}>
-              <Text style={styles.faqQuestion}>Có thể nâng cấp/giảm cấp gói không?</Text>
+              <Text style={styles.faqQuestion}>
+                Có thể nâng cấp/giảm cấp gói không?
+              </Text>
               <Text style={styles.faqAnswer}>
-                Có, bạn có thể thay đổi gói bất cứ lúc nào. Thay đổi sẽ có hiệu lực ngay lập tức.
+                Có, bạn có thể thay đổi gói bất cứ lúc nào. Thay đổi sẽ có hiệu
+                lực ngay lập tức.
               </Text>
             </View>
           </View>
@@ -364,9 +387,7 @@ export default function SubscriptionScreen() {
         <Text style={styles.footerText}>
           Bạn có thể thay đổi hoặc hủy gói bất cứ lúc nào
         </Text>
-        <Text style={styles.footerSubtext}>
-          Thanh toán an toàn và bảo mật
-        </Text>
+        <Text style={styles.footerSubtext}>Thanh toán an toàn và bảo mật</Text>
       </View>
     </View>
   );
@@ -729,4 +750,3 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
 });
-
