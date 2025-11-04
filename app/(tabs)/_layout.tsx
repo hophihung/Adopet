@@ -5,6 +5,7 @@ import {
   User,
   Heart,
   PawPrint,
+  Bell,
 } from 'lucide-react-native';
 import { View } from 'react-native';
 
@@ -99,6 +100,14 @@ export default function TabLayout() {
         options={{
           title: '',
           tabBarIcon: ({ color, size }) => <PawPrint size={26} color={color} />,
+        }}
+      />
+
+      <Tabs.Screen
+        name="reminders"
+        options={{
+          title: '',
+          tabBarIcon: ({ color, size }) => <Bell size={26} color={color} />,
         }}
       />
 
