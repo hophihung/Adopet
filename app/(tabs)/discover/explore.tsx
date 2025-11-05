@@ -88,9 +88,9 @@ export default function ExploreScreen() {
     (destination: 'match' | 'explore') => {
       setActiveTopTab(destination);
       if (destination === 'match') {
-        router.replace('/(tabs)');
+        router.replace('/(tabs)/discover/match');
       } else {
-        router.replace('/explore');
+        router.replace('/(tabs)/discover/explore');
       }
     },
     [router]

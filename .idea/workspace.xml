@@ -6,9 +6,32 @@
   <component name="ChangeListManager">
     <list default="true" id="9fcd68c1-d0d0-4c8c-a8ff-2b8e56742dc1" name="Changes" comment="">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/(tabs)/virtual-pet.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/app/(tabs)/virtual-pet.tsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/FLOW.md" beforeDir="false" afterPath="$PROJECT_DIR$/FLOW.md" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/(auth)/filter-pets.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/app/(auth)/filter-pets.tsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/(tabs)/_layout.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/app/(tabs)/_layout.tsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/(tabs)/chat.tsx" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/(tabs)/community.tsx" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/(tabs)/explore.tsx" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/(tabs)/index.tsx" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/(tabs)/my-pets.tsx" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/(tabs)/profile.tsx" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/(tabs)/reel.tsx" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/(tabs)/reminders.tsx" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/(tabs)/virtual-pet.tsx" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/+not-found.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/app/+not-found.tsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/_layout.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/app/_layout.tsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/post/post-detail.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/app/post/post-detail.tsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/subscription.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/app/subscription.tsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/contexts/AuthContext.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/contexts/AuthContext.tsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/components/FeatureLimitBanner.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/src/components/FeatureLimitBanner.tsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/components/StripePaymentSheet.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/src/components/StripePaymentSheet.tsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/components/SubscriptionCard.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/src/components/SubscriptionCard.tsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/components/index.ts" beforeDir="false" afterPath="$PROJECT_DIR$/src/components/index.ts" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/config/virtualPet/animations.ts" beforeDir="false" afterPath="$PROJECT_DIR$/src/config/virtualPet/animations.ts" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/features/virtualPet/components/PixelPetAnimation.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/src/features/virtualPet/components/PixelPetAnimation.tsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/features/chat/components/ChatList.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/src/features/chat/components/ChatList.tsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/features/chat/components/ChatScreen.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/src/features/chat/components/ChatScreen.tsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/hooks/useSubscription.ts" beforeDir="false" afterPath="$PROJECT_DIR$/src/hooks/useSubscription.ts" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/services/payment.service.ts" beforeDir="false" afterPath="$PROJECT_DIR$/src/services/payment.service.ts" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -30,19 +53,19 @@
     <option name="hideEmptyMiddlePackages" value="true" />
     <option name="showLibraryContents" value="true" />
   </component>
-  <component name="PropertiesComponent"><![CDATA[{
-  "keyToString": {
-    "ModuleVcsDetector.initialDetectionPerformed": "true",
-    "RunOnceActivity.ShowReadmeOnStart": "true",
-    "RunOnceActivity.cidr.known.project.marker": "true",
-    "RunOnceActivity.git.unshallow": "true",
-    "RunOnceActivity.readMode.enableVisualFormatting": "true",
-    "cf.first.check.clang-format": "false",
-    "cidr.known.project.marker": "true",
-    "git-widget-placeholder": "version2",
-    "last_opened_file_path": "/Users/thanvinh/Desktop/Adopet/Adopet"
+  <component name="PropertiesComponent">{
+  &quot;keyToString&quot;: {
+    &quot;ModuleVcsDetector.initialDetectionPerformed&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.ShowReadmeOnStart&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.cidr.known.project.marker&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.git.unshallow&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.readMode.enableVisualFormatting&quot;: &quot;true&quot;,
+    &quot;cf.first.check.clang-format&quot;: &quot;false&quot;,
+    &quot;cidr.known.project.marker&quot;: &quot;true&quot;,
+    &quot;git-widget-placeholder&quot;: &quot;version2&quot;,
+    &quot;last_opened_file_path&quot;: &quot;/Users/thanvinh/Desktop/Adopet/Adopet&quot;
   }
-}]]></component>
+}</component>
   <component name="TaskManager">
     <task active="true" id="Default" summary="Default task">
       <changelist id="9fcd68c1-d0d0-4c8c-a8ff-2b8e56742dc1" name="Changes" comment="" />

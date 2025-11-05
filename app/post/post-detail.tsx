@@ -26,7 +26,7 @@ interface Comment {
   content: string;
   created_at: string;
   user_id: string;
-  profiles: Profile | Profile[] | null;
+  profiles?: Profile[];
 }
 
 /* ============================================================
@@ -79,10 +79,9 @@ export default function PostDetailScreen() {
     fetchComments();
   }, [postId]);
 
-  const getProfileData = (profiles: Profile | Profile[] | null) => {
-    if (!profiles) return { full_name: 'Ẩn danh', avatar_url: null };
-    if (Array.isArray(profiles)) return profiles[0] || { full_name: 'Ẩn danh', avatar_url: null };
-    return profiles;
+  const getProfileData = (profiles?: Profile[]) => {
+    if (!profiles || profiles.length === 0) return { full_name: 'Ẩn danh', avatar_url: null };
+    return profiles[0];
   };
 
   if (loading) {

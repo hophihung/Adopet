@@ -60,7 +60,7 @@ export function FeatureLimitBanner({
 
   return (
     <LinearGradient
-      colors={config.colors}
+      colors={config.colors as [string, string]}
       style={styles.container}
       start={{ x: 0, y: 0 }}
       end={{ x: 1, y: 0 }}

@@ -21,10 +21,10 @@ import {
   User,
 } from 'lucide-react-native';
 import { LinearGradient } from 'expo-linear-gradient';
-import { useProfile } from '../../src/features/profile/context/ProfileContext';
-import { useAuth } from '../../contexts/AuthContext';
-import { useSubscription } from '../../contexts/SubscriptionContext';
-import { SubscriptionManager } from '../../src/components/SubscriptionManager';
+import { useProfile } from '../../../src/features/profile/context/ProfileContext';
+import { useAuth } from '../../../contexts/AuthContext';
+import { useSubscription } from '../../../contexts/SubscriptionContext';
+import { SubscriptionManager } from '../../../src/components/SubscriptionManager';
 
 export default function ProfileScreen() {
   const { profile, stats, loading, refreshing, refreshProfile } = useProfile();

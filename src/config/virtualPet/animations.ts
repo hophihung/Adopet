@@ -20,7 +20,7 @@ export type PetMood = 'idle' | 'happy' | 'sad' | 'eating' | 'sleeping' | 'playin
  */
 export type EvolutionStage = 1 | 2 | 3 | 4;
 
-export const EVOLUTION_LEVELS: EvolutionStage[] = [1, 10, 30, 50];
+export const EVOLUTION_LEVELS: number[] = [1, 10, 30, 50];
 
 /**
  * Get evolution stage từ level

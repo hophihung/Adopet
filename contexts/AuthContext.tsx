@@ -25,7 +25,7 @@ interface AuthContextType {
   signInWithGoogle: () => Promise<void>;
   signInWithFacebook: () => Promise<void>;
   signOut: () => Promise<void>;
-  createProfile: (role: 'user' | 'seller') => Promise<void>;
+  createProfile: (role: 'user' | 'seller') => Promise<'user' | 'seller'>;
   refreshProfile: () => Promise<void>;
   completeOnboarding: () => Promise<void>;
 }
@@ -142,7 +142,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setSession(data.session);
       setUser(data.session.user);
       await fetchProfile(data.session.user.id);
-      router.replace('/(tabs)');
+      router.replace('/(tabs)/discover/match' as any);
     }
 
     setLoading(false);

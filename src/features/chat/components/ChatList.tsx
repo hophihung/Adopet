@@ -13,6 +13,7 @@ import { Swipeable } from 'react-native-gesture-handler';
 import { MessageCircle, Heart } from 'lucide-react-native';
 import { ChatService, Conversation } from '../services/chat.service';
 import { useAuth } from '../../../../contexts/AuthContext';
+import { colors } from '@/src/theme/colors';
 
 interface ChatListProps {
   onConversationSelect: (conversation: Conversation) => void;
@@ -144,7 +145,7 @@ export function ChatList({ onConversationSelect }: ChatListProps) {
             </View>
 
             <View style={styles.petInfo}>
-              <Heart size={12} color="#FF5A75" />
+              <Heart size={12} color={colors.primary} />
               <Text style={styles.petName}>
                 {`${pet?.name || 'Unknown Pet'} • ${pet?.type || 'Pet'}`}
               </Text>
@@ -165,7 +166,7 @@ export function ChatList({ onConversationSelect }: ChatListProps) {
   if (loading) {
     return (
       <View style={styles.loadingContainer}>
-        <ActivityIndicator size="large" color="#FF5A75" />
+        <ActivityIndicator size="large" color={colors.primary} />
         <Text style={styles.loadingText}>Đang tải cuộc trò chuyện...</Text>
       </View>
     );
@@ -174,7 +175,7 @@ export function ChatList({ onConversationSelect }: ChatListProps) {
   if (conversations.length === 0) {
     return (
       <View style={styles.emptyContainer}>
-        <MessageCircle size={64} color="#ccc" />
+        <MessageCircle size={64} color={colors.textTertiary} />
         <Text style={styles.emptyTitle}>Chưa có cuộc trò chuyện nào</Text>
         <Text style={styles.emptySubtitle}>
           Thích một pet để bắt đầu trò chuyện với người bán!
@@ -197,36 +198,37 @@ export function ChatList({ onConversationSelect }: ChatListProps) {
 const styles = StyleSheet.create({
   list: {
     flex: 1,
-    backgroundColor: '#fff',
+    backgroundColor: colors.background,
   },
   loadingContainer: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: '#fff',
+    backgroundColor: colors.background,
   },
   loadingText: {
     marginTop: 16,
     fontSize: 16,
-    color: '#666',
+    color: colors.textSecondary,
+    fontWeight: '500',
   },
   emptyContainer: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: '#fff',
+    backgroundColor: colors.background,
     paddingHorizontal: 40,
   },
   emptyTitle: {
     fontSize: 20,
     fontWeight: '600',
-    color: '#333',
+    color: colors.text,
     marginTop: 16,
     textAlign: 'center',
   },
   emptySubtitle: {
     fontSize: 14,
-    color: '#666',
+    color: colors.textSecondary,
     marginTop: 8,
     textAlign: 'center',
     lineHeight: 20,
@@ -236,7 +238,8 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     paddingVertical: 16,
     borderBottomWidth: 1,
-    borderBottomColor: '#f0f0f0',
+    borderBottomColor: colors.border,
+    backgroundColor: colors.surface,
   },
   avatarContainer: {
     position: 'relative',
@@ -246,21 +249,31 @@ const styles = StyleSheet.create({
     width: 50,
     height: 50,
     borderRadius: 25,
-    backgroundColor: '#f0f0f0',
+    backgroundColor: colors.backgroundSecondary,
+    borderWidth: 2,
+    borderColor: colors.border,
   },
   unreadBadge: {
     position: 'absolute',
     top: -4,
     right: -4,
-    backgroundColor: '#FF5A75',
+    backgroundColor: colors.error,
     borderRadius: 10,
     minWidth: 20,
     height: 20,
     justifyContent: 'center',
     alignItems: 'center',
+    paddingHorizontal: 4,
+    borderWidth: 2,
+    borderColor: colors.background,
+    shadowColor: colors.error,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.3,
+    shadowRadius: 4,
+    elevation: 3,
   },
   unreadText: {
-    color: '#fff',
+    color: colors.textInverse,
     fontSize: 10,
     fontWeight: '700',
   },
@@ -277,26 +290,50 @@ const styles = StyleSheet.create({
   userName: {
     fontSize: 16,
     fontWeight: '600',
-    color: '#333',
+    color: colors.text,
     flex: 1,
   },
   timeText: {
     fontSize: 12,
-    color: '#999',
+    color: colors.textTertiary,
+    fontWeight: '500',
   },
   petInfo: {
     flexDirection: 'row',
     alignItems: 'center',
     marginBottom: 4,
+    marginTop: 2,
   },
   petName: {
     fontSize: 12,
-    color: '#FF5A75',
+    color: colors.primary,
     marginLeft: 4,
     fontWeight: '500',
   },
   lastMessage: {
     fontSize: 14,
-    color: '#666',
+    color: colors.textSecondary,
+    fontWeight: '400',
+    marginTop: 2,
+  },
+  rightActions: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'flex-end',
+    paddingRight: 20,
+    height: '100%',
+  },
+  deleteButton: {
+    backgroundColor: colors.error,
+    justifyContent: 'center',
+    alignItems: 'center',
+    width: 80,
+    height: '100%',
+    borderRadius: 0,
+  },
+  deleteText: {
+    color: '#fff',
+    fontSize: 14,
+    fontWeight: '600',
   },
 });

@@ -116,7 +116,7 @@ class PaymentService {
         color: plan.color,
         icon: plan.icon,
         is_popular: plan.is_popular,
-        features: plan.plan_features.map(feature => ({
+        features: plan.plan_features.map((feature: any) => ({
           key: feature.feature_key,
           name: feature.feature_name,
           value: feature.feature_value,

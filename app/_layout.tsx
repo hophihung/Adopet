@@ -37,7 +37,7 @@ function RootLayoutNav() {
       } else {
         // Đã hoàn thành tất cả -> vào main app
         if (inAuthGroup) {
-          router.replace('/(tabs)');
+          router.replace('/(tabs)/discover/match');
         }
       }
     }

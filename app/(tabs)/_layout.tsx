@@ -1,29 +1,26 @@
 import { Tabs } from 'expo-router';
-import {
-  Users,
-  MessageCircle,
-  User,
-  Heart,
-  PawPrint,
-  Bell,
-  Sparkles,
-} from 'lucide-react-native';
-import { View } from 'react-native';
+import { Compass, Users, PawPrint, User, Bell } from 'lucide-react-native';
+import { colors } from '@/src/theme/colors';
 
 export default function TabLayout() {
   return (
     <Tabs
       screenOptions={{
         headerShown: false,
-        tabBarActiveTintColor: '#FF5A75',
-        tabBarInactiveTintColor: '#999',
+        tabBarActiveTintColor: colors.primary,
+        tabBarInactiveTintColor: colors.textTertiary,
         tabBarStyle: {
-          backgroundColor: '#fff',
+          backgroundColor: colors.tabBarBackground,
           borderTopWidth: 1,
-          borderTopColor: '#f0f0f0',
+          borderTopColor: colors.borderLight,
           height: 65,
           paddingBottom: 8,
           paddingTop: 8,
+          elevation: 8,
+          shadowColor: colors.primary,
+          shadowOffset: { width: 0, height: -2 },
+          shadowOpacity: 0.1,
+          shadowRadius: 8,
         },
         tabBarLabelStyle: {
           fontSize: 11,
@@ -31,99 +28,38 @@ export default function TabLayout() {
         },
       }}
     >
-      {/* ========================================
-          PHẦN 1: CÁC ROUTE ẨN (ĐẶT Ở ĐẦU)
-          ======================================== */}
-
-      {/* Ẩn Explore khỏi Bottom Tab Bar */}
+      {/* Discover Group - Match + Explore */}
       <Tabs.Screen
-        name="explore"
+        name="discover"
         options={{
-          href: null,
+          title: 'Khám phá',
+          tabBarIcon: ({ color, size }) => <Compass size={26} color={color} />,
         }}
       />
 
-      {/* Ẩn Reel khỏi Bottom Tab Bar */}
+      {/* Social Group - Community + Chat */}
       <Tabs.Screen
-        name="reel"
+        name="social"
         options={{
-          // tabBarButton: () => null,
-          href: null,
-        }}
-      />
-
-      {/* ========================================
-          PHẦN 2: CÁC NÚT HIỂN THỊ TRÊN BOTTOM BAR
-          ======================================== */}
-
-      <Tabs.Screen
-        name="index"
-        options={{
-          title: '',
-          tabBarIcon: ({ color, size }) => <Heart size={26} color={color} />,
-        }}
-      />
-
-      <Tabs.Screen
-        name="community"
-        options={{
-          title: '',
+          title: 'Cộng đồng',
           tabBarIcon: ({ color, size }) => <Users size={26} color={color} />,
         }}
       />
 
+      {/* Pets Group - My Pets + Virtual Pet */}
       <Tabs.Screen
-        name="chat"
+        name="pets"
         options={{
-          title: '',
-          tabBarIcon: ({ color, size }) => (
-            <View>
-              <MessageCircle size={26} color={color} />
-              {/* chấm đỏ thông báo */}
-              <View
-                style={{
-                  position: 'absolute',
-                  top: -2,
-                  right: -2,
-                  width: 8,
-                  height: 8,
-                  borderRadius: 4,
-                  backgroundColor: '#FF5A75',
-                }}
-              />
-            </View>
-          ),
-        }}
-      />
-
-      <Tabs.Screen
-        name="my-pets"
-        options={{
-          title: '',
+          title: 'Pets',
           tabBarIcon: ({ color, size }) => <PawPrint size={26} color={color} />,
         }}
       />
 
+      {/* Me Group - Reminders + Profile */}
       <Tabs.Screen
-        name="virtual-pet"
+        name="me"
         options={{
-          title: '',
-          tabBarIcon: ({ color, size }) => <Sparkles size={26} color={color} />,
-        }}
-      />
-
-      <Tabs.Screen
-        name="reminders"
-        options={{
-          title: '',
-          tabBarIcon: ({ color, size }) => <Bell size={26} color={color} />,
-        }}
-      />
-
-      <Tabs.Screen
-        name="profile"
-        options={{
-          title: '',
+          title: 'Tôi',
           tabBarIcon: ({ color, size }) => <User size={26} color={color} />,
         }}
       />

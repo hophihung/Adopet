@@ -79,16 +79,16 @@ export default function MatchScreen() {
     (destination: 'match' | 'explore') => {
       setActiveTopTab(destination);
       if (destination === 'match') {
-        router.replace('/(tabs)');
+        router.replace('/(tabs)/discover/match');
       } else {
-        router.replace('/explore');
+        router.replace('/(tabs)/discover/explore');
       }
     },
     [router]
   );
 
   const handleOpenReel = useCallback(() => {
-    router.push('/reel');
+    router.push('/(tabs)/discover/reel');
   }, [router]);
 
   const loadPets = async () => {
@@ -459,7 +459,7 @@ export default function MatchScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#fff' },
+  container: { flex: 1, backgroundColor: '#FFFFFF' },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -467,17 +467,18 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     paddingTop: 50,
     paddingBottom: 16,
+    backgroundColor: '#FFFFFF',
   },
   brand: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 10,
   },
-  brandText: { fontSize: 26, fontWeight: '700', color: '#FF3B5C' },
+  brandText: { fontSize: 26, fontWeight: '700', color: '#6366F1' },
   topNav: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#F7F9FC',
+    backgroundColor: '#F8F9FA',
     borderRadius: 24,
     padding: 4,
     marginHorizontal: 16,
@@ -488,21 +489,21 @@ const styles = StyleSheet.create({
     borderRadius: 20,
   },
   topNavButtonActive: {
-    backgroundColor: '#FFE4EC',
+    backgroundColor: '#EEF2FF',
   },
   topNavText: {
     fontSize: 14,
     fontWeight: '600',
-    color: '#7A7F85',
+    color: '#6B7280',
   },
   topNavTextActive: {
-    color: '#FF3B5C',
+    color: '#6366F1',
   },
   headerActionButton: {
     width: 44,
     height: 44,
     borderRadius: 22,
-    backgroundColor: '#FFE8F0',
+    backgroundColor: '#F8F9FA',
     alignItems: 'center',
     justifyContent: 'center',
   },

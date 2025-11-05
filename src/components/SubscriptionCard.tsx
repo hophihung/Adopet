@@ -52,7 +52,7 @@ export function SubscriptionCard({
         activeOpacity={0.8}
       >
         <LinearGradient
-          colors={isCurrentPlan ? ['#34C759', '#30D158'] : plan.gradient}
+          colors={(isCurrentPlan ? ['#34C759', '#30D158'] : plan.gradient) as [string, string, ...string[]]}
           style={styles.planGradient}
         >
           <View style={styles.planHeader}>

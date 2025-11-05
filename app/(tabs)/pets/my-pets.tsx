@@ -9,9 +9,9 @@ import {
   RefreshControl,
 } from 'react-native';
 import { useRouter } from 'expo-router';
-import { usePetManagement } from '../../src/features/pets/hooks/usePetManagement';
-import { PetLimitBanner } from '../../src/features/pets/components/PetLimitBanner';
-import { PetCard } from '../../src/features/pets/components/PetCard';
+import { usePetManagement } from '../../../src/features/pets/hooks/usePetManagement';
+import { PetLimitBanner } from '../../../src/features/pets/components/PetLimitBanner';
+import { PetCard } from '../../../src/features/pets/components/PetCard';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Plus, Edit2, Trash2, PawPrint } from 'lucide-react-native';
 

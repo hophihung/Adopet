@@ -132,12 +132,13 @@ export function useSubscription(): UseSubscriptionReturn {
       }
 
       // Update subscription after successful payment
+      const paymentId = 'id' in paymentResult ? paymentResult.id : paymentResult.orderId;
       await paymentService.updateSubscription(
         user.id,
         planId,
         billingCycle,
         paymentMethod,
-        paymentResult.id || paymentResult.orderId
+        paymentId
       );
 
       // Refresh plan data

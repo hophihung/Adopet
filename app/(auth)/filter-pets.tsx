@@ -52,12 +52,12 @@ export default function FilterPetScreen() {
 
   const handleContinue = async () => {
     await completeOnboarding();
-    router.replace('/(tabs)');
+    router.replace('/(tabs)/discover/match');
   };
 
   const handleSkip = async () => {
     await completeOnboarding();
-    router.replace('/(tabs)');
+    router.replace('/(tabs)/discover/match');
   };
 
   const displayAgeLabel = () => {

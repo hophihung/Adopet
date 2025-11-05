@@ -9,20 +9,17 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { MessageCircle, Bell } from 'lucide-react-native';
 import { LinearGradient } from 'expo-linear-gradient';
-import { ChatList } from '../../src/features/chat/components/ChatList';
-import { ChatScreen } from '../../src/features/chat/components/ChatScreen';
-import {
-  ChatService,
-  Conversation,
-  Notification,
-} from '../../src/features/chat/services/chat.service';
-import { useAuth } from '../../contexts/AuthContext';
+import { useAuth } from '@/contexts/AuthContext';
+import { ChatScreen, ChatList } from '@/src/components';
+import { Conversation, ChatService, type Notification as ChatNotification } from '@/src/features/chat';
+import { colors } from '@/src/theme/colors';
+
 
 export default function ChatTabScreen() {
   const { user } = useAuth();
   const [selectedConversation, setSelectedConversation] =
     useState<Conversation | null>(null);
-  const [notifications, setNotifications] = useState<Notification[]>([]);
+  const [notifications, setNotifications] = useState<ChatNotification[]>([]);
   const [unreadCount, setUnreadCount] = useState(0);
   const [loading, setLoading] = useState(true);
 
@@ -84,7 +81,7 @@ export default function ChatTabScreen() {
     loadUnreadCount(); // Refresh unread count when going back
   };
 
-  const handleNotificationPress = async (notification: Notification) => {
+  const handleNotificationPress = async (notification: ChatNotification) => {
     // Mark notification as read
     try {
       await ChatService.markNotificationAsRead(notification.id);
@@ -121,7 +118,7 @@ export default function ChatTabScreen() {
     <SafeAreaView style={styles.container} edges={['top']}>
       {/* Header with Gradient */}
       <LinearGradient
-        colors={['#FF6B6B', '#FF8E53']}
+        colors={[colors.primary, colors.primaryDark]}
         style={styles.headerGradient}
       >
         <View style={styles.headerRow}>
@@ -161,7 +158,7 @@ export default function ChatTabScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#F5F7FA',
+    backgroundColor: colors.background,
   },
   headerGradient: {
     paddingTop: 48,
@@ -193,7 +190,7 @@ const styles = StyleSheet.create({
     marginLeft: 8,
   },
   unreadText: {
-    color: '#FF6B6B',
+    color: colors.primary,
     fontSize: 12,
     fontWeight: '700',
   },

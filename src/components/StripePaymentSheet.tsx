@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
 import { View, StyleSheet, Alert, ActivityIndicator } from 'react-native';
 import { Button, Text } from 'react-native-paper';
-import { useStripe, CardField } from '@stripe/stripe-react-native';
+// TODO: Install @stripe/stripe-react-native
+// import { useStripe, CardField } from '@stripe/stripe-react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { paymentService } from '../services/payment.service';
 import { useAuth } from '@/contexts/AuthContext';
@@ -23,7 +24,9 @@ export function StripePaymentSheet({
   onSuccess,
   onCancel,
 }: StripePaymentSheetProps) {
-  const { confirmPayment } = useStripe();
+  // TODO: Uncomment when Stripe is installed
+  // const { confirmPayment } = useStripe();
+  const confirmPayment = null as any;
   const { user, profile } = useAuth();
   const [loading, setLoading] = useState(false);
   const [cardComplete, setCardComplete] = useState(false);
@@ -46,8 +49,7 @@ export function StripePaymentSheet({
       const paymentIntent = await paymentService.createPaymentIntent(
         planId,
         billingCycle,
-        user.id,
-        user.email
+        'stripe'
       );
 
       if (!paymentIntent.client_secret) {
@@ -124,17 +126,19 @@ export function StripePaymentSheet({
           Card Information
         </Text>
         
-        <CardField
+        {/* TODO: Uncomment when Stripe is installed */}
+        {/* <CardField
           postalCodeEnabled={false}
           placeholders={{
             number: '4242 4242 4242 4242',
           }}
           cardStyle={styles.card}
           style={styles.cardField}
-          onCardChange={(cardDetails) => {
+          onCardChange={(cardDetails: any) => {
             setCardComplete(cardDetails.complete);
           }}
-        />
+        /> */}
+        <Text>Stripe payment integration pending</Text>
 
         <Text variant="bodySmall" style={styles.helperText}>
           💳 Test card: 4242 4242 4242 4242 (any future date, any CVC)

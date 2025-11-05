@@ -102,9 +102,33 @@ else if (!hasCompletedOnboarding) {
 }
 else {
   // State 4: Hoàn thành
-  → /(tabs) - Home
+  → /(tabs)/home - Home (Match screen)
 }
 ```
+
+## 📱 App Structure (Nested Tabs)
+
+### Main Tabs (Bottom Bar - 4 tabs):
+1. **/(tabs)/home** - Trang chủ
+   - Nested: Match (index) | Community | Explore | Reel (hidden)
+2. **/(tabs)/pets** - Pets
+   - Nested: My Pets | Virtual Pet
+3. **/(tabs)/activity** - Hoạt động
+   - Nested: Chat | Reminders
+4. **/(tabs)/profile** - Cá nhân
+
+### Route Mapping:
+
+| Old Path | New Path | Notes |
+|----------|----------|-------|
+| `/(tabs)` | `/(tabs)/home` | Home group (default: Match) |
+| `/explore` | `/(tabs)/home/explore` | Nested trong home |
+| `/reel` | `/(tabs)/home/reel` | Nested trong home (hidden) |
+| `/chat` | `/(tabs)/activity/chat` | Nested trong activity |
+| `/reminders` | `/(tabs)/activity/reminders` | Nested trong activity |
+| `/my-pets` | `/(tabs)/pets/my-pets` | Nested trong pets |
+| `/virtual-pet` | `/(tabs)/pets/virtual-pet` | Nested trong pets |
+| `/profile` | `/(tabs)/profile` | Root level |
 
 ## 🚫 Prevent Skipping
 

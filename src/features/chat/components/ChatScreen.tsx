@@ -130,8 +130,8 @@ export function ChatScreen({ conversation, onBack }: ChatScreenProps) {
   const renderMessage = ({ item }: { item: Message }) => {
     const isMe = item.sender_id === user?.id;
     
-    // Special rendering for pet_like with meta
-    if (item.message_type === 'pet_like' && item.meta) {
+    // Special rendering for system messages with meta
+    if (item.message_type === 'system' && item.meta) {
       const meta = item.meta as any;
       return (
         <View style={[styles.messageContainer, isMe ? styles.myMessage : styles.otherMessage]}>

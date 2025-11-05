@@ -15,6 +15,8 @@ import { LevelUpModal, petColors, petEmojis, PetSelectionModal, PetType } from '
 import { CheckinCalendar } from '@/src/features/virtualPet/components/CheckinCalendar';
 import { PixelPetAnimation } from '@/src/features/virtualPet/components/PixelPetAnimation';
 import { getEvolutionStageName, getEvolutionStage } from '@/src/config/virtualPet/animations';
+import { GamerBackground } from '@/src/components/backgrounds/GamerBackground';
+import { colors } from '@/src/theme/colors';
 
 
 
@@ -130,32 +132,34 @@ export default function VirtualPetScreen() {
   const moodColor = virtualPet.mood >= 80 ? '#34C759' : virtualPet.mood >= 50 ? '#FF9500' : '#FF3B30';
 
   return (
-    <View style={styles.container}>
-      {/* Header */}
-      <LinearGradient colors={[colors.primary, colors.secondary]} style={styles.headerGradient}>
-        <View style={styles.header}>
-          <View>
-            <Text style={styles.headerTitle}>{virtualPet.name}</Text>
-            <Text style={styles.headerSubtitle}>
-              {petEmojis[virtualPet.pet_type]} Level {virtualPet.level} • {getEvolutionStageName(getEvolutionStage(virtualPet.level))}
-            </Text>
-          </View>
-          <TouchableOpacity
-            style={styles.calendarButton}
-            onPress={() => setShowCheckinCalendar(true)}
-          >
-            <View style={styles.calendarButtonBadge}>
-              <Calendar size={20} color={colors.primary} />
-              <Text style={styles.calendarButtonText}>{virtualPet.streak_days}</Text>
+    <GamerBackground intensity="medium">
+      <View style={styles.container}>
+        {/* Header */}
+        <View style={styles.headerGradient}>
+          <View style={styles.header}>
+            <View>
+              <Text style={styles.headerTitle}>{virtualPet.name}</Text>
+              <Text style={styles.headerSubtitle}>
+                {petEmojis[virtualPet.pet_type]} Level {virtualPet.level} • {getEvolutionStageName(getEvolutionStage(virtualPet.level))}
+              </Text>
             </View>
-          </TouchableOpacity>
+            <TouchableOpacity
+              style={styles.calendarButton}
+              onPress={() => setShowCheckinCalendar(true)}
+            >
+              <View style={styles.calendarButtonBadge}>
+                <Calendar size={20} color={colors.primary} />
+                <Text style={styles.calendarButtonText}>{virtualPet.streak_days}</Text>
+              </View>
+            </TouchableOpacity>
+          </View>
         </View>
-      </LinearGradient>
 
       <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
         {/* Pet Display */}
         <View style={styles.petContainer}>
-          <View style={[styles.petBackground, { backgroundColor: colors.accent }]}>
+          <View style={styles.petBackground}>
+            <View style={styles.petGlow} />
             <PixelPetAnimation
               petType={virtualPet.pet_type}
               mood={currentMoodState}
@@ -322,14 +326,15 @@ export default function VirtualPetScreen() {
           petType={virtualPet.pet_type}
         />
       )}
-    </View>
+      </View>
+    </GamerBackground>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#F5F7FA',
+    backgroundColor: 'transparent',
   },
   centerContainer: {
     flex: 1,
@@ -346,6 +351,9 @@ const styles = StyleSheet.create({
     paddingTop: 50,
     paddingBottom: 20,
     paddingHorizontal: 20,
+    backgroundColor: 'rgba(10, 14, 39, 0.8)',
+    borderBottomWidth: 1,
+    borderBottomColor: 'rgba(99, 102, 241, 0.3)',
   },
   header: {
     flexDirection: 'row',
@@ -358,30 +366,30 @@ const styles = StyleSheet.create({
   calendarButtonBadge: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: 'rgba(255, 255, 255, 0.9)',
+    backgroundColor: 'rgba(255, 255, 255, 0.15)',
     paddingHorizontal: 12,
     paddingVertical: 8,
     borderRadius: 20,
     gap: 6,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
+    borderWidth: 1,
+    borderColor: 'rgba(99, 102, 241, 0.3)',
   },
   calendarButtonText: {
     fontSize: 14,
     fontWeight: '700',
-    color: '#333',
+    color: '#FFFFFF',
   },
   headerTitle: {
     fontSize: 28,
     fontWeight: '800',
-    color: '#FFF',
+    color: '#FFFFFF',
+    textShadowColor: '#6366F1',
+    textShadowOffset: { width: 0, height: 0 },
+    textShadowRadius: 10,
   },
   headerSubtitle: {
     fontSize: 16,
-    color: 'rgba(255, 255, 255, 0.9)',
+    color: 'rgba(255, 255, 255, 0.8)',
     marginTop: 4,
     fontWeight: '500',
   },
@@ -398,11 +406,20 @@ const styles = StyleSheet.create({
     borderRadius: 110,
     justifyContent: 'center',
     alignItems: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.15,
-    shadowRadius: 16,
-    elevation: 8,
+    position: 'relative',
+  },
+  petGlow: {
+    position: 'absolute',
+    width: 240,
+    height: 240,
+    borderRadius: 120,
+    backgroundColor: '#6366F1',
+    opacity: 0.2,
+    shadowColor: '#6366F1',
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0.8,
+    shadowRadius: 20,
+    elevation: 10,
   },
   statsContainer: {
     paddingHorizontal: 20,
@@ -410,12 +427,14 @@ const styles = StyleSheet.create({
     marginBottom: 20,
   },
   statCard: {
-    backgroundColor: '#FFF',
+    backgroundColor: 'rgba(255, 255, 255, 0.05)',
     borderRadius: 16,
     padding: 20,
-    shadowColor: '#000',
+    borderWidth: 1,
+    borderColor: 'rgba(99, 102, 241, 0.2)',
+    shadowColor: '#6366F1',
     shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
+    shadowOpacity: 0.3,
     shadowRadius: 8,
     elevation: 3,
   },
@@ -428,14 +447,14 @@ const styles = StyleSheet.create({
   statTitle: {
     fontSize: 16,
     fontWeight: '600',
-    color: '#333',
+    color: '#FFFFFF',
   },
   progressContainer: {
     gap: 8,
   },
   progressBar: {
     height: 12,
-    backgroundColor: '#F0F0F0',
+    backgroundColor: 'rgba(255, 255, 255, 0.1)',
     borderRadius: 6,
     overflow: 'hidden',
   },
@@ -446,28 +465,28 @@ const styles = StyleSheet.create({
   progressText: {
     fontSize: 14,
     fontWeight: '600',
-    color: '#666',
+    color: '#FFFFFF',
   },
   streakText: {
     fontSize: 18,
     fontWeight: '700',
-    color: '#333',
+    color: '#FFFFFF',
     marginTop: 8,
   },
   warningText: {
     fontSize: 14,
-    color: '#FF3B30',
+    color: '#EF4444',
     marginTop: 4,
   },
   evolutionText: {
     fontSize: 18,
     fontWeight: '700',
-    color: '#333',
+    color: '#FFFFFF',
     marginTop: 8,
   },
   evolutionNextText: {
     fontSize: 14,
-    color: '#666',
+    color: 'rgba(255, 255, 255, 0.7)',
     marginTop: 4,
   },
   evolutionMaxText: {
@@ -497,6 +516,8 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     gap: 12,
+    borderWidth: 1,
+    borderColor: 'rgba(99, 102, 241, 0.3)',
   },
   checkinButtonText: {
     fontSize: 18,
@@ -510,21 +531,18 @@ const styles = StyleSheet.create({
   },
   infoCard: {
     flexDirection: 'row',
-    backgroundColor: '#FFF',
+    backgroundColor: 'rgba(255, 255, 255, 0.05)',
     borderRadius: 12,
     padding: 16,
     gap: 12,
     alignItems: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
-    shadowRadius: 4,
-    elevation: 2,
+    borderWidth: 1,
+    borderColor: 'rgba(99, 102, 241, 0.2)',
   },
   infoText: {
     flex: 1,
     fontSize: 14,
-    color: '#666',
+    color: 'rgba(255, 255, 255, 0.8)',
     lineHeight: 20,
   },
   emptyContainer: {

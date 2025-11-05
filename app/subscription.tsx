@@ -124,7 +124,7 @@ export default function SubscriptionScreen() {
 
       // Navigate to home
       setTimeout(() => {
-        router.replace('/(tabs)');
+        router.replace('/(tabs)/discover/match');
       }, 1000);
     } catch (error) {
       Alert.alert(
@@ -138,7 +138,7 @@ export default function SubscriptionScreen() {
   };
 
   const handleSkip = () => {
-    router.replace('/(tabs)');
+    router.replace('/(tabs)/discover/match' as any);
   };
 
   if (loading) {
