@@ -22,11 +22,27 @@ serve(async (req) => {
       cancel_url,
     } = await req.json();
 
-    // Validate input
-    if (!transaction_id || !amount || !pet_name || !transaction_code) {
+    // Validate input (transaction_code is optional for free transactions)
+    if (!transaction_id || amount === undefined || !pet_name) {
       return new Response(
         JSON.stringify({
-          error: 'Missing required fields: transaction_id, amount, pet_name, transaction_code',
+          error: 'Missing required fields: transaction_id, amount, pet_name',
+        }),
+        {
+          status: 400,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        }
+      );
+    }
+
+    // Nếu amount = 0 hoặc miễn phí, không tạo PayOS payment link
+    if (!amount || amount <= 0) {
+      return new Response(
+        JSON.stringify({
+          error: 'Cannot create payment link for free transaction (amount = 0)',
+          payment_url: null,
+          payment_link_id: null,
+          qr_code: null,
         }),
         {
           status: 400,

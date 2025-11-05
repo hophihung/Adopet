@@ -332,7 +332,8 @@ export function TransactionCard({
         </View>
       )}
 
-      {isBuyer && (
+      {/* Chỉ hiển thị buyer actions nếu có số tiền > 0 (không miễn phí) */}
+      {isBuyer && transaction.amount > 0 && (
         <View style={styles.buyerActions}>
           <Text style={styles.instructionText}>
             Chọn phương thức thanh toán:
@@ -389,6 +390,15 @@ export function TransactionCard({
               </>
             )}
           </TouchableOpacity>
+        </View>
+      )}
+
+      {/* Nếu miễn phí, hiển thị thông báo cho buyer */}
+      {isBuyer && transaction.amount <= 0 && (
+        <View style={styles.freeBuyerInfo}>
+          <Text style={styles.freeBuyerText}>
+            🎉 Giao dịch này hoàn toàn miễn phí. Không cần thanh toán.
+          </Text>
         </View>
       )}
 
@@ -556,6 +566,20 @@ const styles = StyleSheet.create({
     color: '#666',
     textAlign: 'center',
     marginBottom: 8,
+  },
+  freeBuyerInfo: {
+    marginTop: 16,
+    padding: 16,
+    backgroundColor: '#E8F5E9',
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: '#4CAF50',
+  },
+  freeBuyerText: {
+    fontSize: 14,
+    color: '#4CAF50',
+    textAlign: 'center',
+    fontWeight: '600',
   },
   petImage: {
     width: '100%',

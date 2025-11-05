@@ -96,24 +96,33 @@ export function PayOSPaymentSheet({
 
     try {
       setLoading(true);
+      
+      // Kiểm tra trạng thái thanh toán từ PayOS
       const paymentInfo = await PayOSTransactionService.getPaymentLinkInfo(
         paymentLink.payment_link_id
       );
 
-      // Check if payment is completed
-      if (paymentInfo.status === 'PAID' || paymentInfo.status === 'success') {
-        // Confirm transaction
+      // Check if payment is completed (PayOS đã nhận tiền)
+      // PayOS trả về status: 'PAID', 'CANCELLED', 'PENDING', etc.
+      if (paymentInfo.status === 'PAID' || paymentInfo.status === 'success' || paymentInfo.status === 'COMPLETED') {
+        // PayOS đã xác nhận nhận tiền, mới confirm transaction
         await PayOSTransactionService.confirmTransactionAfterPayment(
           transactionId,
           paymentLink.payment_link_id
         );
 
-        Alert.alert('Thành công', 'Thanh toán thành công!');
+        Alert.alert('Thành công', 'PayOS đã xác nhận nhận tiền. Giao dịch đã hoàn thành!');
         onSuccess();
-      } else {
+      } else if (paymentInfo.status === 'CANCELLED' || paymentInfo.status === 'EXPIRED') {
         Alert.alert(
-          'Thanh toán chưa hoàn tất',
-          'Vui lòng hoàn tất thanh toán trên PayOS hoặc thử lại sau.'
+          'Thanh toán đã hủy',
+          'Giao dịch thanh toán đã bị hủy hoặc hết hạn. Vui lòng thử lại.'
+        );
+      } else {
+        // PENDING hoặc các status khác
+        Alert.alert(
+          'Đang chờ PayOS xác nhận',
+          'PayOS chưa xác nhận nhận tiền. Vui lòng đợi vài giây rồi thử lại.\n\nTrạng thái: ' + (paymentInfo.status || 'PENDING')
         );
       }
     } catch (error: any) {
