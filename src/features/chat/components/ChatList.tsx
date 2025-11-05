@@ -8,9 +8,10 @@ import {
   Image,
   ActivityIndicator,
   Animated,
+  Alert,
 } from 'react-native';
 import { Swipeable } from 'react-native-gesture-handler';
-import { MessageCircle, Heart } from 'lucide-react-native';
+import { MessageCircle, Heart, Trash2 } from 'lucide-react-native';
 import { ChatService, Conversation } from '../services/chat.service';
 import { useAuth } from '../../../../contexts/AuthContext';
 
@@ -50,10 +51,12 @@ export function ChatList({ onConversationSelect }: ChatListProps) {
     const subscription = ChatService.subscribeToConversationList(
       user.id,
       (conversation) => {
-        setConversations(prev => {
-          const existing = prev.find(c => c.id === conversation.id);
+        setConversations((prev) => {
+          const existing = prev.find((c) => c.id === conversation.id);
           if (existing) {
-            return prev.map(c => c.id === conversation.id ? conversation : c);
+            return prev.map((c) =>
+              c.id === conversation.id ? conversation : c
+            );
           } else {
             return [conversation, ...prev];
           }
@@ -72,16 +75,17 @@ export function ChatList({ onConversationSelect }: ChatListProps) {
     const diffInHours = (now.getTime() - date.getTime()) / (1000 * 60 * 60);
 
     if (diffInHours < 24) {
-      return date.toLocaleTimeString('vi-VN', { 
-        hour: '2-digit', 
-        minute: '2-digit' 
+      return date.toLocaleTimeString('vi-VN', {
+        hour: '2-digit',
+        minute: '2-digit',
       });
-    } else if (diffInHours < 168) { // 7 days
+    } else if (diffInHours < 168) {
+      // 7 days
       return date.toLocaleDateString('vi-VN', { weekday: 'short' });
     } else {
-      return date.toLocaleDateString('vi-VN', { 
-        day: '2-digit', 
-        month: '2-digit' 
+      return date.toLocaleDateString('vi-VN', {
+        day: '2-digit',
+        month: '2-digit',
       });
     }
   };
@@ -90,21 +94,52 @@ export function ChatList({ onConversationSelect }: ChatListProps) {
     const otherUser = user?.id === item.buyer_id ? item.seller : item.buyer;
     const pet = item.pet;
 
-    const renderRightActions = (_: any, dragX: Animated.AnimatedInterpolation<number>) => {
+    const renderRightActions = (
+      _: any,
+      dragX: Animated.AnimatedInterpolation<number>
+    ) => {
+      const scale = dragX.interpolate({
+        inputRange: [-80, 0],
+        outputRange: [1, 0],
+        extrapolate: 'clamp',
+      });
+
       return (
         <View style={styles.rightActions}>
           <TouchableOpacity
             style={styles.deleteButton}
-            onPress={async () => {
-              if (!user?.id) return;
-              try {
-                await ChatService.archiveConversation(item.id, user.id);
-                setConversations(prev => prev.filter(c => c.id !== item.id));
-              } catch (e) {
-                console.error('Error archiving conversation', e);
-              }
+            onPress={() => {
+              Alert.alert(
+                'Xóa cuộc trò chuyện',
+                'Bạn có chắc muốn xóa cuộc trò chuyện này?',
+                [
+                  {
+                    text: 'Hủy',
+                    style: 'cancel',
+                  },
+                  {
+                    text: 'Xóa',
+                    style: 'destructive',
+                    onPress: async () => {
+                      if (!user?.id) return;
+                      try {
+                        await ChatService.archiveConversation(item.id, user.id);
+                        setConversations((prev) =>
+                          prev.filter((c) => c.id !== item.id)
+                        );
+                      } catch (e) {
+                        console.error('Error archiving conversation', e);
+                        Alert.alert('Lỗi', 'Không thể xóa cuộc trò chuyện');
+                      }
+                    },
+                  },
+                ]
+              );
             }}
           >
+            <Animated.View style={{ transform: [{ scale }] }}>
+              <Trash2 size={22} color="#fff" />
+            </Animated.View>
             <Text style={styles.deleteText}>Xóa</Text>
           </TouchableOpacity>
         </View>
@@ -119,8 +154,8 @@ export function ChatList({ onConversationSelect }: ChatListProps) {
         >
           <View style={styles.avatarContainer}>
             <Image
-              source={{ 
-                uri: otherUser?.avatar_url || 'https://via.placeholder.com/50'
+              source={{
+                uri: otherUser?.avatar_url || 'https://via.placeholder.com/50',
               }}
               style={styles.avatar}
             />
@@ -151,10 +186,9 @@ export function ChatList({ onConversationSelect }: ChatListProps) {
             </View>
 
             <Text style={styles.lastMessage} numberOfLines={1}>
-              {item.unread_count && item.unread_count > 0 
+              {item.unread_count && item.unread_count > 0
                 ? `${item.unread_count} tin nhắn mới`
-                : 'Nhấn để xem cuộc trò chuyện'
-              }
+                : 'Nhấn để xem cuộc trò chuyện'}
             </Text>
           </View>
         </TouchableOpacity>
@@ -235,6 +269,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     paddingHorizontal: 20,
     paddingVertical: 16,
+    backgroundColor: '#fff',
     borderBottomWidth: 1,
     borderBottomColor: '#f0f0f0',
   },
@@ -298,5 +333,23 @@ const styles = StyleSheet.create({
   lastMessage: {
     fontSize: 14,
     color: '#666',
+  },
+  rightActions: {
+    flexDirection: 'row',
+    alignItems: 'stretch',
+  },
+  deleteButton: {
+    backgroundColor: '#FF3B30',
+    justifyContent: 'center',
+    alignItems: 'center',
+    width: 80,
+    paddingHorizontal: 12,
+    gap: 4,
+  },
+  deleteText: {
+    color: '#fff',
+    fontSize: 13,
+    fontWeight: '700',
+    marginTop: 2,
   },
 });
