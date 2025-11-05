@@ -79,6 +79,7 @@ export const PetService = {
   },
 
   // Lấy tất cả pets có sẵn (cho swipe)
+  // Loại trừ các pet đã pass (swipe left) - giống Tinder
   async getAvailablePets(userId?: string) {
     let query = supabase
       .from('pets')
@@ -100,7 +101,21 @@ export const PetService = {
 
     const { data, error } = await query;
     if (error) throw error;
-    return data;
+
+    // Loại trừ các pet đã pass (swipe left) - filter ở client side
+    if (userId && data) {
+      const { data: passedPetIds } = await supabase
+        .from('pet_passes')
+        .select('pet_id')
+        .eq('user_id', userId);
+
+      if (passedPetIds && passedPetIds.length > 0) {
+        const passedIds = new Set(passedPetIds.map((p: any) => p.pet_id));
+        return data.filter((pet: any) => !passedIds.has(pet.id));
+      }
+    }
+
+    return data || [];
   },
 
   // Tạo pet mới
@@ -289,6 +304,39 @@ export const PetService = {
 
     if (error) throw error;
     return true;
+  },
+
+  // Pass pet (swipe left) - giống Tinder, một lần pass là vĩnh viễn
+  async passPet(petId: string, userId: string) {
+    if (!userId) {
+      throw new Error('User ID is required to pass a pet');
+    }
+
+    // Check if already passed
+    const { data: existing } = await supabase
+      .from('pet_passes')
+      .select('id')
+      .eq('pet_id', petId)
+      .eq('user_id', userId)
+      .single();
+
+    if (existing) {
+      // Already passed, no need to insert again
+      return { passed: true };
+    }
+
+    // Insert pass record
+    const { data, error } = await supabase
+      .from('pet_passes')
+      .insert({
+        pet_id: petId,
+        user_id: userId,
+      })
+      .select()
+      .single();
+
+    if (error) throw error;
+    return { passed: true, data };
   },
 
   // Get pet likes

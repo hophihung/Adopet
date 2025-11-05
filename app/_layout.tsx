@@ -2,9 +2,14 @@ import { useEffect } from 'react';
 import { Stack, useRouter, useSegments } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
+import { StripeProvider } from '@stripe/stripe-react-native';
+import Constants from 'expo-constants';
 import { AuthProvider, useAuth } from '../contexts/AuthContext';
 import { SubscriptionProvider } from '../contexts/SubscriptionContext';
 import { ProfileProvider } from '../src/features/profile/context/ProfileContext';
+
+const stripePublishableKey = Constants.expoConfig?.extra?.stripePublishableKey || 
+  process.env.EXPO_PUBLIC_STRIPE_PUBLISHABLE_KEY || '';
 
 function RootLayoutNav() {
   const { user, profile, loading, hasCompletedOnboarding } = useAuth();
@@ -58,13 +63,19 @@ function RootLayoutNav() {
 export default function RootLayout() {
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
-      <AuthProvider>
-        <SubscriptionProvider>
-          <ProfileProvider>
-            <RootLayoutNav />
-          </ProfileProvider>
-        </SubscriptionProvider>
-      </AuthProvider>
+      <StripeProvider
+        publishableKey={stripePublishableKey}
+        merchantIdentifier="merchant.com.adopet"
+        urlScheme="adopet"
+      >
+        <AuthProvider>
+          <SubscriptionProvider>
+            <ProfileProvider>
+              <RootLayoutNav />
+            </ProfileProvider>
+          </SubscriptionProvider>
+        </AuthProvider>
+      </StripeProvider>
     </GestureHandlerRootView>
   );
 }

@@ -1,10 +1,11 @@
-# Stripe Payment Integration Setup Guide
+# Stripe Subscription Payment Integration Setup Guide
 
 ## 📋 Prerequisites
 
 - Stripe account (sign up at https://stripe.com)
 - Supabase project with Edge Functions enabled
 - Supabase CLI installed (`npm install -g supabase`)
+- React Native app with `@stripe/stripe-react-native` installed (✅ already done)
 
 ## 🔑 Step 1: Get Stripe API Keys
 
@@ -36,7 +37,7 @@ supabase secrets set SUPABASE_SERVICE_ROLE_KEY=your_service_role_key
 
 ### Deploy the functions
 ```bash
-supabase functions deploy create-payment-intent
+supabase functions deploy create-subscription-payment-intent
 supabase functions deploy stripe-webhook
 ```
 
@@ -63,24 +64,24 @@ supabase functions deploy stripe-webhook
 
 ## 🗄️ Step 4: Setup Database Tables
 
-Ensure your `subscriptions` table has these columns:
-```sql
-CREATE TABLE IF NOT EXISTS subscriptions (
-  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-  profile_id UUID REFERENCES profiles(id) ON DELETE CASCADE,
-  plan TEXT NOT NULL,
-  status TEXT NOT NULL DEFAULT 'active',
-  billing_cycle TEXT,
-  payment_method TEXT,
-  payment_id TEXT,
-  start_date TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-  end_date TIMESTAMPTZ,
-  auto_renew BOOLEAN DEFAULT TRUE,
-  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-  UNIQUE(profile_id)
-);
+Run the migration to create the `subscription_payments` table:
+
+```bash
+supabase db push
 ```
+
+Or manually execute `supabase/migrations/20250105_subscription_payments.sql` in Supabase SQL Editor.
+
+This creates:
+- `subscription_payments` table - Tracks Stripe payment transactions
+- `subscriptions` table - Stores user subscription plans (should already exist)
+
+Key columns in `subscription_payments`:
+- `profile_id` - User ID
+- `plan` - Subscription plan (free/premium/pro)
+- `amount` - Payment amount in VND
+- `payment_intent_id` - Stripe Payment Intent ID
+- `status` - Payment status (pending/succeeded/failed/canceled)
 
 ## 🧪 Step 5: Test Payment
 
@@ -100,13 +101,18 @@ npm run dev
 ## 📱 Testing Flow
 
 1. Sign up / Login to app
-2. Select "Seller" role
-3. Choose a paid subscription plan
-4. Click "Continue"
-5. Payment sheet will open
+2. Navigate to subscription screen
+3. Choose a paid subscription plan (Premium ₫99,000 or Pro ₫149,000)
+4. Click "Chọn gói" button
+5. Stripe Payment Sheet will open
 6. Enter test card: `4242 4242 4242 4242`
-7. Complete payment
-8. Webhook will update subscription status
+7. Enter any future expiry date and CVC
+8. Complete payment
+9. Webhook will automatically:
+   - Update `subscription_payments` status to 'succeeded'
+   - Create/update subscription in `subscriptions` table
+   - Activate subscription for user
+10. User will be redirected to main app
 
 ## 🔒 Production Checklist
 
@@ -138,4 +144,33 @@ Ensure `STRIPE_WEBHOOK_SECRET` is correctly set in Supabase secrets
 
 ### "Payment intent creation failed"
 Verify `STRIPE_SECRET_KEY` is set correctly in Edge Functions
+
+## 📊 Current Subscription Plans
+
+| Plan | Price | Pet Limit | Features |
+|------|-------|-----------|----------|
+| Free | ₫0 | 4 pets | Basic features, 5 views/day |
+| Premium | ₫99,000/month | 6 pets | Unlimited views, priority contact |
+| Pro | ₫149,000/month | 9 pets | All Premium + Analytics, Badge, API access |
+
+## 🔧 Key Files
+
+- `lib/stripe.ts` - Stripe payment service utilities
+- `contexts/SubscriptionContext.tsx` - Subscription state management
+- `app/subscription.tsx` - Subscription UI screen
+- `app/_layout.tsx` - Stripe Provider initialization
+- `supabase/functions/create-subscription-payment-intent/index.ts` - Payment intent creation
+- `supabase/functions/stripe-webhook/index.ts` - Webhook event handler
+- `supabase/migrations/20250105_subscription_payments.sql` - Database schema
+
+## 🎯 How It Works
+
+1. **User selects plan** → SubscriptionContext.createSubscription()
+2. **Payment initiated** → lib/stripe.processSubscriptionPayment()
+3. **Edge Function called** → create-subscription-payment-intent
+4. **Stripe Payment Intent created** → Returns client_secret
+5. **Payment Sheet shown** → User completes payment
+6. **Webhook triggered** → stripe-webhook function
+7. **Database updated** → Subscription activated
+8. **User redirected** → Main app with active subscription
 

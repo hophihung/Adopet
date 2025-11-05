@@ -57,20 +57,23 @@ BEGIN
     )
   );
 
-  -- Create notification for seller with pet preview
+  -- Create notification for seller with pet preview (ảnh, tên, giá)
   INSERT INTO public.notifications (user_id, type, title, body, data)
   VALUES (
     pet_record.seller_id,
     'pet_liked',
     'Có người quan tâm thú cưng của bạn',
-    COALESCE(pet_record.name, 'Thú cưng') || ' vừa được thích',
+    COALESCE(pet_record.name, 'Thú cưng') || ' - ' || 
+    COALESCE(pet_record.price::text, '0') || ' VNĐ',
     jsonb_build_object(
       'pet_id', pet_record.id,
       'buyer_id', NEW.user_id,
       'conversation_id', conversation_id,
       'thumb', pet_record.thumb,
+      'images', (SELECT images FROM public.pets WHERE id = pet_record.id),
       'name', pet_record.name,
-      'type', pet_record.type
+      'type', pet_record.type,
+      'price', pet_record.price
     )
   );
 

@@ -5,7 +5,22 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="9fcd68c1-d0d0-4c8c-a8ff-2b8e56742dc1" name="Changes" comment="">
+      <change beforePath="$PROJECT_DIR$/.env.example" beforeDir="false" afterPath="$PROJECT_DIR$/.env.example" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/STRIPE_SETUP.md" beforeDir="false" afterPath="$PROJECT_DIR$/STRIPE_SETUP.md" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/(tabs)/discover/match.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/app/(tabs)/discover/match.tsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/(tabs)/discover/reel.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/app/(tabs)/discover/reel.tsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/_layout.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/app/_layout.tsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/contexts/SubscriptionContext.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/contexts/SubscriptionContext.tsx" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/package-lock.json" beforeDir="false" afterPath="$PROJECT_DIR$/package-lock.json" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/package.json" beforeDir="false" afterPath="$PROJECT_DIR$/package.json" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/features/chat/components/ChatScreen.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/src/features/chat/components/ChatScreen.tsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/features/chat/index.ts" beforeDir="false" afterPath="$PROJECT_DIR$/src/features/chat/index.ts" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/features/chat/services/chat.service.ts" beforeDir="false" afterPath="$PROJECT_DIR$/src/features/chat/services/chat.service.ts" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/features/pets/services/pet.service.ts" beforeDir="false" afterPath="$PROJECT_DIR$/src/features/pets/services/pet.service.ts" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/supabase/.temp/cli-latest" beforeDir="false" afterPath="$PROJECT_DIR$/supabase/.temp/cli-latest" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/supabase/migrations/009_chat_pet_like_enhancement.sql" beforeDir="false" afterPath="$PROJECT_DIR$/supabase/migrations/009_chat_pet_like_enhancement.sql" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/tsconfig.json" beforeDir="false" afterPath="$PROJECT_DIR$/tsconfig.json" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />

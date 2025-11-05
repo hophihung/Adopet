@@ -14,16 +14,21 @@ export interface Conversation {
     name: string;
     images: string[];
     type: string;
+    price?: number;
   };
   buyer?: {
     id: string;
     full_name: string;
     avatar_url: string;
+    reputation_points?: number;
+    avatar_frame?: string;
   };
   seller?: {
     id: string;
     full_name: string;
     avatar_url: string;
+    reputation_points?: number;
+    avatar_frame?: string;
   };
   unread_count?: number;
 }
@@ -33,15 +38,18 @@ export interface Message {
   conversation_id: string;
   sender_id: string;
   content: string;
-  message_type: 'text' | 'image' | 'system';
+  message_type: 'text' | 'image' | 'system' | 'transaction';
   created_at: string;
   is_read: boolean;
   read_at: string | null;
+  transaction_id?: string;
   meta?: any;
   sender?: {
     id: string;
     full_name: string;
     avatar_url: string;
+    reputation_points?: number;
+    avatar_frame?: string;
   };
 }
 
@@ -78,7 +86,9 @@ export const ChatService = {
         seller:seller_id (
           id,
           full_name,
-          avatar_url
+          avatar_url,
+          reputation_points,
+          avatar_frame
         )
       `)
       .or(`buyer_id.eq.${userId},seller_id.eq.${userId}`)
@@ -107,7 +117,9 @@ export const ChatService = {
         sender:sender_id (
           id,
           full_name,
-          avatar_url
+          avatar_url,
+          reputation_points,
+          avatar_frame
         )
       `)
       .eq('conversation_id', conversationId)
@@ -122,7 +134,8 @@ export const ChatService = {
     conversationId: string,
     senderId: string,
     content: string,
-    messageType: 'text' | 'image' | 'system' = 'text'
+    messageType: 'text' | 'image' | 'system' | 'transaction' = 'text',
+    transactionId?: string
   ): Promise<Message> {
     const { data, error } = await supabase
       .from('messages')
@@ -131,13 +144,16 @@ export const ChatService = {
         sender_id: senderId,
         content,
         message_type: messageType,
+        transaction_id: transactionId || null,
       })
       .select(`
         *,
         sender:sender_id (
           id,
           full_name,
-          avatar_url
+          avatar_url,
+          reputation_points,
+          avatar_frame
         )
       `)
       .single();
@@ -268,7 +284,9 @@ export const ChatService = {
         seller:seller_id (
           id,
           full_name,
-          avatar_url
+          avatar_url,
+          reputation_points,
+          avatar_frame
         )
       `)
       .single();

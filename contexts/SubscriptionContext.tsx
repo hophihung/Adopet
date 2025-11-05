@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { supabase } from '../lib/supabaseClient';
 import { useAuth } from './AuthContext';
+import { processSubscriptionPayment } from '../lib/stripe';
 
 export type SubscriptionPlan = 'free' | 'premium' | 'pro';
 export type SubscriptionStatus = 'active' | 'canceled' | 'expired';
@@ -86,20 +87,37 @@ export function SubscriptionProvider({
         throw new Error('You already have an active subscription');
       }
 
-      const { data, error: insertError } = await supabase
-        .from('subscriptions')
-        .insert({
-          profile_id: user!.id,
-          plan,
-          status: 'active',
-          start_date: new Date().toISOString(),
-        })
-        .select()
-        .single();
+      // Free plan - create directly without payment
+      if (plan === 'free') {
+        const { data, error: insertError } = await supabase
+          .from('subscriptions')
+          .insert({
+            profile_id: user!.id,
+            plan,
+            status: 'active',
+            start_date: new Date().toISOString(),
+          })
+          .select()
+          .single();
 
-      if (insertError) throw insertError;
+        if (insertError) throw insertError;
+        setSubscription(data);
+        return;
+      }
 
-      setSubscription(data);
+      // Paid plans - process Stripe payment
+      const paymentResult = await processSubscriptionPayment({
+        plan,
+        profileId: user!.id,
+      });
+
+      if (!paymentResult.success) {
+        throw new Error(paymentResult.error || 'Payment failed');
+      }
+
+      // Payment successful - webhook will create subscription
+      // Refresh subscription to get the updated data
+      await fetchSubscription();
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Failed to create subscription';
       setError(message);
@@ -150,19 +168,35 @@ export function SubscriptionProvider({
         return;
       }
 
-      const { data, error: updateError } = await supabase
-        .from('subscriptions')
-        .update({
-          plan: newPlan,
-          updated_at: new Date().toISOString(),
-        })
-        .eq('id', subscription.id)
-        .select()
-        .single();
+      // Downgrade to free - no payment needed
+      if (newPlan === 'free') {
+        const { data, error: updateError } = await supabase
+          .from('subscriptions')
+          .update({
+            plan: newPlan,
+            updated_at: new Date().toISOString(),
+          })
+          .eq('id', subscription.id)
+          .select()
+          .single();
 
-      if (updateError) throw updateError;
+        if (updateError) throw updateError;
+        setSubscription(data);
+        return;
+      }
 
-      setSubscription(data);
+      // Upgrade to paid plan - process payment
+      const paymentResult = await processSubscriptionPayment({
+        plan: newPlan,
+        profileId: user!.id,
+      });
+
+      if (!paymentResult.success) {
+        throw new Error(paymentResult.error || 'Payment failed');
+      }
+
+      // Payment successful - webhook will update subscription
+      await fetchSubscription();
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Failed to upgrade subscription';
       setError(message);

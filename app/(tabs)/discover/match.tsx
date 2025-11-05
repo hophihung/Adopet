@@ -149,9 +149,17 @@ export default function MatchScreen() {
     swiperRef.current?.swipeRight();
   };
 
-  const handlePass = () => {
-    if (currentIndex < pets.length) {
-      trackPetView(pets[currentIndex].id);
+  const handlePass = async () => {
+    if (currentIndex < pets.length && user?.id) {
+      const petId = pets[currentIndex].id;
+      trackPetView(petId);
+      
+      // Lưu pass action - pet này sẽ không hiển thị lại
+      try {
+        await PetService.passPet(petId, user.id);
+      } catch (error) {
+        console.error('Error passing pet:', error);
+      }
     }
     swiperRef.current?.swipeLeft();
   };
@@ -393,9 +401,17 @@ export default function MatchScreen() {
               </View>
             </View>
           )}
-          onSwipedLeft={(cardIndex) => {
-            if (cardIndex < pets.length) {
+          onSwipedLeft={async (cardIndex) => {
+            if (cardIndex < pets.length && user?.id) {
+              const petId = pets[cardIndex].id;
               console.log(' Pass', pets[cardIndex].name);
+              
+              // Lưu pass action - pet này sẽ không hiển thị lại
+              try {
+                await PetService.passPet(petId, user.id);
+              } catch (error) {
+                console.error('Error passing pet:', error);
+              }
             }
             setCurrentIndex(cardIndex + 1);
           }}
