@@ -9,8 +9,8 @@ import {
   RefreshControl,
   ActivityIndicator,
   Modal,
+  Alert,
 } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
 import {
   Settings,
   Edit,
@@ -19,31 +19,64 @@ import {
   Star,
   Crown,
   User,
+  LogOut,
 } from 'lucide-react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useProfile } from '../../src/features/profile/context/ProfileContext';
 import { useAuth } from '../../contexts/AuthContext';
 import { useSubscription } from '../../contexts/SubscriptionContext';
 import { SubscriptionManager } from '../../src/components/SubscriptionManager';
+import { router } from 'expo-router';
 
 export default function ProfileScreen() {
   const { profile, stats, loading, refreshing, refreshProfile } = useProfile();
   const { signOut } = useAuth();
   const { subscription } = useSubscription();
   const [showSubscriptionModal, setShowSubscriptionModal] = useState(false);
+  const [signingOut, setSigningOut] = useState(false);
+
+  // ✅ Function xử lý sign out với confirmation
+  const handleSignOut = async () => {
+    Alert.alert('Đăng xuất', 'Bạn có chắc muốn đăng xuất khỏi tài khoản?', [
+      {
+        text: 'Hủy',
+        style: 'cancel',
+      },
+      {
+        text: 'Đăng xuất',
+        style: 'destructive',
+        onPress: async () => {
+          try {
+            setSigningOut(true);
+            await signOut();
+            // Navigate to login screen
+            router.replace('/(auth)/login');
+          } catch (error: any) {
+            console.error('Sign out error:', error);
+            Alert.alert(
+              'Lỗi',
+              error?.message || 'Không thể đăng xuất. Vui lòng thử lại.'
+            );
+          } finally {
+            setSigningOut(false);
+          }
+        },
+      },
+    ]);
+  };
 
   if (loading) {
     return (
-      <SafeAreaView style={styles.container} edges={['top']}>
+      <View style={styles.container}>
         <View style={styles.loadingContainer}>
           <ActivityIndicator size="large" color="#FF5A75" />
         </View>
-      </SafeAreaView>
+      </View>
     );
   }
 
   return (
-    <SafeAreaView style={styles.container} edges={['top']}>
+    <View style={styles.container}>
       <ScrollView
         style={styles.scrollView}
         refreshControl={
@@ -175,9 +208,19 @@ export default function ProfileScreen() {
           </TouchableOpacity>
           <TouchableOpacity
             style={[styles.menuItem, styles.signOutButton]}
-            onPress={signOut}
+            onPress={handleSignOut}
+            disabled={signingOut}
           >
-            <Text style={styles.signOutText}>Sign Out</Text>
+            <View style={styles.signOutContent}>
+              {signingOut ? (
+                <ActivityIndicator size="small" color="#FF5A75" />
+              ) : (
+                <>
+                  <LogOut size={18} color="#FF5A75" />
+                  <Text style={styles.signOutText}>Sign Out</Text>
+                </>
+              )}
+            </View>
           </TouchableOpacity>
         </View>
       </ScrollView>
@@ -189,7 +232,7 @@ export default function ProfileScreen() {
         presentationStyle="pageSheet"
         onRequestClose={() => setShowSubscriptionModal(false)}
       >
-        <SafeAreaView style={styles.modalContainer}>
+        <View style={styles.modalContainer}>
           <View style={styles.modalHeader}>
             <Text style={styles.modalTitle}>Subscription</Text>
             <TouchableOpacity
@@ -202,9 +245,9 @@ export default function ProfileScreen() {
           <SubscriptionManager
             onClose={() => setShowSubscriptionModal(false)}
           />
-        </SafeAreaView>
+        </View>
       </Modal>
-    </SafeAreaView>
+    </View>
   );
 }
 
@@ -225,6 +268,7 @@ const styles = StyleSheet.create({
     paddingTop: 48,
     paddingBottom: 16,
     paddingHorizontal: 20,
+    position: 'relative',
   },
   headerRow: {
     flexDirection: 'row',
@@ -363,6 +407,14 @@ const styles = StyleSheet.create({
   signOutButton: {
     marginTop: 10,
     backgroundColor: '#FFF0F2',
+    borderRadius: 12,
+    borderBottomWidth: 0,
+  },
+  signOutContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
   },
   signOutText: {
     fontSize: 16,

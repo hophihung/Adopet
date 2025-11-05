@@ -1,0 +1,30 @@
+npx expo install expo-notifications
+
+
+npm install --save-dev babel-plugin-module-resolver
+
+
+hương pháp	Ưu điểm	Nhược điểm
+Giữ import thông thường	Đơn giản, dễ debug	Có warning (nhưng vô hại)
+Dynamic import	Không có warning	Phức tạp hơn một chút
+
+
+Test	Thời gian	Trạng thái app	Kiểu hiển thị	Âm thanh
+Test 1	2s	Foreground	Alert-style trong app	Nhẹ
+Test 2	7s	Background	Notification banner đẹp	Đầy đủ
+Test 3	12s	Killed	Notification banner đẹp	Đầy đủ
+
+npm install expo-av
+
+npm install expo-av
+◦  Android: npm run android  → sau khi cài app dev client, chạy  và mở app đó.
+
+
+
+sua  tắt chế độ  
+
+Màn hình select-role được dùng khi user đã đăng nhập nhưng chưa có profile.
+
+
+app\(auth)\_layout.tsx 
+app\_layout.tsx

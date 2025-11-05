@@ -7,7 +7,12 @@ import { SubscriptionProvider } from '../contexts/SubscriptionContext';
 import { ProfileProvider } from '../src/features/profile/context/ProfileContext';
 
 function RootLayoutNav() {
-  const { user, profile, loading, hasCompletedOnboarding } = useAuth();
+
+  // const { user, profile, loading, hasCompletedOnboarding } = useAuth();
+
+
+  const { user, profile, loading, hasCompletedOnboarding, createProfile } =
+    useAuth();
   const segments = useSegments();
   const router = useRouter();
 
@@ -25,10 +30,17 @@ function RootLayoutNav() {
     } else {
       // Đã đăng nhập
       if (!profile) {
-        // Chưa có profile -> redirect to select role
-        if (currentScreen !== 'select-role') {
-          router.replace('/(auth)/select-role');
-        }
+
+        // // Chưa có profile -> redirect to select role
+        // if (currentScreen !== 'select-role') {
+        //   router.replace('/(auth)/select-role');
+        // }
+
+
+        // Chưa có profile -> tự động tạo profile với role 'user' (skip select-role screen)
+        createProfile('user').catch((error) => {
+          console.error('Error auto-creating profile:', error);
+        });
       } else if (!hasCompletedOnboarding) {
         // Có profile nhưng chưa hoàn thành onboarding -> redirect to filter
         if (currentScreen !== 'filter-pets') {

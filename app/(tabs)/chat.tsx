@@ -6,7 +6,6 @@ import {
   TouchableOpacity,
   ActivityIndicator,
 } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
 import { MessageCircle, Bell } from 'lucide-react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { ChatList } from '../../src/features/chat/components/ChatList';
@@ -118,7 +117,7 @@ export default function ChatTabScreen() {
   }
 
   return (
-    <SafeAreaView style={styles.container} edges={['top']}>
+    <View style={styles.container}>
       {/* Header with Gradient */}
       <LinearGradient
         colors={['#FF6B6B', '#FF8E53']}
@@ -154,7 +153,7 @@ export default function ChatTabScreen() {
 
       {/* Chat List */}
       <ChatList onConversationSelect={handleConversationSelect} />
-    </SafeAreaView>
+    </View>
   );
 }
 
@@ -167,6 +166,7 @@ const styles = StyleSheet.create({
     paddingTop: 48,
     paddingBottom: 16,
     paddingHorizontal: 20,
+    position: 'relative',
   },
   headerRow: {
     flexDirection: 'row',

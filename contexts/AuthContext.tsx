@@ -25,7 +25,7 @@ interface AuthContextType {
   signInWithGoogle: () => Promise<void>;
   signInWithFacebook: () => Promise<void>;
   signOut: () => Promise<void>;
-  createProfile: (role: 'user' | 'seller') => Promise<void>;
+  createProfile: (role: 'user' | 'seller') => Promise<'user' | 'seller'>;
   refreshProfile: () => Promise<void>;
   completeOnboarding: () => Promise<void>;
 }
@@ -58,22 +58,27 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setLoading(false);
     }, 5000);
 
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      clearTimeout(timeout);
-      setSession(session);
-      setUser(session?.user ?? null);
-      if (session?.user) {
-        fetchProfile(session.user.id);
-      } else {
+    supabase.auth
+      .getSession()
+      .then(({ data: { session } }) => {
+        clearTimeout(timeout);
+        setSession(session);
+        setUser(session?.user ?? null);
+        if (session?.user) {
+          fetchProfile(session.user.id);
+        } else {
+          setLoading(false);
+        }
+      })
+      .catch((error) => {
+        clearTimeout(timeout);
+        console.error('Error getting session:', error);
         setLoading(false);
-      }
-    }).catch((error) => {
-      clearTimeout(timeout);
-      console.error('Error getting session:', error);
-      setLoading(false);
-    });
+      });
 
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((_event, session) => {
       setSession(session);
       setUser(session?.user ?? null);
       if (session?.user) {
@@ -101,15 +106,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       }
 
       setProfile(data);
-      
+
       // Nếu là seller và chưa có subscription, đảm bảo tạo free subscription
       if (data && data.role === 'seller') {
         try {
           await supabase.rpc('ensure_seller_has_subscription', {
-            user_profile_id: userId
+            user_profile_id: userId,
           });
         } catch (subscriptionError) {
-          console.error('Error ensuring seller subscription:', subscriptionError);
+          console.error(
+            'Error ensuring seller subscription:',
+            subscriptionError
+          );
         }
       }
     } catch (error) {
@@ -147,7 +155,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     setLoading(false);
   };
-
 
   const signUpWithEmail = async (email: string, password: string) => {
     const { error } = await supabase.auth.signUp({
@@ -197,27 +204,51 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     console.log('🔵 Creating profile with role:', role);
 
-    const { error } = await supabase.from('profiles').insert({
-      id: user.id,
-      role,
-      email: user.email,
-      full_name: user.user_metadata?.full_name || user.user_metadata?.name || null,
-      avatar_url: user.user_metadata?.avatar_url || user.user_metadata?.picture || null,
-    });
+    // Check if profile already exists
+    const { data: existingProfile } = await supabase
+      .from('profiles')
+      .select('*')
+      .eq('id', user.id)
+      .maybeSingle();
 
-    if (error) {
-      console.error('🔴 Error creating profile:', error);
-      throw error;
+    if (existingProfile) {
+      console.log('🔵 Profile already exists, updating role');
+      // Update existing profile
+      const { error } = await supabase
+        .from('profiles')
+        .update({ role })
+        .eq('id', user.id);
+
+      if (error) {
+        console.error('🔴 Error updating profile:', error);
+        throw error;
+      }
+    } else {
+      // Create new profile
+      const { error } = await supabase.from('profiles').insert({
+        id: user.id,
+        role,
+        email: user.email,
+        full_name:
+          user.user_metadata?.full_name || user.user_metadata?.name || null,
+        avatar_url:
+          user.user_metadata?.avatar_url || user.user_metadata?.picture || null,
+      });
+
+      if (error) {
+        console.error('🔴 Error creating profile:', error);
+        throw error;
+      }
     }
 
-    console.log('🔵 Profile created successfully');
+    console.log('🔵 Profile created/updated successfully');
 
     // Reset onboarding when creating new profile
     await AsyncStorage.setItem('onboarding_completed', 'false');
     setHasCompletedOnboarding(false);
 
     await refreshProfile();
-    
+
     console.log('🔵 Returning role:', role);
     // Return role để component có thể xử lý redirect
     return role;

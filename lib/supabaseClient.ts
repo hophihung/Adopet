@@ -117,3 +117,20 @@ export type Subscription = {
   created_at: string;
   updated_at: string;
 };
+
+export type VirtualPet = {
+  id: string;
+  user_id: string;
+  pet_type: 'cat' | 'dog' | 'bird';
+  name: string;
+  level: number;
+  exp: number;
+  exp_to_next_level: number;
+  mood: number; // 0-100
+  last_checkin_date: string | null;
+  streak_days: number;
+  skin_id: string;
+  background_id: string;
+  created_at: string;
+  updated_at: string;
+};

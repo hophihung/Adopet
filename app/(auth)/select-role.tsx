@@ -13,7 +13,9 @@ import { router } from 'expo-router';
 export default function SelectRoleScreen() {
   const { createProfile } = useAuth();
   const [loading, setLoading] = useState(false);
-  const [selectedRole, setSelectedRole] = useState<'user' | 'seller' | null>(null);
+  const [selectedRole, setSelectedRole] = useState<'user' | 'seller' | null>(
+    null
+  );
 
   const handleSelectRole = async (role: 'user' | 'seller') => {
     setSelectedRole(role);
@@ -22,7 +24,7 @@ export default function SelectRoleScreen() {
     try {
       const createdRole = await createProfile(role);
       console.log('🔵 Created role:', createdRole);
-      
+
       // Nếu là seller, redirect đến subscription page
       if (createdRole === 'seller') {
         console.log('🔵 Redirecting seller to subscription page');
@@ -61,70 +63,72 @@ export default function SelectRoleScreen() {
             </Text>
           </View>
 
-        {/* Role Cards */}
-        <View style={styles.cards}>
-          <TouchableOpacity
-            onPress={() => !loading && handleSelectRole('user')}
-            disabled={loading}
-            activeOpacity={0.9}
-          >
-            <Card
-              style={[
-                styles.card,
-                selectedRole === 'user' && styles.selectedCard,
-              ]}
+          {/* Role Cards */}
+          <View style={styles.cards}>
+            <TouchableOpacity
+              onPress={() => !loading && handleSelectRole('user')}
+              disabled={loading}
+              activeOpacity={0.9}
             >
-              <Card.Content style={styles.cardContent}>
-                <View style={styles.emojiContainer}>
-                  <Text style={styles.emoji}>🥰</Text>
-                </View>
-                <Text variant="titleLarge" style={styles.roleTitle}>
-                  Pet Lover
-                </Text>
-                <Text variant="bodyMedium" style={styles.roleDescription}>
-                  I want to adopt and care for a pet 🐶🐱
-                </Text>
-                <View style={styles.badge}>
-                  <Text style={styles.badgeText}>Most Popular</Text>
-                </View>
-              </Card.Content>
-            </Card>
-          </TouchableOpacity>
+              <Card
+                style={[
+                  styles.card,
+                  selectedRole === 'user' && styles.selectedCard,
+                ]}
+              >
+                <Card.Content style={styles.cardContent}>
+                  <View style={styles.emojiContainer}>
+                    <Text style={styles.emoji}>🥰</Text>
+                  </View>
+                  <Text variant="titleLarge" style={styles.roleTitle}>
+                    Pet Lover
+                  </Text>
+                  <Text variant="bodyMedium" style={styles.roleDescription}>
+                    I want to adopt and care for a pet 🐶🐱
+                  </Text>
+                  <View style={styles.badge}>
+                    <Text style={styles.badgeText}>Most Popular</Text>
+                  </View>
+                </Card.Content>
+              </Card>
+            </TouchableOpacity>
 
-          <TouchableOpacity
-            onPress={() => !loading && handleSelectRole('seller')}
-            disabled={loading}
-            activeOpacity={0.9}
-          >
-            <Card
-              style={[
-                styles.card,
-                selectedRole === 'seller' && styles.selectedCard,
-              ]}
+            <TouchableOpacity
+              onPress={() => !loading && handleSelectRole('seller')}
+              disabled={loading}
+              activeOpacity={0.9}
             >
-              <Card.Content style={styles.cardContent}>
-                <View style={styles.emojiContainer}>
-                  <Text style={styles.emoji}>🏡</Text>
-                </View>
-                <Text variant="titleLarge" style={styles.roleTitle}>
-                  Pet Care Provider
-                </Text>
-                <Text variant="bodyMedium" style={styles.roleDescription}>
-                  I help pets find loving homes ✨
-                </Text>
-              </Card.Content>
-            </Card>
-          </TouchableOpacity>
-        </View>
-
-        {loading && (
-          <View style={styles.loadingContainer}>
-            <ActivityIndicator size="large" color="#FF69B4" />
-            <Text style={styles.loadingText}>🐾 Setting up your profile...</Text>
+              <Card
+                style={[
+                  styles.card,
+                  selectedRole === 'seller' && styles.selectedCard,
+                ]}
+              >
+                <Card.Content style={styles.cardContent}>
+                  <View style={styles.emojiContainer}>
+                    <Text style={styles.emoji}>🏡</Text>
+                  </View>
+                  <Text variant="titleLarge" style={styles.roleTitle}>
+                    Pet Care Provider
+                  </Text>
+                  <Text variant="bodyMedium" style={styles.roleDescription}>
+                    I help pets find loving homes ✨
+                  </Text>
+                </Card.Content>
+              </Card>
+            </TouchableOpacity>
           </View>
-        )}
+
+          {loading && (
+            <View style={styles.loadingContainer}>
+              <ActivityIndicator size="large" color="#FF69B4" />
+              <Text style={styles.loadingText}>
+                🐾 Setting up your profile...
+              </Text>
+            </View>
+          )}
+        </View>
       </View>
-    </View>
     </LinearGradient>
   );
 }
@@ -180,7 +184,6 @@ const styles = StyleSheet.create({
   selectedCard: {
     borderColor: '#FF69B4',
     backgroundColor: '#FFF0F5',
-    transform: [{ scale: 1.02 }],
   },
   cardContent: {
     alignItems: 'center',
