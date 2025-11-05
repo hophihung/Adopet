@@ -5,33 +5,7 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="9fcd68c1-d0d0-4c8c-a8ff-2b8e56742dc1" name="Changes" comment="">
-      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/FLOW.md" beforeDir="false" afterPath="$PROJECT_DIR$/FLOW.md" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/(auth)/filter-pets.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/app/(auth)/filter-pets.tsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/(tabs)/_layout.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/app/(tabs)/_layout.tsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/(tabs)/chat.tsx" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/(tabs)/community.tsx" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/(tabs)/explore.tsx" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/(tabs)/index.tsx" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/(tabs)/my-pets.tsx" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/(tabs)/profile.tsx" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/(tabs)/reel.tsx" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/(tabs)/reminders.tsx" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/(tabs)/virtual-pet.tsx" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/+not-found.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/app/+not-found.tsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/_layout.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/app/_layout.tsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/post/post-detail.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/app/post/post-detail.tsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/subscription.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/app/subscription.tsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/contexts/AuthContext.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/contexts/AuthContext.tsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/components/FeatureLimitBanner.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/src/components/FeatureLimitBanner.tsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/components/StripePaymentSheet.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/src/components/StripePaymentSheet.tsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/components/SubscriptionCard.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/src/components/SubscriptionCard.tsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/components/index.ts" beforeDir="false" afterPath="$PROJECT_DIR$/src/components/index.ts" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/config/virtualPet/animations.ts" beforeDir="false" afterPath="$PROJECT_DIR$/src/config/virtualPet/animations.ts" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/features/chat/components/ChatList.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/src/features/chat/components/ChatList.tsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/features/chat/components/ChatScreen.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/src/features/chat/components/ChatScreen.tsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/hooks/useSubscription.ts" beforeDir="false" afterPath="$PROJECT_DIR$/src/hooks/useSubscription.ts" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/services/payment.service.ts" beforeDir="false" afterPath="$PROJECT_DIR$/src/services/payment.service.ts" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/package-lock.json" beforeDir="false" afterPath="$PROJECT_DIR$/package-lock.json" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />

@@ -3,6 +3,7 @@ import { Session, User } from '@supabase/supabase-js';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { supabase } from '../lib/supabaseClient';
 import { router } from 'expo-router';
+import { getClientIPWithRetry } from '../src/utils/ipUtils';
 
 interface Profile {
   id: string;
@@ -128,33 +129,134 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const signInWithEmail = async (email: string, password: string) => {
     setLoading(true);
-    const { data, error } = await supabase.auth.signInWithPassword({
-      email,
-      password,
-    });
-    console.log('🔵 Sign-in data:', data);
-    console.log('🔵 Sign-in error:', error);
+    
+    try {
+      // Lấy IP address
+      const clientIP = await getClientIPWithRetry();
+      
+      if (clientIP) {
+        // Kiểm tra IP có bị ban không
+        const { data: banCheck, error: banError } = await supabase.rpc('check_ip_ban', {
+          p_ip_address: clientIP,
+        });
 
-    if (error) throw error;
+        if (banError) {
+          console.warn('⚠️ Error checking IP ban:', banError);
+        } else if (banCheck?.banned) {
+          const errorMessage = banCheck.reason || 'IP address của bạn đã bị ban';
+          throw new Error(errorMessage);
+        }
 
-    // Nếu muốn phản hồi UI ngay khi đăng nhập thành công:
-    if (data?.session?.user) {
-      setSession(data.session);
-      setUser(data.session.user);
-      await fetchProfile(data.session.user.id);
-      router.replace('/(tabs)/discover/match' as any);
+        // Đăng nhập
+        const { data, error } = await supabase.auth.signInWithPassword({
+          email,
+          password,
+        });
+        console.log('🔵 Sign-in data:', data);
+        console.log('🔵 Sign-in error:', error);
+
+        if (error) throw error;
+
+        // Nếu muốn phản hồi UI ngay khi đăng nhập thành công:
+        if (data?.session?.user) {
+          // Track IP sau khi đăng nhập thành công
+          if (clientIP) {
+            try {
+              await supabase.rpc('track_user_ip', {
+                p_user_id: data.session.user.id,
+                p_ip_address: clientIP,
+              });
+            } catch (trackError) {
+              console.warn('⚠️ Error tracking IP:', trackError);
+              // Không throw error vì tracking IP không quan trọng bằng đăng nhập
+            }
+          }
+
+          setSession(data.session);
+          setUser(data.session.user);
+          await fetchProfile(data.session.user.id);
+          router.replace('/(tabs)/discover/match' as any);
+        }
+      } else {
+        // Nếu không lấy được IP, vẫn cho phép đăng nhập nhưng không track
+        console.warn('⚠️ Could not get client IP, proceeding without IP check');
+        const { data, error } = await supabase.auth.signInWithPassword({
+          email,
+          password,
+        });
+
+        if (error) throw error;
+
+        if (data?.session?.user) {
+          setSession(data.session);
+          setUser(data.session.user);
+          await fetchProfile(data.session.user.id);
+          router.replace('/(tabs)/discover/match' as any);
+        }
+      }
+    } finally {
+      setLoading(false);
     }
-
-    setLoading(false);
   };
 
 
   const signUpWithEmail = async (email: string, password: string) => {
-    const { error } = await supabase.auth.signUp({
+    // Lấy IP address trước khi đăng ký
+    const clientIP = await getClientIPWithRetry();
+    
+    if (clientIP) {
+      // Kiểm tra IP có bị ban không
+      const { data: banCheck, error: banError } = await supabase.rpc('check_ip_ban', {
+        p_ip_address: clientIP,
+      });
+
+      if (banError) {
+        console.warn('⚠️ Error checking IP ban:', banError);
+      } else if (banCheck?.banned) {
+        const errorMessage = banCheck.reason || 'IP address của bạn đã bị ban. Không thể đăng ký tài khoản mới.';
+        throw new Error(errorMessage);
+      }
+
+      // Kiểm tra số lượng tài khoản từ IP này
+      const { data: limitCheck, error: limitError } = await supabase.rpc('check_ip_account_limit', {
+        p_ip_address: clientIP,
+        p_max_accounts: 3, // Giới hạn 3 tài khoản mỗi IP
+      });
+
+      if (limitError) {
+        console.warn('⚠️ Error checking IP account limit:', limitError);
+      } else if (limitCheck?.banned || !limitCheck?.success) {
+        const errorMessage = limitCheck?.message || 'IP address đã đăng ký quá nhiều tài khoản. Không thể đăng ký thêm.';
+        throw new Error(errorMessage);
+      }
+    }
+
+    // Đăng ký tài khoản
+    const { data, error } = await supabase.auth.signUp({
       email,
       password,
     });
+    
     if (error) throw error;
+
+    // Track IP sau khi đăng ký thành công
+    if (clientIP && data?.user) {
+      try {
+        await supabase.rpc('track_user_ip', {
+          p_user_id: data.user.id,
+          p_ip_address: clientIP,
+        });
+
+        // Kiểm tra lại sau khi track để tự động ban nếu vượt quá
+        await supabase.rpc('check_ip_account_limit', {
+          p_ip_address: clientIP,
+          p_max_accounts: 3,
+        });
+      } catch (trackError) {
+        console.warn('⚠️ Error tracking IP:', trackError);
+        // Không throw error vì tracking IP không quan trọng bằng đăng ký
+      }
+    }
   };
 
   const signInWithGoogle = async () => {
