@@ -166,23 +166,40 @@ export function TransactionCard({
         return;
       }
 
-      // Tạo payment link mới (chỉ khi amount > 0)
+      // Tạo payment link mới (chỉ khi amount > 0 và >= 1000 VND)
       try {
         setCreatingPaymentLink(true);
         const petName = transaction.pet?.name || 'Thú cưng';
+        
+        // Double check: không tạo payment link nếu amount <= 0 hoặc < 1000
+        if (transaction.amount <= 0 || transaction.amount < 1000) {
+          setCreatingPaymentLink(false);
+          return;
+        }
+
         const paymentLink = await PayOSTransactionService.createPaymentLink(
           transaction.id,
           transaction.amount,
           petName,
-          transaction.transaction_code
+          transaction.transaction_code || ''
         );
 
         if (paymentLink.qr_code) {
           setPayosQRCode(paymentLink.qr_code);
         }
-      } catch (error) {
+      } catch (error: any) {
         console.error('Error creating PayOS payment link:', error);
-        // Không hiển thị alert để tránh spam, chỉ log error
+        
+        // Nếu lỗi là "free transaction" hoặc "amount < 1000", không hiển thị alert
+        if (error.message?.includes('free transaction') || 
+            error.message?.includes('tối thiểu') ||
+            error.message?.includes('Cannot create payment link')) {
+          // Đây là expected error cho giao dịch miễn phí, không cần thông báo
+          console.log('Skipping PayOS payment link for free transaction');
+        } else {
+          // Các lỗi khác (credentials, network, etc.) - có thể log nhưng không hiển thị alert
+          console.error('PayOS payment link creation failed:', error.message);
+        }
       } finally {
         setCreatingPaymentLink(false);
       }

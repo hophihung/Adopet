@@ -23,6 +23,11 @@ export const PayOSTransactionService = {
     transactionCode: string,
     currency: string = PAYOS_CURRENCY
   ): Promise<PayOSPaymentLink> {
+    // Validate amount: không tạo payment link cho giao dịch miễn phí
+    if (!amount || amount <= 0) {
+      throw new Error('Cannot create payment link for free transaction (amount = 0)');
+    }
+
     // Validate minimum amount
     if (amount < PAYOS_MIN_AMOUNT) {
       throw new Error(
@@ -38,15 +43,29 @@ export const PayOSTransactionService = {
         amount: Math.round(amount), // PayOS requires integer amounts
         currency: currency,
         pet_name: petName,
-        transaction_code: transactionCode,
+        transaction_code: transactionCode || null, // Allow null for free transactions
         return_url: PAYOS_CONFIG.returnUrl,
         cancel_url: PAYOS_CONFIG.cancelUrl,
       },
     });
 
     if (error) {
-      console.error('Error creating payment link:', error);
-      throw new Error(error.message || 'Không thể tạo payment link');
+      console.error('Edge Function error:', error);
+      
+      // Try to extract error message from error object
+      let errorMessage = 'Không thể tạo payment link';
+      if (error.message) {
+        errorMessage = error.message;
+      } else if (typeof error === 'string') {
+        errorMessage = error;
+      }
+      
+      throw new Error(errorMessage);
+    }
+
+    // Check if Edge Function returned an error in the response
+    if (data?.error) {
+      throw new Error(data.error);
     }
 
     if (!data?.payment_url || !data?.payment_link_id) {
