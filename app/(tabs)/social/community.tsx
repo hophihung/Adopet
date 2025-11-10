@@ -22,7 +22,7 @@ import {
   Send,
   Users,
 } from 'lucide-react-native';
-import { useRouter } from 'expo-router';
+import { useRouter, usePathname } from 'expo-router';
 import { supabase } from '@/lib/supabase';
 import { PostCommentService } from '@/src/features/posts/services/PostComment.Service';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -76,6 +76,27 @@ interface Comment {
 
 const CommunityScreen: React.FC = () => {
   const router = useRouter();
+  const pathname = usePathname();
+  const [activeTab, setActiveTab] = useState<'community' | 'chat'>('community');
+  
+  // Navigate between community and chat
+  const handleTabChange = (tab: 'community' | 'chat') => {
+    setActiveTab(tab);
+    if (tab === 'chat') {
+      router.replace('/(tabs)/social/chat');
+    } else {
+      router.replace('/(tabs)/social/community');
+    }
+  };
+
+  // Update active tab based on current pathname
+  useEffect(() => {
+    if (pathname?.includes('/chat')) {
+      setActiveTab('chat');
+    } else {
+      setActiveTab('community');
+    }
+  }, [pathname]);
   const [posts, setPosts] = useState<Post[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [refreshing, setRefreshing] = useState<boolean>(false);
@@ -355,7 +376,7 @@ const CommunityScreen: React.FC = () => {
     return Array.isArray(profiles) ? profiles[0] : profiles;
   };
 
-  const renderItem = ({ item }: { item: Post }): React.ReactElement => {
+  const renderItem = React.useCallback(({ item }: { item: Post }): React.ReactElement => {
     const profile = getProfile(item.profiles);
 
     return (
@@ -368,6 +389,7 @@ const CommunityScreen: React.FC = () => {
                 'https://cdn-icons-png.flaticon.com/512/149/149071.png',
             }}
             style={styles.avatar}
+            cache="force-cache"
           />
           <View style={styles.userInfo}>
             <Text style={styles.username}>
@@ -380,7 +402,11 @@ const CommunityScreen: React.FC = () => {
         </View>
 
         {item.image_url && (
-          <Image source={{ uri: item.image_url }} style={styles.postImage} />
+          <Image 
+            source={{ uri: item.image_url }} 
+            style={styles.postImage}
+            cache="force-cache"
+          />
         )}
         <Text style={styles.caption}>{item.content}</Text>
 
@@ -407,25 +433,46 @@ const CommunityScreen: React.FC = () => {
         </View>
       </View>
     );
-  };
+  }, [likePostMap, currentUserId, handleLike, handleOpenComments]);
 
   return (
     <View style={styles.container}>
       <LinearGradient
         colors={['#FF6B6B', '#FF8E53']}
         style={styles.headerGradient}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 0 }}
       >
         <View style={styles.headerRow}>
-          <View style={styles.headerLeft}>
-            <Users size={28} color="#fff" />
-            <Text style={styles.header}>Community</Text>
+          <View style={styles.headerTabsContainer}>
+            <TouchableOpacity
+              style={styles.headerTab}
+              onPress={() => handleTabChange('community')}
+              activeOpacity={0.7}
+            >
+              <Text style={[styles.headerTabText, activeTab === 'community' && styles.headerTabTextActive]}>
+                Cộng đồng
+              </Text>
+              {activeTab === 'community' && <View style={styles.headerTabIndicator} />}
+            </TouchableOpacity>
+            <View style={styles.headerTabDivider} />
+            <TouchableOpacity
+              style={styles.headerTab}
+              onPress={() => handleTabChange('chat')}
+              activeOpacity={0.7}
+            >
+              <Text style={[styles.headerTabText, activeTab === 'chat' && styles.headerTabTextActive]}>
+                Tin nhắn
+              </Text>
+              {activeTab === 'chat' && <View style={styles.headerTabIndicator} />}
+            </TouchableOpacity>
           </View>
           <TouchableOpacity
             style={styles.fab}
             onPress={() => router.push('/post/create-post')}
             activeOpacity={0.8}
           >
-            <Plus color="#fff" size={22} />
+            <Plus color="#FF6B6B" size={24} strokeWidth={2.5} />
           </TouchableOpacity>
         </View>
       </LinearGradient>
@@ -446,61 +493,12 @@ const CommunityScreen: React.FC = () => {
               onRefresh={() => void fetchPosts()}
             />
           }
-          renderItem={({ item }) => {
-            const profile = getProfile(item.profiles);
-            return (
-              <View style={styles.card}>
-                <View style={styles.userRow}>
-                  <Image
-                    source={{
-                      uri:
-                        profile?.avatar_url ||
-                        'https://cdn-icons-png.flaticon.com/512/149/149071.png',
-                    }}
-                    style={styles.avatar}
-                  />
-                  <View style={styles.userInfo}>
-                    <Text style={styles.username}>
-                      {profile?.full_name || 'Ẩn danh'}
-                    </Text>
-                    <Text style={styles.timestamp}>
-                      {new Date(item.created_at).toLocaleDateString('vi-VN')}
-                    </Text>
-                  </View>
-                </View>
-                {item.image_url && (
-                  <Image
-                    source={{ uri: item.image_url }}
-                    style={styles.postImage}
-                  />
-                )}
-                <Text style={styles.caption}>{item.content}</Text>
-
-                {/* Actions: Like & Comment */}
-                <View style={styles.actions}>
-                  <TouchableOpacity
-                    style={styles.actionBtn}
-                    onPress={() => void handleLike(item.id)}
-                  >
-                    <Heart
-                      color="#FF6B6B"
-                      size={24}
-                      fill={item.like_count > 0 ? '#FF6B6B' : 'transparent'}
-                    />
-                    <Text style={styles.count}>{item.like_count}</Text>
-                  </TouchableOpacity>
-
-                  <TouchableOpacity
-                    style={styles.actionBtn}
-                    onPress={() => void handleOpenComments(item.id)}
-                  >
-                    <MessageCircle color="#4A90E2" size={24} />
-                    <Text style={styles.count}>{item.comment_count}</Text>
-                  </TouchableOpacity>
-                </View>
-              </View>
-            );
-          }}
+          removeClippedSubviews={true}
+          windowSize={10}
+          maxToRenderPerBatch={5}
+          updateCellsBatchingPeriod={50}
+          initialNumToRender={5}
+          renderItem={renderItem}
         />
       )}
 
@@ -599,9 +597,10 @@ const styles = StyleSheet.create({
     backgroundColor: '#F5F7FA',
   },
   headerGradient: {
-    paddingTop: 48,
+    paddingTop: Platform.OS === 'ios' ? 50 : 30,
     paddingBottom: 16,
     paddingHorizontal: 20,
+    zIndex: 10,
   },
   headerRow: {
     flexDirection: 'row',
@@ -612,6 +611,52 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 12,
+  },
+  headerTabsContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 20,
+    flex: 1,
+  },
+  headerTab: {
+    alignItems: 'center',
+    paddingVertical: 6,
+    paddingHorizontal: 4,
+    position: 'relative',
+  },
+  headerTabDivider: {
+    width: 1,
+    height: 16,
+    backgroundColor: 'rgba(255, 255, 255, 0.3)',
+  },
+  headerTabText: {
+    fontSize: 17,
+    fontWeight: '600',
+    color: 'rgba(255, 255, 255, 0.7)',
+    textShadowColor: 'rgba(0, 0, 0, 0.3)',
+    textShadowOffset: { width: 0, height: 1 },
+    textShadowRadius: 2,
+  },
+  headerTabTextActive: {
+    color: '#fff',
+    fontWeight: '700',
+    textShadowColor: 'rgba(0, 0, 0, 0.5)',
+    textShadowOffset: { width: 0, height: 2 },
+    textShadowRadius: 3,
+  },
+  headerTabIndicator: {
+    position: 'absolute',
+    bottom: 2,
+    left: '50%',
+    transform: [{ translateX: -15 }],
+    width: 30,
+    height: 3,
+    backgroundColor: '#fff',
+    borderRadius: 2,
+    shadowColor: '#fff',
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0.5,
+    shadowRadius: 3,
   },
   header: {
     fontSize: 24,
@@ -692,14 +737,18 @@ const styles = StyleSheet.create({
     color: '#333',
   },
   fab: {
-    backgroundColor: 'rgba(255, 255, 255, 0.25)',
+    backgroundColor: 'rgba(255, 255, 255, 0.95)',
     width: 48,
     height: 48,
     borderRadius: 24,
     alignItems: 'center',
     justifyContent: 'center',
-    borderWidth: 2,
-    borderColor: 'rgba(255, 255, 255, 0.4)',
+    borderWidth: 0,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 4,
+    elevation: 5,
   },
   modalContainer: {
     flex: 1,

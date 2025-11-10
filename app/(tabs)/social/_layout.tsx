@@ -11,12 +11,7 @@ export default function SocialTabLayout() {
         tabBarActiveTintColor: colors.primary,
         tabBarInactiveTintColor: colors.textTertiary,
         tabBarStyle: {
-          backgroundColor: colors.tabBarBackground,
-          borderTopWidth: 1,
-          borderTopColor: colors.border,
-          height: 50,
-          paddingBottom: 4,
-          paddingTop: 4,
+          display: 'none', // Ẩn tab bar - chỉ hiển thị header tabs
         },
         tabBarLabelStyle: {
           fontSize: 12,
@@ -34,24 +29,7 @@ export default function SocialTabLayout() {
       <Tabs.Screen
         name="chat"
         options={{
-          title: 'Tin nhắn',
-          tabBarIcon: ({ color, size }) => (
-            <View>
-              <MessageCircle size={22} color={color} />
-              {/* Notification dot */}
-              <View
-                style={{
-                  position: 'absolute',
-                  top: -2,
-                  right: -2,
-                  width: 8,
-                  height: 8,
-                  borderRadius: 4,
-                  backgroundColor: colors.error,
-                }}
-              />
-            </View>
-          ),
+          href: null, // Ẩn khỏi tab bar - di chuyển lên header
         }}
       />
     </Tabs>

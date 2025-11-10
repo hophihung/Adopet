@@ -68,27 +68,29 @@ export default function SelectRoleScreen() {
             disabled={loading}
             activeOpacity={0.9}
           >
-            <Card
-              style={[
-                styles.card,
-                selectedRole === 'user' && styles.selectedCard,
-              ]}
-            >
-              <Card.Content style={styles.cardContent}>
-                <View style={styles.emojiContainer}>
-                  <Text style={styles.emoji}>🥰</Text>
-                </View>
-                <Text variant="titleLarge" style={styles.roleTitle}>
-                  Pet Lover
-                </Text>
-                <Text variant="bodyMedium" style={styles.roleDescription}>
-                  I want to adopt and care for a pet 🐶🐱
-                </Text>
-                <View style={styles.badge}>
-                  <Text style={styles.badgeText}>Most Popular</Text>
-                </View>
-              </Card.Content>
-            </Card>
+            <View style={selectedRole === 'user' ? styles.selectedCardWrapper : null}>
+              <Card
+                style={[
+                  styles.card,
+                  selectedRole === 'user' ? styles.selectedCard : null,
+                ]}
+              >
+                <Card.Content style={styles.cardContent}>
+                  <View style={styles.emojiContainer}>
+                    <Text style={styles.emoji}>🥰</Text>
+                  </View>
+                  <Text variant="titleLarge" style={styles.roleTitle}>
+                    Pet Lover
+                  </Text>
+                  <Text variant="bodyMedium" style={styles.roleDescription}>
+                    I want to adopt and care for a pet 🐶🐱
+                  </Text>
+                  <View style={styles.badge}>
+                    <Text style={styles.badgeText}>Most Popular</Text>
+                  </View>
+                </Card.Content>
+              </Card>
+            </View>
           </TouchableOpacity>
 
           <TouchableOpacity
@@ -96,24 +98,26 @@ export default function SelectRoleScreen() {
             disabled={loading}
             activeOpacity={0.9}
           >
-            <Card
-              style={[
-                styles.card,
-                selectedRole === 'seller' && styles.selectedCard,
-              ]}
-            >
-              <Card.Content style={styles.cardContent}>
-                <View style={styles.emojiContainer}>
-                  <Text style={styles.emoji}>🏡</Text>
-                </View>
-                <Text variant="titleLarge" style={styles.roleTitle}>
-                  Pet Care Provider
-                </Text>
-                <Text variant="bodyMedium" style={styles.roleDescription}>
-                  I help pets find loving homes ✨
-                </Text>
-              </Card.Content>
-            </Card>
+            <View style={selectedRole === 'seller' ? styles.selectedCardWrapper : null}>
+              <Card
+                style={[
+                  styles.card,
+                  selectedRole === 'seller' ? styles.selectedCard : null,
+                ]}
+              >
+                <Card.Content style={styles.cardContent}>
+                  <View style={styles.emojiContainer}>
+                    <Text style={styles.emoji}>🏡</Text>
+                  </View>
+                  <Text variant="titleLarge" style={styles.roleTitle}>
+                    Pet Care Provider
+                  </Text>
+                  <Text variant="bodyMedium" style={styles.roleDescription}>
+                    I help pets find loving homes ✨
+                  </Text>
+                </Card.Content>
+              </Card>
+            </View>
           </TouchableOpacity>
         </View>
 
@@ -177,10 +181,12 @@ const styles = StyleSheet.create({
     borderWidth: 3,
     borderColor: '#FFE4E1',
   },
+  selectedCardWrapper: {
+    transform: [{ scale: 1.02 }],
+  },
   selectedCard: {
     borderColor: '#FF69B4',
     backgroundColor: '#FFF0F5',
-    transform: [{ scale: 1.02 }],
   },
   cardContent: {
     alignItems: 'center',

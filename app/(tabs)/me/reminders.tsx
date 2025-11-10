@@ -7,21 +7,45 @@ import {
   TouchableOpacity,
   ActivityIndicator,
   RefreshControl,
+  Platform,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Bell, Plus } from 'lucide-react-native';
+import { LinearGradient } from 'expo-linear-gradient';
 import { useAuth } from '@/contexts/AuthContext';
 import { ReminderService } from '@/src/features/reminders/services/reminder.service';
 import { Reminder } from '@/src/features/reminders/types';
 import { ReminderCard } from '@/src/features/reminders/components/ReminderCard';
-import { router } from 'expo-router';
+import { useRouter, usePathname } from 'expo-router';
 import { colors } from '@/src/theme/colors';
 
 export default function RemindersScreen() {
   const { user } = useAuth();
+  const router = useRouter();
+  const pathname = usePathname();
   const [reminders, setReminders] = useState<Reminder[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+  const [activeTab, setActiveTab] = useState<'reminders' | 'profile'>('reminders');
+  
+  // Navigate between reminders and profile
+  const handleTabChange = (tab: 'reminders' | 'profile') => {
+    setActiveTab(tab);
+    if (tab === 'profile') {
+      router.replace('/(tabs)/me/profile');
+    } else {
+      router.replace('/(tabs)/me/reminders');
+    }
+  };
+
+  // Update active tab based on current pathname
+  useEffect(() => {
+    if (pathname?.includes('/profile')) {
+      setActiveTab('profile');
+    } else {
+      setActiveTab('reminders');
+    }
+  }, [pathname]);
 
   useEffect(() => {
     if (user?.id) {
@@ -86,20 +110,46 @@ export default function RemindersScreen() {
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
-      {/* Header */}
-      <View style={styles.header}>
-        <View style={styles.headerLeft}>
-          <Bell size={28} color={colors.primary} />
-          <Text style={styles.headerTitle}>Nhắc nhở</Text>
+      {/* Header with Gradient */}
+      <LinearGradient
+        colors={['#FF6B6B', '#FF8E53']}
+        style={styles.headerGradient}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 0 }}
+      >
+        <View style={styles.headerRow}>
+          <View style={styles.headerTabsContainer}>
+            <TouchableOpacity
+              style={styles.headerTab}
+              onPress={() => handleTabChange('reminders')}
+              activeOpacity={0.7}
+            >
+              <Text style={[styles.headerTabText, activeTab === 'reminders' && styles.headerTabTextActive]}>
+                Nhắc nhở
+              </Text>
+              {activeTab === 'reminders' && <View style={styles.headerTabIndicator} />}
+            </TouchableOpacity>
+            <View style={styles.headerTabDivider} />
+            <TouchableOpacity
+              style={styles.headerTab}
+              onPress={() => handleTabChange('profile')}
+              activeOpacity={0.7}
+            >
+              <Text style={[styles.headerTabText, activeTab === 'profile' && styles.headerTabTextActive]}>
+                Cá nhân
+              </Text>
+              {activeTab === 'profile' && <View style={styles.headerTabIndicator} />}
+            </TouchableOpacity>
+          </View>
+          <TouchableOpacity
+            style={styles.addButton}
+            onPress={() => router.push('/reminder/create-reminder')}
+            activeOpacity={0.8}
+          >
+            <Plus size={24} color="#FF6B6B" strokeWidth={2.5} />
+          </TouchableOpacity>
         </View>
-        <TouchableOpacity
-          style={styles.addButton}
-          onPress={() => router.push('/reminder/create-reminder')}
-          activeOpacity={0.8}
-        >
-          <Plus size={22} color={colors.primary} />
-        </TouchableOpacity>
-      </View>
+      </LinearGradient>
 
       {/* Reminders List */}
       <ScrollView
@@ -156,6 +206,63 @@ const styles = StyleSheet.create({
     color: colors.textSecondary,
     fontWeight: '500',
   },
+  headerGradient: {
+    paddingTop: Platform.OS === 'ios' ? 50 : 30,
+    paddingBottom: 16,
+    paddingHorizontal: 20,
+    zIndex: 10,
+  },
+  headerRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  headerTabsContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 20,
+    flex: 1,
+  },
+  headerTab: {
+    alignItems: 'center',
+    paddingVertical: 6,
+    paddingHorizontal: 4,
+    position: 'relative',
+  },
+  headerTabDivider: {
+    width: 1,
+    height: 16,
+    backgroundColor: 'rgba(255, 255, 255, 0.3)',
+  },
+  headerTabText: {
+    fontSize: 17,
+    fontWeight: '600',
+    color: 'rgba(255, 255, 255, 0.7)',
+    textShadowColor: 'rgba(0, 0, 0, 0.3)',
+    textShadowOffset: { width: 0, height: 1 },
+    textShadowRadius: 2,
+  },
+  headerTabTextActive: {
+    color: '#fff',
+    fontWeight: '700',
+    textShadowColor: 'rgba(0, 0, 0, 0.5)',
+    textShadowOffset: { width: 0, height: 2 },
+    textShadowRadius: 3,
+  },
+  headerTabIndicator: {
+    position: 'absolute',
+    bottom: 2,
+    left: '50%',
+    transform: [{ translateX: -20 }],
+    width: 40,
+    height: 3,
+    backgroundColor: '#fff',
+    borderRadius: 2,
+    shadowColor: '#fff',
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0.5,
+    shadowRadius: 3,
+  },
   header: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -177,14 +284,18 @@ const styles = StyleSheet.create({
     color: colors.text,
   },
   addButton: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    backgroundColor: colors.primarySoft,
-    justifyContent: 'center',
+    backgroundColor: 'rgba(255, 255, 255, 0.95)',
+    width: 48,
+    height: 48,
+    borderRadius: 24,
     alignItems: 'center',
-    borderWidth: 2,
-    borderColor: colors.primaryLight,
+    justifyContent: 'center',
+    borderWidth: 0,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 4,
+    elevation: 5,
   },
   content: {
     flex: 1,

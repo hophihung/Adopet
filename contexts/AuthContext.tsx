@@ -22,7 +22,7 @@ interface AuthContextType {
   loading: boolean;
   hasCompletedOnboarding: boolean;
   signInWithEmail: (email: string, password: string) => Promise<void>;
-  signUpWithEmail: (email: string, password: string) => Promise<void>;
+  signUpWithEmail: (email: string, password: string, fullName?: string) => Promise<void>;
   signInWithGoogle: () => Promise<void>;
   signInWithFacebook: () => Promise<void>;
   signOut: () => Promise<void>;
@@ -200,7 +200,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
 
-  const signUpWithEmail = async (email: string, password: string) => {
+  const signUpWithEmail = async (email: string, password: string, fullName?: string) => {
     // Lấy IP address trước khi đăng ký
     const clientIP = await getClientIPWithRetry();
     
@@ -231,10 +231,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       }
     }
 
-    // Đăng ký tài khoản
+    // Đăng ký tài khoản với metadata full_name nếu có
     const { data, error } = await supabase.auth.signUp({
       email,
       password,
+      options: {
+        data: {
+          full_name: fullName || null,
+        },
+      },
     });
     
     if (error) throw error;
@@ -299,20 +304,53 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     console.log('🔵 Creating profile with role:', role);
 
-    const { error } = await supabase.from('profiles').insert({
-      id: user.id,
-      role,
-      email: user.email,
-      full_name: user.user_metadata?.full_name || user.user_metadata?.name || null,
-      avatar_url: user.user_metadata?.avatar_url || user.user_metadata?.picture || null,
-    });
+    // Kiểm tra xem profile đã tồn tại chưa
+    const { data: existingProfile } = await supabase
+      .from('profiles')
+      .select('id')
+      .eq('id', user.id)
+      .maybeSingle();
 
-    if (error) {
-      console.error('🔴 Error creating profile:', error);
-      throw error;
+    if (existingProfile) {
+      // Nếu đã có profile, chỉ cập nhật role
+      const { error: updateError } = await supabase
+        .from('profiles')
+        .update({ role })
+        .eq('id', user.id);
+
+      if (updateError) {
+        console.error('🔴 Error updating profile:', updateError);
+        throw updateError;
+      }
+    } else {
+      // Nếu chưa có profile, tạo mới
+      const { error } = await supabase.from('profiles').insert({
+        id: user.id,
+        role,
+        email: user.email,
+        full_name: user.user_metadata?.full_name || user.user_metadata?.name || null,
+        avatar_url: user.user_metadata?.avatar_url || user.user_metadata?.picture || null,
+      });
+
+      if (error) {
+        console.error('🔴 Error creating profile:', error);
+        throw error;
+      }
     }
 
-    console.log('🔵 Profile created successfully');
+    console.log('🔵 Profile created/updated successfully');
+
+    // Nếu là seller, đảm bảo có subscription
+    if (role === 'seller') {
+      try {
+        await supabase.rpc('ensure_seller_has_subscription', {
+          user_profile_id: user.id
+        });
+      } catch (subscriptionError) {
+        console.warn('⚠️ Error ensuring seller subscription:', subscriptionError);
+        // Không throw error vì subscription có thể được tạo sau
+      }
+    }
 
     // Reset onboarding when creating new profile
     await AsyncStorage.setItem('onboarding_completed', 'false');

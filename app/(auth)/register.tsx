@@ -1,6 +1,6 @@
 /**
- * LoginScreen
- * Màn hình đăng nhập với Email/Password, Google, và Facebook
+ * RegisterScreen
+ * Màn hình đăng ký với Email/Password, Google, và Facebook
  */
 
 import React, { useState } from 'react';
@@ -10,29 +10,47 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { useAuth } from '../../contexts/AuthContext';
 import { router } from 'expo-router';
 import * as WebBrowser from 'expo-web-browser';
-import { Egg, PawPrint } from 'lucide-react-native';
+import { PawPrint } from 'lucide-react-native';
 
 const { width } = Dimensions.get('window');
 
 // Cần thiết cho OAuth trên mobile
 WebBrowser.maybeCompleteAuthSession();
 
-export default function LoginScreen() {
-  const { signInWithEmail, signInWithGoogle, signInWithFacebook } = useAuth();
+export default function RegisterScreen() {
+  const { signUpWithEmail, signInWithGoogle, signInWithFacebook } = useAuth();
+  const [fullName, setFullName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
   const [loading, setLoading] = useState(false);
 
   const handleEmailAuth = async () => {
+    if (!fullName || !fullName.trim()) {
+      Alert.alert('Lỗi', 'Vui lòng nhập họ và tên');
+      return;
+    }
+
     if (!email || !password) {
       Alert.alert('Lỗi', 'Vui lòng nhập email và mật khẩu');
       return;
     }
 
+    if (password.length < 6) {
+      Alert.alert('Lỗi', 'Mật khẩu phải có ít nhất 6 ký tự');
+      return;
+    }
+
+    if (password !== confirmPassword) {
+      Alert.alert('Lỗi', 'Mật khẩu xác nhận không khớp');
+      return;
+    }
+
     setLoading(true);
     try {
-      await signInWithEmail(email, password);
-      // Navigation được xử lý tự động bởi auth state change
+      await signUpWithEmail(email, password, fullName.trim());
+      Alert.alert('Thành công', 'Tài khoản đã được tạo! Vui lòng kiểm tra email để xác thực.');
+      router.push('/(auth)/login');
     } catch (error: any) {
       Alert.alert('Lỗi', error.message);
     } finally {
@@ -46,7 +64,7 @@ export default function LoginScreen() {
       await signInWithGoogle();
       // OAuth sẽ mở browser, khi quay lại app sẽ tự động navigate
     } catch (error: any) {
-      Alert.alert('Error', error.message);
+      Alert.alert('Lỗi', error.message);
     } finally {
       setLoading(false);
     }
@@ -58,7 +76,7 @@ export default function LoginScreen() {
       await signInWithFacebook();
       // OAuth sẽ mở browser, khi quay lại app sẽ tự động navigate
     } catch (error: any) {
-      Alert.alert('Error', error.message);
+      Alert.alert('Lỗi', error.message);
     } finally {
       setLoading(false);
     }
@@ -83,24 +101,34 @@ export default function LoginScreen() {
             {/* Header with cute pets */}
             <View style={styles.header}>
               <View style={styles.petsContainer}>
-
                 <View style={styles.logoContainer}>
                   <Text style={styles.logo}><PawPrint size={50} color={'#FF6B6B'}/></Text>
                 </View>
-
               </View>
-            
             </View>
 
             {/* Email/Password Form */}
             <Card style={styles.card}>
               <Card.Content style={styles.cardContent}>
                 <View style={styles.formHeader}>
-                  <Text style={styles.formTitle}>Đăng nhập</Text>
+                  <Text style={styles.formTitle}>Tạo tài khoản</Text>
                   <Text style={styles.formSubtitle}>
-                    Chào mừng bạn trở lại!
+                    Tham gia cộng đồng yêu thú cưng
                   </Text>
                 </View>
+
+                <TextInput
+                  label="Họ và tên"
+                  value={fullName}
+                  onChangeText={setFullName}
+                  autoCapitalize="words"
+                  style={styles.input}
+                  mode="outlined"
+                  disabled={loading}
+                  left={<TextInput.Icon icon="account" />}
+                  outlineColor="#FFB6C1"
+                  activeOutlineColor="#FF69B4"
+                />
 
                 <TextInput
                   label="Email"
@@ -116,7 +144,7 @@ export default function LoginScreen() {
                   activeOutlineColor="#FF69B4"
                 />
                 <TextInput
-                  label="Password"
+                  label="Mật khẩu"
                   value={password}
                   onChangeText={setPassword}
                   secureTextEntry
@@ -128,11 +156,24 @@ export default function LoginScreen() {
                   outlineColor="#FFB6C1"
                   activeOutlineColor="#FF69B4"
                 />
+                <TextInput
+                  label="Xác nhận mật khẩu"
+                  value={confirmPassword}
+                  onChangeText={setConfirmPassword}
+                  secureTextEntry
+                  style={styles.input}
+                  mode="outlined"
+                  disabled={loading}
+                  left={<TextInput.Icon icon="lock-check" />}
+                  right={<TextInput.Icon icon="eye" />}
+                  outlineColor="#FFB6C1"
+                  activeOutlineColor="#FF69B4"
+                />
 
                 {loading ? (
                   <View style={styles.loaderContainer}>
                     <ActivityIndicator size="large" color="#FF69B4" />
-                    <Text style={styles.loaderText}>🐾 Đang đăng nhập...</Text>
+                    <Text style={styles.loaderText}>🐾 Đang tạo tài khoản...</Text>
                   </View>
                 ) : (
                   <>
@@ -142,19 +183,19 @@ export default function LoginScreen() {
                       style={styles.button}
                       buttonColor="#FF69B4"
                       contentStyle={styles.buttonContent}
-                      icon="paw"
+                      icon="account-plus"
                     >
-                      Đăng nhập
+                      Tạo tài khoản
                     </Button>
 
                     <TouchableOpacity
-                      onPress={() => router.push('/(auth)/register')}
+                      onPress={() => router.push('/(auth)/login')}
                       style={styles.toggleButton}
                     >
                       <Text style={styles.toggleText}>
-                        Chưa có tài khoản?{' '}
+                        Đã có tài khoản?{' '}
                         <Text style={styles.toggleTextBold}>
-                          Đăng ký ngay
+                          Đăng nhập
                         </Text>
                       </Text>
                     </TouchableOpacity>
@@ -167,7 +208,7 @@ export default function LoginScreen() {
             <View style={styles.divider}>
               <View style={styles.dividerLine} />
               <View style={styles.dividerTextContainer}>
-                <Text style={styles.dividerText}>Quick Login</Text>
+                <Text style={styles.dividerText}>Đăng ký nhanh</Text>
               </View>
               <View style={styles.dividerLine} />
             </View>
@@ -207,12 +248,12 @@ export default function LoginScreen() {
             <View style={styles.footerContainer}>
               <Text style={styles.footerPets}>🐶 🐱 🐹 🐰 🐦</Text>
               <Text variant="bodySmall" style={styles.footer}>
-                Every pet deserves a loving home
+                Mọi thú cưng đều xứng đáng có một ngôi nhà yêu thương
               </Text>
               <Text variant="bodySmall" style={styles.footerTerms}>
-                By continuing, you agree to our{' '}
-                <Text style={styles.footerLink}>Terms</Text> and{' '}
-                <Text style={styles.footerLink}>Privacy</Text>
+                Bằng cách tiếp tục, bạn đồng ý với{' '}
+                <Text style={styles.footerLink}>Điều khoản</Text> và{' '}
+                <Text style={styles.footerLink}>Chính sách bảo mật</Text>
               </Text>
             </View>
           </View>
@@ -254,7 +295,6 @@ const styles = StyleSheet.create({
     marginBottom: 12,
     gap: 16,
   },
-
   logoContainer: {
     width: 70,
     height: 70,
@@ -271,7 +311,7 @@ const styles = StyleSheet.create({
     fontSize: 32,
     fontWeight: '800',
     textAlign: 'center',
-    color: '#FF69B4',          // Hồng pastel tươi
+    color: '#FF69B4',
     textShadowColor: 'rgba(0,0,0,0.15)',
     textShadowOffset: { width: 0, height: 2 },
     textShadowRadius: 4,
@@ -281,7 +321,6 @@ const styles = StyleSheet.create({
       android: 'sans-serif-medium',
     }),
   },
-
   subtitle: {
     color: '#8B4513',
     textAlign: 'center',
@@ -310,9 +349,8 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     color: '#8B4513',
     marginBottom: 4,
-    textAlign: 'center', // ✅ căn giữa chữ theo chiều ngang
+    textAlign: 'center',
   },
-
   formSubtitle: {
     textAlign: 'center',
     fontSize: 14,
@@ -437,3 +475,4 @@ const styles = StyleSheet.create({
     textDecorationLine: 'underline',
   },
 });
+

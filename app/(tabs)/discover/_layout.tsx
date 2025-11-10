@@ -10,12 +10,7 @@ export default function DiscoverTabLayout() {
         tabBarActiveTintColor: colors.primary,
         tabBarInactiveTintColor: colors.textTertiary,
         tabBarStyle: {
-          backgroundColor: colors.tabBarBackground,
-          borderTopWidth: 1,
-          borderTopColor: colors.border,
-          height: 50,
-          paddingBottom: 4,
-          paddingTop: 4,
+          display: 'none', // Ẩn tab bar - chỉ hiển thị header tabs
         },
         tabBarLabelStyle: {
           fontSize: 12,
@@ -26,15 +21,13 @@ export default function DiscoverTabLayout() {
       <Tabs.Screen
         name="match"
         options={{
-          title: 'Match',
-          tabBarIcon: ({ color, size }) => <Heart size={22} color={color} />,
+          href: null, // Ẩn khỏi tab bar - di chuyển lên header
         }}
       />
       <Tabs.Screen
         name="explore"
         options={{
-          title: 'Khám phá',
-          tabBarIcon: ({ color, size }) => <Search size={22} color={color} />,
+          href: null, // Ẩn khỏi tab bar - di chuyển lên header
         }}
       />
       <Tabs.Screen

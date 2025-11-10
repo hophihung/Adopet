@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import {
   View,
   Text,
@@ -14,16 +14,19 @@ import {
   Platform,
   Alert,
 } from 'react-native';
-import { Heart, MessageCircle, Share2, Plus, Send, X } from 'lucide-react-native';
-import { useRouter } from 'expo-router';
+import { Heart, MessageCircle, Share2, Plus, Send, X, Music, Video, Image as ImageIcon } from 'lucide-react-native';
+import { Video as ExpoVideo, AVPlaybackStatus } from 'expo-av';
+import { useRouter, usePathname } from 'expo-router';
 import { useAuth } from '@/contexts/AuthContext';
 import { ReelService, Reel, ReelComment } from '@/src/features/reels/services/reel.service';
 import { colors } from '@/src/theme/colors';
+import { Audio } from 'expo-av';
 
 const { height: SCREEN_HEIGHT, width: SCREEN_WIDTH } = Dimensions.get('window');
 
 export default function ReelScreen() {
   const router = useRouter();
+  const pathname = usePathname();
   const { user } = useAuth();
   const [reels, setReels] = useState<Reel[]>([]);
   const [loading, setLoading] = useState(true);
@@ -36,11 +39,39 @@ export default function ReelScreen() {
   const [loadingComments, setLoadingComments] = useState(false);
   const [sendingComment, setSendingComment] = useState(false);
   const flatListRef = useRef<FlatList>(null);
+  const videoRefs = useRef<Map<string, ExpoVideo>>(new Map());
+  
+  // Audio state for music playback
+  const [audioSound, setAudioSound] = useState<Audio.Sound | null>(null);
+  const [currentPlayingReelId, setCurrentPlayingReelId] = useState<string | null>(null);
+  const [currentVideoId, setCurrentVideoId] = useState<string | null>(null);
+  const [videoOrientations, setVideoOrientations] = useState<Map<string, 'landscape' | 'portrait' | 'square' | 'wide'>>(new Map());
+  const [activeTab, setActiveTab] = useState<'match' | 'explore'>('explore');
+  const [expandedCaptions, setExpandedCaptions] = useState<Set<string>>(new Set()); // Track expanded captions
+  
+  // Navigate between match and explore screens
+  const handleTabChange = (tab: 'match' | 'explore') => {
+    setActiveTab(tab);
+    if (tab === 'match') {
+      router.replace('/(tabs)/discover/match');
+    } else {
+      router.replace('/(tabs)/discover/reel');
+    }
+  };
 
   useEffect(() => {
     loadReels();
     loadLikedReels();
   }, []);
+
+  // Update active tab based on current pathname
+  useEffect(() => {
+    if (pathname?.includes('/match')) {
+      setActiveTab('match');
+    } else if (pathname?.includes('/reel') || pathname?.includes('/explore')) {
+      setActiveTab('explore');
+    }
+  }, [pathname]);
 
   useEffect(() => {
     // Subscribe to realtime updates
@@ -54,6 +85,22 @@ export default function ReelScreen() {
       reelSubscription.unsubscribe();
     };
   }, []);
+
+  // Cleanup video refs and audio on unmount
+  useEffect(() => {
+    return () => {
+      // Pause all videos
+      videoRefs.current.forEach((video) => {
+        video.pauseAsync().catch(console.error);
+      });
+      videoRefs.current.clear();
+      
+      // Stop audio
+      if (audioSound) {
+        audioSound.unloadAsync().catch(console.error);
+      }
+    };
+  }, [audioSound]);
 
   const loadReels = async () => {
     try {
@@ -85,7 +132,7 @@ export default function ReelScreen() {
     }
   };
 
-  const handleLike = async (reelId: string) => {
+  const handleLike = useCallback(async (reelId: string) => {
     if (!user?.id) {
       Alert.alert('Thông báo', 'Vui lòng đăng nhập để thích reel');
       return;
@@ -113,9 +160,9 @@ export default function ReelScreen() {
       console.error('Error toggling like:', error);
       Alert.alert('Lỗi', 'Không thể thích reel');
     }
-  };
+  }, [user?.id, likedReels]);
 
-  const handleComment = (reelId: string) => {
+  const handleComment = useCallback((reelId: string) => {
     if (!user?.id) {
       Alert.alert('Thông báo', 'Vui lòng đăng nhập để bình luận');
       return;
@@ -124,7 +171,7 @@ export default function ReelScreen() {
     setSelectedReelId(reelId);
     setCommentModalVisible(true);
     loadComments(reelId);
-  };
+  }, [user?.id]);
 
   const loadComments = async (reelId: string) => {
     try {
@@ -184,75 +231,371 @@ export default function ReelScreen() {
     }
   };
 
-  const handleViewChange = (viewableItems: any) => {
+  const handleViewChange = useCallback((viewableItems: any) => {
     if (viewableItems.viewableItems.length > 0) {
       const currentIndex = viewableItems.viewableItems[0].index;
       setCurrentIndex(currentIndex);
 
-      // Increment view count
+      // Increment view count and play video
       const reel = reels[currentIndex];
       if (reel) {
         ReelService.incrementView(reel.id);
+        
+        // Play video if it's a video reel
+        if (reel.media_type === 'video' && reel.video_url) {
+          handlePlayVideo(reel.id);
+        }
+        
+        // Play music if reel has music track
+        handlePlayMusic(reel);
+      } else {
+        // Stop video and music when no reel is visible
+        handlePauseVideo();
+        handleStopMusic();
+      }
+    } else {
+      // No items visible, pause everything
+      handlePauseVideo();
+      handleStopMusic();
+    }
+  }, [reels, handlePlayVideo, handlePauseVideo, handlePlayMusic, handleStopMusic]);
+
+  // Play video for current reel
+  const handlePlayVideo = useCallback(async (reelId: string) => {
+    // Pause previous video
+    if (currentVideoId && currentVideoId !== reelId) {
+      const prevVideo = videoRefs.current.get(currentVideoId);
+      if (prevVideo) {
+        try {
+          await prevVideo.pauseAsync();
+        } catch (error) {
+          console.error('Error pausing previous video:', error);
+        }
       }
     }
-  };
 
-  const renderReel = ({ item, index }: { item: Reel; index: number }) => {
+    // Play current video
+    const video = videoRefs.current.get(reelId);
+    if (video) {
+      try {
+        await video.playAsync();
+        setCurrentVideoId(reelId);
+      } catch (error) {
+        console.error('Error playing video:', error);
+      }
+    }
+  }, [currentVideoId]);
+
+  // Pause current video
+  const handlePauseVideo = useCallback(async () => {
+    if (currentVideoId) {
+      const video = videoRefs.current.get(currentVideoId);
+      if (video) {
+        try {
+          await video.pauseAsync();
+        } catch (error) {
+          console.error('Error pausing video:', error);
+        }
+      }
+      setCurrentVideoId(null);
+    }
+  }, [currentVideoId]);
+
+  // Stop music
+  const handleStopMusic = useCallback(async () => {
+    if (audioSound) {
+      try {
+        await audioSound.unloadAsync();
+        setAudioSound(null);
+      } catch (error) {
+        console.error('Error stopping music:', error);
+      }
+    }
+    setCurrentPlayingReelId(null);
+  }, [audioSound]);
+
+  // Play music for current reel
+  const handlePlayMusic = useCallback(async (reel: Reel) => {
+    // Stop previous music
+    if (currentPlayingReelId && currentPlayingReelId !== reel.id) {
+      handleStopMusic();
+    }
+
+    // If reel has music track, play it
+    if (reel.music_tracks && reel.music_track_id) {
+      setCurrentPlayingReelId(reel.id);
+      
+      // TODO: Implement audio playback with expo-av
+      // try {
+      //   // Stop previous sound
+      //   if (audioSound) {
+      //     await audioSound.unloadAsync();
+      //   }
+      //   
+      //   // Create new sound
+      //   const { sound } = await Audio.Sound.createAsync(
+      //     { uri: reel.music_tracks.audio_url },
+      //     {
+      //       shouldPlay: true,
+      //       isLooping: true,
+      //       volume: reel.music_volume || 0.7,
+      //     }
+      // );
+      //   
+      //   // Seek to start time if specified
+      //   if (reel.music_start_time) {
+      //     await sound.setPositionAsync(reel.music_start_time * 1000);
+      //   }
+      //   
+      //   setAudioSound(sound);
+      // } catch (error) {
+      //   console.error('Error playing music:', error);
+      // }
+      
+      console.log('Music should play:', reel.music_tracks.title);
+    } else {
+      handleStopMusic();
+    }
+  }, [currentPlayingReelId, handleStopMusic]);
+
+  // Cleanup audio on unmount
+  useEffect(() => {
+    return () => {
+      handleStopMusic();
+    };
+  }, []);
+
+  const renderReel = useCallback(({ item, index }: { item: Reel; index: number }) => {
     const isLiked = likedReels.has(item.id);
     const profile = Array.isArray(item.profiles) ? item.profiles[0] : item.profiles;
+    const mediaUrl = item.media_type === 'image' 
+      ? (item.image_url || item.thumbnail_url)
+      : (item.video_url || item.thumbnail_url);
+    const isPlayingMusic = currentPlayingReelId === item.id && item.music_tracks;
+    const isCurrentVideo = currentVideoId === item.id;
+    const videoOrientation = videoOrientations.get(item.id) || 'portrait';
+    const isLandscape = videoOrientation === 'landscape';
+    const isWide = videoOrientation === 'wide'; // 16:9 aspect ratio
+    const isSquare = videoOrientation === 'square'; // 1:1 aspect ratio
 
     return (
       <View style={styles.reelContainer}>
-        {/* Video/Thumbnail */}
-        <Image
-          source={{
-            uri: item.thumbnail_url || item.video_url,
-          }}
-          style={styles.reelImage}
-          resizeMode="cover"
-        />
+        {/* Media - Image or Video */}
+        {item.media_type === 'image' ? (
+          <Image
+            source={{ uri: mediaUrl || '' }}
+            style={styles.reelImage}
+            resizeMode="cover"
+            cache="force-cache"
+          />
+        ) : (
+          item.video_url ? (
+            <View style={
+              isWide || isSquare 
+                ? styles.containVideoContainer 
+                : isLandscape 
+                ? styles.landscapeVideoContainer 
+                : styles.portraitVideoContainer
+            }>
+              <ExpoVideo
+                ref={(ref) => {
+                  if (ref) {
+                    videoRefs.current.set(item.id, ref);
+                  } else {
+                    videoRefs.current.delete(item.id);
+                  }
+                }}
+                source={{ uri: item.video_url }}
+                style={
+                  isWide || isSquare
+                    ? styles.containVideo
+                    : isLandscape
+                    ? styles.landscapeVideo
+                    : styles.portraitVideo
+                }
+                resizeMode={isWide || isSquare || isLandscape ? "contain" : "cover"}
+                shouldPlay={isCurrentVideo}
+                isLooping
+                isMuted={false}
+                useNativeControls={false}
+                onLoadStart={() => {
+                  // Video started loading
+                }}
+                onLoad={(status) => {
+                  // Detect video aspect ratio from dimensions
+                  if (status.isLoaded && status.naturalSize) {
+                    const { width, height } = status.naturalSize;
+                    const aspectRatio = width / height;
+                    
+                    let orientation: 'landscape' | 'portrait' | 'square' | 'wide';
+                    if (Math.abs(aspectRatio - 1) < 0.1) {
+                      // 1:1 (square)
+                      orientation = 'square';
+                    } else if (Math.abs(aspectRatio - 16/9) < 0.1 || Math.abs(aspectRatio - 1.78) < 0.1) {
+                      // 16:9 (wide)
+                      orientation = 'wide';
+                    } else if (width > height) {
+                      // Landscape
+                      orientation = 'landscape';
+                    } else {
+                      // Portrait
+                      orientation = 'portrait';
+                    }
+                    
+                    setVideoOrientations((prev) => {
+                      const newMap = new Map(prev);
+                      newMap.set(item.id, orientation);
+                      return newMap;
+                    });
+                  }
+                  
+                  // Video loaded, auto-play if it's the current video
+                  if (isCurrentVideo) {
+                    handlePlayVideo(item.id);
+                  }
+                }}
+                onError={(error) => {
+                  console.error('Video error:', error);
+                }}
+              />
+            </View>
+          ) : (
+            // Fallback to thumbnail if video URL is not available
+            <Image
+              source={{ uri: item.thumbnail_url || '' }}
+              style={styles.reelImage}
+              resizeMode="cover"
+            />
+          )
+        )}
 
-        {/* Overlay */}
+        {/* Overlay - TikTok style */}
         <View style={styles.overlay}>
-          {/* Left side - Info */}
+          {/* Left side - User Info & Caption */}
           <View style={styles.infoContainer}>
-            <Text style={styles.username}>
-              @{profile?.full_name?.toLowerCase().replace(/\s+/g, '_') || 'user'}
-            </Text>
-            <Text style={styles.caption}>{item.caption || ''}</Text>
+            {/* User Avatar and Name */}
+            <View style={styles.userInfo}>
+              {profile?.avatar_url && (
+                <Image
+                  source={{ uri: profile.avatar_url }}
+                  style={styles.userAvatar}
+                  cache="force-cache"
+                />
+              )}
+              <Text style={styles.username}>
+                @{profile?.full_name?.toLowerCase().replace(/\s+/g, '_') || 'user'}
+              </Text>
+            </View>
+            
+            {/* Caption - positioned to be visible above tab bar */}
+            {item.caption && (() => {
+              const isExpanded = expandedCaptions.has(item.id);
+              const captionLength = item.caption.length;
+              const shouldShowReadMore = captionLength > 100; // Show "Xem thêm" if caption is longer than 100 characters
+              
+              return (
+                <View>
+                  <Text 
+                    style={styles.caption} 
+                    numberOfLines={isExpanded ? undefined : 2}
+                  >
+                    {item.caption}
+                  </Text>
+                  {shouldShowReadMore && (
+                    <TouchableOpacity
+                      onPress={() => {
+                        setExpandedCaptions((prev) => {
+                          const newSet = new Set(prev);
+                          if (isExpanded) {
+                            newSet.delete(item.id);
+                          } else {
+                            newSet.add(item.id);
+                          }
+                          return newSet;
+                        });
+                      }}
+                      activeOpacity={0.7}
+                    >
+                      <Text style={styles.readMoreText}>
+                        {isExpanded ? 'Thu gọn' : 'Xem thêm'}
+                      </Text>
+                    </TouchableOpacity>
+                  )}
+                </View>
+              );
+            })()}
+            
+            {/* Music Info - TikTok style with icon and animated text */}
+            {item.music_tracks && (
+              <TouchableOpacity 
+                style={styles.musicContainer}
+                activeOpacity={0.8}
+              >
+                <View style={styles.musicIconContainer}>
+                  <Music size={16} color="#fff" />
+                </View>
+                <View style={styles.musicTextContainer}>
+                  <Text style={styles.musicText} numberOfLines={1}>
+                    {item.music_tracks.title} · {item.music_tracks.artist}
+                  </Text>
+                </View>
+              </TouchableOpacity>
+            )}
           </View>
 
           {/* Right side - Actions */}
           <View style={styles.actionsContainer}>
+            {/* Avatar Button */}
+            {profile?.avatar_url && (
+              <TouchableOpacity style={styles.avatarButton}>
+                <Image
+                  source={{ uri: profile.avatar_url }}
+                  style={styles.actionAvatar}
+                  cache="force-cache"
+                />
+                <View style={styles.followButton}>
+                  <Plus size={14} color="#fff" />
+                </View>
+              </TouchableOpacity>
+            )}
+
             <TouchableOpacity
               style={styles.actionButton}
               onPress={() => handleLike(item.id)}
+              activeOpacity={0.7}
             >
-              <Heart
-                size={32}
-                color="#fff"
-                fill={isLiked ? '#FF6B6B' : 'transparent'}
-              />
+              <View style={[styles.actionIconContainer, isLiked && styles.actionIconContainerLiked]}>
+                <Heart
+                  size={28}
+                  color={isLiked ? '#fff' : '#fff'}
+                  fill={isLiked ? '#FF3040' : 'transparent'}
+                  strokeWidth={2.5}
+                />
+              </View>
               <Text style={styles.actionText}>{item.like_count}</Text>
             </TouchableOpacity>
 
             <TouchableOpacity
               style={styles.actionButton}
               onPress={() => handleComment(item.id)}
+              activeOpacity={0.7}
             >
-              <MessageCircle size={32} color="#fff" />
+              <View style={styles.actionIconContainer}>
+                <MessageCircle size={28} color="#fff" strokeWidth={2.5} />
+              </View>
               <Text style={styles.actionText}>{item.comment_count}</Text>
             </TouchableOpacity>
 
-            <TouchableOpacity style={styles.actionButton}>
-              <Share2 size={32} color="#fff" />
-              <Text style={styles.actionText}>Share</Text>
+            <TouchableOpacity style={styles.actionButton} activeOpacity={0.7}>
+              <View style={styles.actionIconContainer}>
+                <Share2 size={28} color="#fff" strokeWidth={2.5} />
+              </View>
             </TouchableOpacity>
           </View>
         </View>
       </View>
     );
-  };
+  }, [likedReels, currentPlayingReelId, currentVideoId, videoOrientations, expandedCaptions, handleLike, handleComment, handlePlayVideo]);
 
   if (loading) {
     return (
@@ -264,14 +607,39 @@ export default function ReelScreen() {
 
   return (
     <View style={styles.container}>
+      {/* Transparent header with tabs like TikTok */}
       <View style={styles.header}>
-        <Text style={styles.headerTitle}>Reel 🎬</Text>
-        <TouchableOpacity
-          style={styles.addButton}
-          onPress={() => router.push('/reel/create-reel')}
-        >
-          <Plus size={24} color="#fff" />
-        </TouchableOpacity>
+        <View style={styles.tabsContainer}>
+          <TouchableOpacity
+            style={styles.tab}
+            onPress={() => handleTabChange('match')}
+            activeOpacity={0.7}
+          >
+            <Text style={[styles.tabText, activeTab === 'match' && styles.tabTextActive]}>
+              Match
+            </Text>
+            {activeTab === 'match' && <View style={styles.tabIndicator} />}
+          </TouchableOpacity>
+          <View style={styles.tabDivider} />
+          <TouchableOpacity
+            style={styles.tab}
+            onPress={() => handleTabChange('explore')}
+            activeOpacity={0.7}
+          >
+            <Text style={[styles.tabText, activeTab === 'explore' && styles.tabTextActive]}>
+              Khám phá
+            </Text>
+            {activeTab === 'explore' && <View style={styles.tabIndicator} />}
+          </TouchableOpacity>
+        </View>
+        <View style={styles.headerRight}>
+          <TouchableOpacity
+            style={styles.addButton}
+            onPress={() => router.push('/reel/create-reel')}
+          >
+            <Plus size={24} color="#fff" />
+          </TouchableOpacity>
+        </View>
       </View>
 
       <FlatList
@@ -281,12 +649,28 @@ export default function ReelScreen() {
         keyExtractor={(item) => item.id}
         pagingEnabled
         showsVerticalScrollIndicator={false}
-        snapToInterval={SCREEN_HEIGHT - 120}
+        snapToInterval={SCREEN_HEIGHT}
         decelerationRate="fast"
         onViewableItemsChanged={handleViewChange}
         viewabilityConfig={{
           itemVisiblePercentThreshold: 50,
+          minimumViewTime: 100,
         }}
+        onScrollToIndexFailed={(info) => {
+          // Handle scroll to index failure
+          console.warn('Scroll to index failed:', info);
+        }}
+        getItemLayout={(data, index) => ({
+          length: SCREEN_HEIGHT,
+          offset: SCREEN_HEIGHT * index,
+          index,
+        })}
+        removeClippedSubviews={true}
+        windowSize={5}
+        maxToRenderPerBatch={3}
+        updateCellsBatchingPeriod={50}
+        initialNumToRender={2}
+        maintainVisibleContentPosition={null}
       />
 
       {/* Comment Modal */}
@@ -385,77 +769,272 @@ const styles = StyleSheet.create({
     backgroundColor: '#000',
   },
   header: {
-    paddingTop: 30,
-    paddingBottom: 16,
-    paddingHorizontal: 20,
-    backgroundColor: '#000',
-    borderBottomWidth: 1,
-    borderBottomColor: '#333',
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    zIndex: 10,
+    paddingTop: Platform.OS === 'ios' ? 50 : 30,
+    paddingBottom: 12,
+    paddingHorizontal: 16,
+    backgroundColor: 'transparent',
     flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-  },
-  headerTitle: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    color: '#fff',
-  },
-  addButton: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: colors.primary,
     justifyContent: 'center',
     alignItems: 'center',
   },
-  reelContainer: {
-    height: SCREEN_HEIGHT - 120,
-    width: SCREEN_WIDTH,
+  tabsContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 20,
+    flex: 1,
+    justifyContent: 'center',
+  },
+  headerRight: {
+    position: 'absolute',
+    right: 16,
+  },
+  tab: {
+    alignItems: 'center',
+    paddingVertical: 6,
+    paddingHorizontal: 4,
     position: 'relative',
   },
+  tabDivider: {
+    width: 1,
+    height: 16,
+    backgroundColor: 'rgba(255, 255, 255, 0.3)',
+  },
+  tabText: {
+    fontSize: 17,
+    fontWeight: '600',
+    color: 'rgba(255, 255, 255, 0.7)',
+    textShadowColor: 'rgba(0, 0, 0, 0.8)',
+    textShadowOffset: { width: 0, height: 1 },
+    textShadowRadius: 4,
+    letterSpacing: 0.2,
+  },
+  tabTextActive: {
+    color: '#fff',
+    fontWeight: '700',
+    textShadowColor: 'rgba(0, 0, 0, 0.9)',
+    textShadowOffset: { width: 0, height: 2 },
+    textShadowRadius: 5,
+  },
+  tabIndicator: {
+    position: 'absolute',
+    bottom: 2,
+    left: '50%',
+    transform: [{ translateX: -15 }],
+    width: 30,
+    height: 3,
+    backgroundColor: '#fff',
+    borderRadius: 2,
+    shadowColor: '#fff',
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0.5,
+    shadowRadius: 3,
+  },
+  addButton: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: 'rgba(255, 255, 255, 0.2)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.3)',
+  },
+  reelContainer: {
+    height: SCREEN_HEIGHT,
+    width: SCREEN_WIDTH,
+    position: 'relative',
+    backgroundColor: '#000',
+  },
   reelImage: {
-    width: '100%',
-    height: '100%',
-    backgroundColor: '#111',
+    width: SCREEN_WIDTH,
+    height: SCREEN_HEIGHT,
+    backgroundColor: '#000',
+  },
+  portraitVideoContainer: {
+    width: SCREEN_WIDTH,
+    height: SCREEN_HEIGHT,
+    backgroundColor: '#000',
+  },
+  portraitVideo: {
+    width: SCREEN_WIDTH,
+    height: SCREEN_HEIGHT,
+    backgroundColor: '#000',
+  },
+  landscapeVideoContainer: {
+    width: SCREEN_WIDTH,
+    height: SCREEN_HEIGHT,
+    backgroundColor: '#000',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  landscapeVideo: {
+    width: SCREEN_WIDTH,
+    height: SCREEN_HEIGHT * 0.8, // Keep some space, don't force full screen
+    backgroundColor: '#000',
+  },
+  containVideoContainer: {
+    width: SCREEN_WIDTH,
+    height: SCREEN_HEIGHT,
+    backgroundColor: '#000',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  containVideo: {
+    width: SCREEN_WIDTH,
+    height: SCREEN_HEIGHT,
+    backgroundColor: '#000',
   },
   overlay: {
     position: 'absolute',
     bottom: 0,
     left: 0,
     right: 0,
+    top: 0,
     flexDirection: 'row',
     justifyContent: 'space-between',
-    padding: 20,
-    paddingBottom: 32,
-    backgroundColor: 'rgba(0, 0, 0, 0.3)',
+    paddingBottom: 20, // Safe area padding
+    paddingHorizontal: 16,
+    paddingTop: Platform.OS === 'ios' ? 100 : 80, // Space for header tabs
   },
   infoContainer: {
     flex: 1,
     justifyContent: 'flex-end',
+    paddingBottom: 100, // Đẩy lên cao để không bị che bởi bottom tab bar (65px height + 16px marginBottom + 20px safe area)
+    maxWidth: SCREEN_WIDTH - 100, // Leave space for action buttons
+  },
+  userInfo: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 10,
+    gap: 8,
+  },
+  userAvatar: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    borderWidth: 1.5,
+    borderColor: '#fff',
   },
   username: {
-    fontSize: 16,
-    fontWeight: 'bold',
+    fontSize: 15,
+    fontWeight: '600',
     color: '#fff',
-    marginBottom: 8,
+    textShadowColor: 'rgba(0, 0, 0, 0.8)',
+    textShadowOffset: { width: 0, height: 1 },
+    textShadowRadius: 4,
   },
   caption: {
     fontSize: 14,
     color: '#fff',
     lineHeight: 20,
+    marginBottom: 4,
+    textShadowColor: 'rgba(0, 0, 0, 0.8)',
+    textShadowOffset: { width: 0, height: 1 },
+    textShadowRadius: 4,
+    paddingRight: 8,
+  },
+  readMoreText: {
+    fontSize: 14,
+    color: '#fff',
+    fontWeight: '600',
+    marginTop: 4,
+    marginBottom: 10,
+    textShadowColor: 'rgba(0, 0, 0, 0.8)',
+    textShadowOffset: { width: 0, height: 1 },
+    textShadowRadius: 4,
+  },
+  musicContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(0, 0, 0, 0.6)',
+    borderRadius: 20,
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    alignSelf: 'flex-start',
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.2)',
+    maxWidth: '90%',
+    marginTop: 4,
+  },
+  musicIconContainer: {
+    marginRight: 6,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  musicTextContainer: {
+    flex: 1,
+    overflow: 'hidden',
+  },
+  musicText: {
+    fontSize: 12,
+    color: '#fff',
+    fontWeight: '600',
+    textShadowColor: 'rgba(0, 0, 0, 0.8)',
+    textShadowOffset: { width: 0, height: 1 },
+    textShadowRadius: 3,
+    letterSpacing: 0.3,
   },
   actionsContainer: {
     alignItems: 'center',
+    justifyContent: 'flex-end',
     gap: 20,
+    paddingBottom: 100, // Đẩy lên cao để không bị che bởi bottom tab bar (65px height + 16px marginBottom + 20px safe area)
+  },
+  avatarButton: {
+    marginBottom: 4,
+    position: 'relative',
+  },
+  actionAvatar: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    borderWidth: 2,
+    borderColor: '#fff',
+  },
+  followButton: {
+    position: 'absolute',
+    bottom: -4,
+    right: -4,
+    width: 20,
+    height: 20,
+    borderRadius: 10,
+    backgroundColor: colors.primary,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 2,
+    borderColor: '#000',
   },
   actionButton: {
     alignItems: 'center',
     gap: 4,
   },
+  actionIconContainer: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    backgroundColor: 'rgba(0, 0, 0, 0.3)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.2)',
+  },
+  actionIconContainerLiked: {
+    backgroundColor: 'rgba(255, 48, 64, 0.2)',
+    borderColor: 'rgba(255, 48, 64, 0.4)',
+  },
   actionText: {
     fontSize: 12,
     color: '#fff',
     fontWeight: '600',
+    textShadowColor: 'rgba(0, 0, 0, 0.8)',
+    textShadowOffset: { width: 0, height: 1 },
+    textShadowRadius: 3,
+    marginTop: 2,
   },
   modalContainer: {
     flex: 1,

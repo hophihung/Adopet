@@ -7,9 +7,11 @@ import {
   TouchableOpacity,
   Alert,
   ActivityIndicator,
+  Platform,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
-import { Calendar, TrendingUp, Heart, Star, Sparkles } from 'lucide-react-native';
+import { Calendar, TrendingUp, Heart, Star, Sparkles, ArrowLeft } from 'lucide-react-native';
+import { useRouter } from 'expo-router';
 import { useVirtualPet } from '@/src/features/virtualPet/hooks/useVirtualPet';
 import { LevelUpModal, petColors, petEmojis, PetSelectionModal, PetType } from '@/src/features/virtualPet';
 import { CheckinCalendar } from '@/src/features/virtualPet/components/CheckinCalendar';
@@ -21,6 +23,7 @@ import { colors } from '@/src/theme/colors';
 
 
 export default function VirtualPetScreen() {
+  const router = useRouter();
   const {
     virtualPet,
     loading,
@@ -135,9 +138,21 @@ export default function VirtualPetScreen() {
     <GamerBackground intensity="medium">
       <View style={styles.container}>
         {/* Header */}
-        <View style={styles.headerGradient}>
+        <LinearGradient
+          colors={['#FF6B6B', '#FF8E53']}
+          style={styles.headerGradient}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 0 }}
+        >
           <View style={styles.header}>
-            <View>
+            <TouchableOpacity
+              style={styles.backButton}
+              onPress={() => router.replace('/(tabs)/pets/my-pets')}
+              activeOpacity={0.7}
+            >
+              <ArrowLeft size={24} color="#FF6B6B" strokeWidth={2.5} />
+            </TouchableOpacity>
+            <View style={styles.headerContent}>
               <Text style={styles.headerTitle}>{virtualPet.name}</Text>
               <Text style={styles.headerSubtitle}>
                 {petEmojis[virtualPet.pet_type]} Level {virtualPet.level} • {getEvolutionStageName(getEvolutionStage(virtualPet.level))}
@@ -146,16 +161,21 @@ export default function VirtualPetScreen() {
             <TouchableOpacity
               style={styles.calendarButton}
               onPress={() => setShowCheckinCalendar(true)}
+              activeOpacity={0.7}
             >
               <View style={styles.calendarButtonBadge}>
-                <Calendar size={20} color={colors.primary} />
+                <Calendar size={20} color="#FF6B6B" />
                 <Text style={styles.calendarButtonText}>{virtualPet.streak_days}</Text>
               </View>
             </TouchableOpacity>
           </View>
-        </View>
+        </LinearGradient>
 
-      <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
+      <ScrollView 
+        style={styles.content} 
+        contentContainerStyle={styles.contentContainer}
+        showsVerticalScrollIndicator={false}
+      >
         {/* Pet Display */}
         <View style={styles.petContainer}>
           <View style={styles.petBackground}>
@@ -348,36 +368,56 @@ const styles = StyleSheet.create({
     color: '#666',
   },
   headerGradient: {
-    paddingTop: 50,
-    paddingBottom: 20,
+    paddingTop: Platform.OS === 'ios' ? 50 : 30,
+    paddingBottom: 16,
     paddingHorizontal: 20,
-    backgroundColor: 'rgba(10, 14, 39, 0.8)',
-    borderBottomWidth: 1,
-    borderBottomColor: 'rgba(99, 102, 241, 0.3)',
+    zIndex: 10,
   },
   header: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
+    gap: 12,
+  },
+  backButton: {
+    backgroundColor: 'rgba(255, 255, 255, 0.95)',
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 0,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 4,
+    elevation: 5,
+  },
+  headerContent: {
+    flex: 1,
+    marginLeft: 8,
   },
   calendarButton: {
+    backgroundColor: 'rgba(255, 255, 255, 0.95)',
+    borderRadius: 20,
     padding: 8,
+    paddingHorizontal: 12,
+    borderWidth: 0,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 4,
+    elevation: 5,
   },
   calendarButtonBadge: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: 'rgba(255, 255, 255, 0.15)',
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    borderRadius: 20,
     gap: 6,
-    borderWidth: 1,
-    borderColor: 'rgba(99, 102, 241, 0.3)',
   },
   calendarButtonText: {
     fontSize: 14,
     fontWeight: '700',
-    color: '#FFFFFF',
+    color: '#FF6B6B',
   },
   headerTitle: {
     fontSize: 28,
@@ -395,6 +435,9 @@ const styles = StyleSheet.create({
   },
   content: {
     flex: 1,
+  },
+  contentContainer: {
+    paddingBottom: 100, // Đẩy lên cao để không bị che bởi bottom tab bar (65px height + 16px marginBottom + 20px safe area)
   },
   petContainer: {
     alignItems: 'center',

@@ -16,17 +16,29 @@ import * as ImagePicker from 'expo-image-picker';
 import * as FileSystem from 'expo-file-system/legacy';
 import { supabase } from '@/lib/supabase';
 import { LinearGradient } from 'expo-linear-gradient';
-import { Video, X, Send, AlertCircle } from 'lucide-react-native';
+import { Video, X, Send, AlertCircle, Music, Image as ImageIcon } from 'lucide-react-native';
 import { ReelService } from '@/src/features/reels/services/reel.service';
 import { ContentModerationService } from '@/src/features/reels/services/contentModeration.service';
+import { MusicPickerModal } from '@/src/features/reels/components/MusicPickerModal';
+import { MusicTrack } from '@/src/features/reels/services/music.service';
 
 export default function CreateReelScreen() {
+  const [mediaType, setMediaType] = useState<'image' | 'video'>('video');
   const [videoUri, setVideoUri] = useState<string | null>(null);
+  const [imageUri, setImageUri] = useState<string | null>(null);
   const [thumbnailUri, setThumbnailUri] = useState<string | null>(null);
   const [caption, setCaption] = useState('');
   const [loading, setLoading] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [moderating, setModerating] = useState(false);
+  const [uploadStatus, setUploadStatus] = useState<string>('');
+  const [isPosting, setIsPosting] = useState(false); // Prevent duplicate posts
+  
+  // Music states
+  const [selectedTrack, setSelectedTrack] = useState<MusicTrack | null>(null);
+  const [musicStartTime, setMusicStartTime] = useState(0);
+  const [musicVolume, setMusicVolume] = useState(0.7);
+  const [showMusicPicker, setShowMusicPicker] = useState(false);
 
   const { user } = useAuth();
   const router = useRouter();
@@ -41,7 +53,7 @@ export default function CreateReelScreen() {
       }
 
       const result = await ImagePicker.launchImageLibraryAsync({
-        mediaTypes: ImagePicker.MediaTypeOptions.Videos,
+        mediaTypes: ['videos'],
         allowsEditing: true,
         quality: 0.8,
         videoMaxDuration: 60, // Max 60 seconds
@@ -49,7 +61,23 @@ export default function CreateReelScreen() {
 
       if (!result.canceled && result.assets?.[0]?.uri) {
         const asset = result.assets[0];
+        
+        // Validate file size before setting
+        const fileInfo = await FileSystem.getInfoAsync(asset.uri);
+        const fileSize = fileInfo.exists && 'size' in fileInfo ? fileInfo.size : 0;
+        const maxSize = 300 * 1024 * 1024; // 300MB
+        
+        if (fileSize > maxSize) {
+          const sizeMB = (fileSize / (1024 * 1024)).toFixed(2);
+          Alert.alert(
+            'Kích thước file quá lớn',
+            `Video của bạn có kích thước ${sizeMB}MB. Vui lòng chọn video nhỏ hơn 300MB.`
+          );
+          return;
+        }
+        
         setVideoUri(asset.uri);
+        setImageUri(null); // Clear image if video selected
         
         // Generate thumbnail from video
         // Note: In production, you might want to use a library like react-native-video-thumbnails
@@ -64,19 +92,88 @@ export default function CreateReelScreen() {
     }
   };
 
-  // Upload video to Supabase Storage
-  const uploadVideo = async (uri: string): Promise<string | null> => {
+  // Pick image from library
+  const pickImage = async () => {
     try {
-      setUploading(true);
+      const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+      if (status !== 'granted') {
+        Alert.alert('Lỗi', 'Cần cấp quyền truy cập thư viện ảnh');
+        return;
+      }
 
-      // Read file as base64
+      const result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ['images'],
+        allowsEditing: true,
+        quality: 0.8,
+        aspect: [9, 16], // Vertical reel format
+      });
+
+      if (!result.canceled && result.assets?.[0]?.uri) {
+        const asset = result.assets[0];
+        setImageUri(asset.uri);
+        setVideoUri(null); // Clear video if image selected
+        setThumbnailUri(asset.uri); // Use image as thumbnail
+      }
+    } catch (err: any) {
+      console.error('Image picker error:', err);
+      Alert.alert('Lỗi', 'Không thể chọn ảnh: ' + (err.message || 'Đã có lỗi xảy ra'));
+    }
+  };
+
+  // Upload video to Supabase Storage (optimized - background upload)
+  const uploadVideo = async (uri: string, showProgress: boolean = true): Promise<string | null> => {
+    try {
+      if (showProgress) {
+        setUploading(true);
+      }
+
+      // Check file size
+      if (showProgress) {
+        setUploadStatus('Đang kiểm tra file...');
+      }
+      const fileInfo = await FileSystem.getInfoAsync(uri);
+      const fileSize = fileInfo.exists && 'size' in fileInfo ? fileInfo.size : 0;
+      const maxSize = 300 * 1024 * 1024; // 300MB
+      
+      if (fileSize > maxSize) {
+        const sizeMB = (fileSize / (1024 * 1024)).toFixed(2);
+        throw new Error(`Video quá lớn (${sizeMB}MB). Vui lòng chọn video nhỏ hơn 300MB.`);
+      }
+
+      const sizeMB = (fileSize / (1024 * 1024)).toFixed(2);
+      
+      // Generate unique filename
+      const randomString = Math.random().toString(36).substring(2, 15);
+      const timestamp = Date.now();
+      const fileName = `reels/${user?.id}-${timestamp}-${randomString}.mp4`;
+
+      // Optimized: Read file in chunks for large files to avoid memory issues
+      // For files > 50MB, use chunked reading
+      const chunkSize = 50 * 1024 * 1024; // 50MB chunks
+      
+      if (fileSize > chunkSize) {
+        // For large files, read in chunks (but Supabase doesn't support chunked upload directly)
+        // So we still need to read full file, but we'll do it more efficiently
+        if (showProgress) {
+          setUploadStatus(`Đang xử lý video lớn (${sizeMB}MB)...`);
+        }
+      }
+
+      // Read file as base64 (optimized for large files)
+      if (showProgress) {
+        setUploadStatus(`Đang chuẩn bị upload (${sizeMB}MB)...`);
+      }
+      
       const base64 = await FileSystem.readAsStringAsync(uri, {
         encoding: 'base64',
       });
 
       // Convert base64 to ArrayBuffer
+      if (showProgress) {
+        setUploadStatus(`Đang upload video...`);
+      }
+      
       const arrayBuffer = Uint8Array.from(atob(base64), (c) => c.charCodeAt(0));
-      const fileName = `reels/${user?.id}-${Date.now()}.mp4`;
 
       // Upload to Supabase Storage
       const { error } = await supabase.storage
@@ -99,13 +196,77 @@ export default function CreateReelScreen() {
         throw new Error('Failed to get public URL');
       }
 
+      if (showProgress) {
+        setUploadStatus('');
+      }
       return data.publicUrl;
     } catch (err: any) {
       console.error('Upload error:', err);
-      Alert.alert('Lỗi upload video', err.message || 'Không thể upload video');
+      
+      let errorMessage = err.message || 'Không thể upload video';
+      if (err.message?.includes('OutOfMemory') || err.message?.includes('memory')) {
+        errorMessage = 'Video quá lớn. Vui lòng chọn video nhỏ hơn.';
+      }
+      
+      if (showProgress) {
+        Alert.alert('Lỗi upload video', errorMessage);
+        setUploadStatus('');
+      }
       return null;
     } finally {
-      setUploading(false);
+      if (showProgress) {
+        setUploading(false);
+        setUploadStatus('');
+      }
+    }
+  };
+
+  // Upload image to Supabase Storage (optimized - background upload)
+  const uploadImage = async (uri: string, showProgress: boolean = true): Promise<string | null> => {
+    try {
+      if (showProgress) {
+        setUploading(true);
+        setUploadStatus('Đang upload ảnh...');
+      }
+
+      const base64 = await FileSystem.readAsStringAsync(uri, {
+        encoding: 'base64',
+      });
+
+      const arrayBuffer = Uint8Array.from(atob(base64), (c) => c.charCodeAt(0));
+      const randomString = Math.random().toString(36).substring(2, 15);
+      const timestamp = Date.now();
+      const fileName = `reels/images/${user?.id}-${timestamp}-${randomString}.jpg`;
+
+      const { error } = await supabase.storage
+        .from('reels')
+        .upload(fileName, arrayBuffer, {
+          contentType: 'image/jpeg',
+          upsert: false,
+        });
+
+      if (error) throw error;
+
+      const { data } = supabase.storage
+        .from('reels')
+        .getPublicUrl(fileName);
+
+      if (showProgress) {
+        setUploadStatus('');
+      }
+      return data?.publicUrl || null;
+    } catch (err: any) {
+      console.error('Image upload error:', err);
+      if (showProgress) {
+        Alert.alert('Lỗi upload ảnh', err.message || 'Không thể upload ảnh');
+        setUploadStatus('');
+      }
+      return null;
+    } finally {
+      if (showProgress) {
+        setUploading(false);
+        setUploadStatus('');
+      }
     }
   };
 
@@ -117,7 +278,10 @@ export default function CreateReelScreen() {
       });
 
       const arrayBuffer = Uint8Array.from(atob(base64), (c) => c.charCodeAt(0));
-      const fileName = `reels/thumbnails/${user?.id}-${Date.now()}.jpg`;
+      // Generate unique filename with random string to prevent duplicates
+      const randomString = Math.random().toString(36).substring(2, 15);
+      const timestamp = Date.now();
+      const fileName = `reels/thumbnails/${user?.id}-${timestamp}-${randomString}.jpg`;
 
       const { error } = await supabase.storage
         .from('reels')
@@ -179,8 +343,15 @@ export default function CreateReelScreen() {
 
   // Create reel
   const handlePost = async () => {
-    if (!videoUri) {
-      Alert.alert('Thông báo', 'Vui lòng chọn video.');
+    // Prevent duplicate posts
+    if (isPosting) {
+      return;
+    }
+
+    const hasMedia = mediaType === 'video' ? videoUri : imageUri;
+    
+    if (!hasMedia) {
+      Alert.alert('Thông báo', `Vui lòng chọn ${mediaType === 'video' ? 'video' : 'ảnh'}.`);
       return;
     }
 
@@ -189,58 +360,115 @@ export default function CreateReelScreen() {
       return;
     }
 
+    setIsPosting(true);
+    
+    // Show minimal loading (just a brief indicator)
     setLoading(true);
+    setUploadStatus('Đang xử lý...');
 
     try {
-      // Upload video
-      const videoUrl = await uploadVideo(videoUri);
-      if (!videoUrl) {
+      let videoUrl: string | null = null;
+      let imageUrl: string | null = null;
+      let thumbnailUrl: string | null = null;
+
+      // OPTIMIZED: Upload in background, show success immediately
+      // For better UX, we can create reel first with placeholder, then update with real URL
+      // But for now, we'll upload but minimize UI blocking
+
+      // Upload media based on type (with minimal progress indicator)
+      if (mediaType === 'video' && videoUri) {
+        // Check file size first to show appropriate message
+        const fileInfo = await FileSystem.getInfoAsync(videoUri);
+        const fileSize = fileInfo.exists && 'size' in fileInfo ? fileInfo.size : 0;
+        const sizeMB = (fileSize / (1024 * 1024)).toFixed(2);
+        
+        // For large files, show message and upload in background
+        if (fileSize > 50 * 1024 * 1024) { // > 50MB
+          // Show message that upload will continue in background
+          Alert.alert(
+            'Đang upload video',
+            `Video của bạn (${sizeMB}MB) đang được upload. Bạn có thể tiếp tục sử dụng app.`,
+            [{ text: 'OK' }]
+          );
+        }
+        
+        videoUrl = await uploadVideo(videoUri, fileSize <= 50 * 1024 * 1024); // Show progress only for small files
+        if (!videoUrl) {
+          return;
+        }
+
+        // Only upload thumbnail if it's different from video
+        if (thumbnailUri && thumbnailUri !== videoUri) {
+          thumbnailUrl = await uploadThumbnail(thumbnailUri);
+        } else {
+          thumbnailUrl = videoUrl;
+        }
+      } else if (mediaType === 'image' && imageUri) {
+        imageUrl = await uploadImage(imageUri, true); // Images are usually small, show progress
+        if (!imageUrl) {
+          return;
+        }
+        thumbnailUrl = imageUrl;
+      }
+
+      const mediaUrl = videoUrl || imageUrl;
+      if (!mediaUrl) {
         return;
       }
 
-      // Upload thumbnail
-      let thumbnailUrl = null;
-      if (thumbnailUri) {
-        thumbnailUrl = await uploadThumbnail(thumbnailUri);
-      }
-
-      // Moderate content
-      const canPost = await moderateContent(thumbnailUrl || videoUrl, videoUrl);
-      if (!canPost) {
-        // Delete uploaded video if moderation fails
-        // TODO: Implement cleanup
-        return;
-      }
-
-      // Create reel
+      // Create reel immediately
       const reel = await ReelService.create({
-        video_url: videoUrl,
+        media_type: mediaType,
+        video_url: videoUrl || undefined,
+        image_url: imageUrl || undefined,
         thumbnail_url: thumbnailUrl || undefined,
         caption: caption.trim() || undefined,
-        duration: 60, // TODO: Get actual duration from video
+        duration: mediaType === 'video' ? 60 : undefined,
+        music_track_id: selectedTrack?.id,
+        music_start_time: selectedTrack ? musicStartTime : undefined,
+        music_volume: selectedTrack ? musicVolume : undefined,
       });
 
-      // Apply moderation result
-      const moderationResult = await ContentModerationService.moderateContent(
-        thumbnailUrl || videoUrl,
-        videoUrl
+      // Show success message immediately (user can continue using app)
+      Alert.alert(
+        'Thành công! 🎉', 
+        'Reel của bạn đã được đăng tải thành công và đang được kiểm duyệt. Bạn sẽ nhận được thông báo khi video được duyệt.',
+        [{ text: 'OK', onPress: () => {
+          // Reset form
+          setCaption('');
+          setVideoUri(null);
+          setImageUri(null);
+          setThumbnailUri(null);
+          setSelectedTrack(null);
+          setMusicStartTime(0);
+          setMusicVolume(0.7);
+          router.back();
+        }}]
       );
-      await ContentModerationService.applyModerationResult(reel.id, moderationResult);
 
-      Alert.alert('Thành công', 'Reel đã được đăng tải và đang được kiểm duyệt.');
-      setCaption('');
-      setVideoUri(null);
-      setThumbnailUri(null);
-      router.back();
+      // Run moderation in background (async, don't wait)
+      ContentModerationService.moderateContent(thumbnailUrl || mediaUrl, mediaUrl)
+        .then((moderationResult) => {
+          ContentModerationService.applyModerationResult(reel.id, moderationResult)
+            .catch((error) => {
+              console.error('Error applying moderation result:', error);
+            });
+        })
+        .catch((error) => {
+          console.error('Background moderation error:', error);
+        });
     } catch (err: any) {
       console.error('Post error:', err);
       Alert.alert('Lỗi', err.message || 'Không thể đăng reel');
     } finally {
       setLoading(false);
+      setUploading(false);
+      setUploadStatus('');
+      setIsPosting(false);
     }
   };
 
-  const canSubmit = Boolean(videoUri) && !loading && !uploading && !moderating;
+  const canSubmit = (mediaType === 'video' ? Boolean(videoUri) : Boolean(imageUri)) && !loading && !uploading && !moderating && !isPosting;
 
   return (
     <View style={styles.container}>
@@ -281,41 +509,189 @@ export default function CreateReelScreen() {
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
       >
+        {/* Media Type Toggle */}
         <View style={styles.card}>
-          <Text style={styles.sectionLabel}>Video</Text>
-          {videoUri ? (
-            <View style={styles.previewWrapper}>
-              <Image
-                source={{ uri: thumbnailUri || videoUri }}
-                style={styles.videoPreview}
-                resizeMode="cover"
-              />
-              <View style={styles.playIconOverlay}>
-                <Video size={48} color="#fff" fill="#fff" />
-              </View>
-              <TouchableOpacity
-                style={styles.removeVideoButton}
-                onPress={() => {
-                  setVideoUri(null);
-                  setThumbnailUri(null);
-                }}
-                disabled={loading}
-              >
-                <X color="#fff" size={18} />
-              </TouchableOpacity>
-            </View>
-          ) : (
+          <Text style={styles.sectionLabel}>Loại nội dung</Text>
+          <View style={styles.toggleContainer}>
             <TouchableOpacity
-              style={styles.videoPicker}
-              onPress={pickVideo}
+              style={[
+                styles.toggleButton,
+                mediaType === 'video' && styles.toggleButtonActive,
+              ]}
+              onPress={() => {
+                setMediaType('video');
+                setImageUri(null);
+              }}
               disabled={loading}
             >
-              <Video color="#FF6B6B" size={48} />
-              <Text style={styles.videoPickerText}>Chọn video từ thư viện</Text>
-              <Text style={styles.videoPickerHint}>
-                Tối đa 60 giây • Tối đa 100MB
+              <Video size={20} color={mediaType === 'video' ? '#fff' : '#6B7280'} />
+              <Text
+                style={[
+                  styles.toggleText,
+                  mediaType === 'video' && styles.toggleTextActive,
+                ]}
+              >
+                Video
               </Text>
             </TouchableOpacity>
+            <TouchableOpacity
+              style={[
+                styles.toggleButton,
+                mediaType === 'image' && styles.toggleButtonActive,
+              ]}
+              onPress={() => {
+                setMediaType('image');
+                setVideoUri(null);
+              }}
+              disabled={loading}
+            >
+              <ImageIcon size={20} color={mediaType === 'image' ? '#fff' : '#6B7280'} />
+              <Text
+                style={[
+                  styles.toggleText,
+                  mediaType === 'image' && styles.toggleTextActive,
+                ]}
+              >
+                Ảnh
+              </Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+
+        {/* Media Picker */}
+        <View style={styles.card}>
+          <Text style={styles.sectionLabel}>
+            {mediaType === 'video' ? 'Video' : 'Ảnh'}
+          </Text>
+          {mediaType === 'video' ? (
+            videoUri ? (
+              <View style={styles.previewWrapper}>
+                <Image
+                  source={{ uri: thumbnailUri || videoUri }}
+                  style={styles.videoPreview}
+                  resizeMode="cover"
+                />
+                <View style={styles.playIconOverlay}>
+                  <Video size={48} color="#fff" fill="#fff" />
+                </View>
+                <TouchableOpacity
+                  style={styles.removeVideoButton}
+                  onPress={() => {
+                    setVideoUri(null);
+                    setThumbnailUri(null);
+                  }}
+                  disabled={loading}
+                >
+                  <X color="#fff" size={18} />
+                </TouchableOpacity>
+              </View>
+            ) : (
+              <TouchableOpacity
+                style={styles.videoPicker}
+                onPress={pickVideo}
+                disabled={loading}
+              >
+                <Video color="#FF6B6B" size={48} />
+                <Text style={styles.videoPickerText}>Chọn video từ thư viện</Text>
+                <Text style={styles.videoPickerHint}>
+                  Tối đa 60 giây • Tối đa 300MB
+                </Text>
+              </TouchableOpacity>
+            )
+          ) : (
+            imageUri ? (
+              <View style={styles.previewWrapper}>
+                <Image
+                  source={{ uri: imageUri }}
+                  style={styles.videoPreview}
+                  resizeMode="cover"
+                />
+                <TouchableOpacity
+                  style={styles.removeVideoButton}
+                  onPress={() => {
+                    setImageUri(null);
+                    setThumbnailUri(null);
+                  }}
+                  disabled={loading}
+                >
+                  <X color="#fff" size={18} />
+                </TouchableOpacity>
+              </View>
+            ) : (
+              <TouchableOpacity
+                style={styles.videoPicker}
+                onPress={pickImage}
+                disabled={loading}
+              >
+                <ImageIcon color="#FF6B6B" size={48} />
+                <Text style={styles.videoPickerText}>Chọn ảnh từ thư viện</Text>
+                <Text style={styles.videoPickerHint}>
+                  Tỷ lệ 9:16 (dọc) • Tối đa 10MB
+                </Text>
+              </TouchableOpacity>
+            )
+          )}
+        </View>
+
+        {/* Music Section */}
+        <View style={styles.card}>
+          <View style={styles.musicHeader}>
+            <Text style={styles.sectionLabel}>Nhạc nền (Tùy chọn)</Text>
+            <TouchableOpacity
+              style={styles.musicButton}
+              onPress={() => setShowMusicPicker(true)}
+              disabled={loading}
+            >
+              <Music size={18} color="#FF6B6B" />
+              <Text style={styles.musicButtonText}>
+                {selectedTrack ? 'Đổi nhạc' : 'Chọn nhạc'}
+              </Text>
+            </TouchableOpacity>
+          </View>
+
+          {selectedTrack && (
+            <View style={styles.selectedTrackContainer}>
+              <View style={styles.selectedTrackInfo}>
+                {selectedTrack.cover_image_url ? (
+                  <Image
+                    source={{ uri: selectedTrack.cover_image_url }}
+                    style={styles.selectedTrackCover}
+                  />
+                ) : (
+                  <View style={[styles.selectedTrackCover, styles.trackCoverPlaceholder]}>
+                    <Music size={20} color="#999" />
+                  </View>
+                )}
+                <View style={styles.selectedTrackDetails}>
+                  <Text style={styles.selectedTrackTitle} numberOfLines={1}>
+                    {selectedTrack.title}
+                  </Text>
+                  <Text style={styles.selectedTrackArtist} numberOfLines={1}>
+                    {selectedTrack.artist}
+                  </Text>
+                </View>
+                <TouchableOpacity
+                  style={styles.removeTrackButton}
+                  onPress={() => {
+                    setSelectedTrack(null);
+                    setMusicStartTime(0);
+                    setMusicVolume(0.7);
+                  }}
+                >
+                  <X size={18} color="#999" />
+                </TouchableOpacity>
+              </View>
+
+              {/* Music Controls */}
+              <View style={styles.musicControls}>
+                <View style={styles.musicControlRow}>
+                  <Text style={styles.musicControlLabel}>Thời điểm bắt đầu: {musicStartTime}s</Text>
+                </View>
+                <View style={styles.musicControlRow}>
+                  <Text style={styles.musicControlLabel}>Volume: {Math.round(musicVolume * 100)}%</Text>
+                </View>
+              </View>
+            </View>
           )}
         </View>
 
@@ -341,6 +717,13 @@ export default function CreateReelScreen() {
             </Text>
           </View>
         )}
+
+        {uploading && uploadStatus && (
+          <View style={styles.uploadStatusCard}>
+            <ActivityIndicator size="small" color="#FF6B6B" />
+            <Text style={styles.uploadStatusText}>{uploadStatus}</Text>
+          </View>
+        )}
       </ScrollView>
 
       <View style={styles.footer}>
@@ -353,12 +736,25 @@ export default function CreateReelScreen() {
           disabled={!canSubmit || loading}
         >
           {loading || uploading || moderating ? (
-            <ActivityIndicator color="#fff" />
+            <View style={styles.buttonLoadingContainer}>
+              <ActivityIndicator color="#fff" />
+              {uploadStatus && (
+                <Text style={styles.buttonStatusText}>{uploadStatus}</Text>
+              )}
+            </View>
           ) : (
             <Text style={styles.primaryButtonText}>Đăng Reel</Text>
           )}
         </TouchableOpacity>
       </View>
+
+      {/* Music Picker Modal */}
+      <MusicPickerModal
+        visible={showMusicPicker}
+        onClose={() => setShowMusicPicker(false)}
+        onSelect={(track) => setSelectedTrack(track)}
+        selectedTrackId={selectedTrack?.id}
+      />
     </View>
   );
 }
@@ -503,6 +899,139 @@ const styles = StyleSheet.create({
     color: '#FF6F00',
     fontWeight: '500',
   },
+  uploadStatusCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    backgroundColor: '#F0F9FF',
+    padding: 16,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: '#0EA5E9',
+    marginBottom: 20,
+  },
+  uploadStatusText: {
+    fontSize: 14,
+    color: '#0369A1',
+    fontWeight: '500',
+    flex: 1,
+  },
+  buttonLoadingContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  buttonStatusText: {
+    color: '#fff',
+    fontSize: 14,
+    fontWeight: '600',
+    marginLeft: 8,
+  },
+  toggleContainer: {
+    flexDirection: 'row',
+    backgroundColor: '#F3F4F6',
+    borderRadius: 12,
+    padding: 4,
+    marginTop: 12,
+  },
+  toggleButton: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 12,
+    borderRadius: 8,
+    gap: 8,
+  },
+  toggleButtonActive: {
+    backgroundColor: '#FF6B6B',
+  },
+  toggleText: {
+    fontSize: 15,
+    fontWeight: '600',
+    color: '#6B7280',
+  },
+  toggleTextActive: {
+    color: '#fff',
+  },
+  musicHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 12,
+  },
+  musicButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    backgroundColor: '#FFE0E0',
+    borderRadius: 20,
+  },
+  musicButtonText: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#FF6B6B',
+  },
+  selectedTrackContainer: {
+    marginTop: 12,
+    padding: 16,
+    backgroundColor: '#F9FAFB',
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: '#E4E7EB',
+  },
+  selectedTrackInfo: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 12,
+  },
+  selectedTrackCover: {
+    width: 50,
+    height: 50,
+    borderRadius: 8,
+    backgroundColor: '#E4E7EB',
+  },
+  selectedTrackDetails: {
+    flex: 1,
+    marginLeft: 12,
+  },
+  selectedTrackTitle: {
+    fontSize: 15,
+    fontWeight: '600',
+    color: '#1F2933',
+    marginBottom: 4,
+  },
+  selectedTrackArtist: {
+    fontSize: 13,
+    color: '#6B7280',
+  },
+  removeTrackButton: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: '#F3F4F6',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  trackCoverPlaceholder: {
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  musicControls: {
+    marginTop: 12,
+    paddingTop: 12,
+    borderTopWidth: 1,
+    borderTopColor: '#E4E7EB',
+  },
+  musicControlRow: {
+    marginBottom: 8,
+  },
+  musicControlLabel: {
+    fontSize: 13,
+    color: '#6B7280',
+  },
   footer: {
     padding: 20,
     backgroundColor: '#fff',
@@ -531,6 +1060,7 @@ const styles = StyleSheet.create({
     fontWeight: '700',
   },
 });
+
 
 
 

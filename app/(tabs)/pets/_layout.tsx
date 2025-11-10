@@ -10,12 +10,7 @@ export default function PetsTabLayout() {
         tabBarActiveTintColor: colors.primary,
         tabBarInactiveTintColor: colors.textTertiary,
         tabBarStyle: {
-          backgroundColor: colors.tabBarBackground,
-          borderTopWidth: 1,
-          borderTopColor: colors.border,
-          height: 60,
-          paddingBottom: 6,
-          paddingTop: 6,
+          display: 'none', // Ẩn tab bar - chỉ hiển thị header tabs
         },
         tabBarLabelStyle: {
           fontSize: 11,

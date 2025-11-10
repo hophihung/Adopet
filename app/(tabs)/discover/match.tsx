@@ -11,7 +11,7 @@ import {
   ActivityIndicator,
 } from 'react-native';
 import { useAuth } from '@/contexts/AuthContext';
-import { Heart, X, RotateCcw, Star, Send, PawPrint, Video } from 'lucide-react-native';
+import { Heart, X, RotateCcw, Star, Send, PawPrint, Video, Home, MapPin } from 'lucide-react-native';
 import { useRouter, usePathname } from 'expo-router';
 import Swiper from 'react-native-deck-swiper';
 import { PetService } from '@/src/features/pets/services/pet.service';
@@ -345,58 +345,38 @@ export default function MatchScreen() {
               </View>
 
               <View style={styles.cardOverlay}>
-                {pet.profiles && (
-                  <View style={styles.sellerInfo}>
-                    {pet.profiles.avatar_url && (
-                      <Image
-                        source={{ uri: pet.profiles.avatar_url }}
-                        style={styles.sellerAvatar}
-                      />
-                    )}
-                    <View>
-                      <Text style={styles.sellerName}>
-                        {pet.profiles.full_name || 'Người bán'}
-                      </Text>
-                      <View style={styles.statsBadge}>
-                        <Text style={styles.statText}>Likes {pet.like_count}</Text>
-                        <Text style={styles.statSeparator}>|</Text>
-                        <Text style={styles.statText}>Views {pet.view_count}</Text>
-                      </View>
-                    </View>
+                {/* Pet Info Overlay - Bottom Left */}
+                <View style={styles.petInfoOverlay}>
+                  {/* Active Status */}
+                  <View style={styles.activeStatus}>
+                    <View style={styles.activeDot} />
+                    <Text style={styles.activeText}>Có hoạt động gần đây</Text>
                   </View>
-                )}
 
-                <View style={styles.petInfo}>
-                  <View style={styles.petHeader}>
+                  {/* Name, Age, Verification */}
+                  <View style={styles.nameRow}>
                     <Text style={styles.petName}>{pet.name}</Text>
-                    <Text style={styles.petAge}>
-                      {pet.age_months ? Math.floor(pet.age_months / 12) : '?'}
-                    </Text>
+                    {pet.age_months && (
+                      <Text style={styles.petAge}>
+                        {Math.floor(pet.age_months / 12)}
+                      </Text>
+                    )}
+                    <Text style={styles.verifiedIcon}>✓</Text>
                   </View>
-                  {pet.breed && (
-                    <View style={styles.infoRow}>
-                      <Text style={styles.infoIcon}>Breed</Text>
-                      <Text style={styles.infoText}>{pet.breed}</Text>
-                    </View>
-                  )}
+
+                  {/* Location */}
                   {pet.location && (
                     <View style={styles.infoRow}>
-                      <Text style={styles.infoIcon}>Location</Text>
-                      <Text style={styles.infoText}>{pet.location}</Text>
+                      <Home size={14} color="#fff" style={styles.icon} />
+                      <Text style={styles.infoText}>Sống tại {pet.location}</Text>
                     </View>
                   )}
-                  {pet.size && (
-                    <View style={styles.infoRow}>
-                      <Text style={styles.infoIcon}>Size</Text>
-                      <Text style={styles.infoText}>Size: {pet.size}</Text>
-                    </View>
-                  )}
-                  {pet.energy_level && (
-                    <View style={styles.infoRow}>
-                      <Text style={styles.infoIcon}>Energy</Text>
-                      <Text style={styles.infoText}>{pet.energy_level}</Text>
-                    </View>
-                  )}
+
+                  {/* Distance - Mock data for now */}
+                  <View style={styles.infoRow}>
+                    <MapPin size={14} color="#fff" style={styles.icon} />
+                    <Text style={styles.infoText}>Cách xa 2 km</Text>
+                  </View>
                 </View>
               </View>
             </View>
@@ -581,106 +561,84 @@ const styles = StyleSheet.create({
   },
   cardOverlay: {
     flex: 1,
-    justifyContent: 'space-between',
-    padding: 16,
+    justifyContent: 'flex-end',
+    padding: 20,
     position: 'absolute',
     top: 0,
     bottom: 0,
     left: 0,
     right: 0,
   },
-  statusBadge: {
+  petInfoOverlay: {
+    alignSelf: 'flex-start',
+    maxWidth: '80%',
+  },
+  activeStatus: {
     flexDirection: 'row',
     alignItems: 'center',
-    alignSelf: 'flex-start',
-    backgroundColor: 'rgba(0,0,0,0.4)',
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 20,
+    marginBottom: 8,
     gap: 6,
-    margin: 12,
   },
-  statusDot: { width: 8, height: 8, borderRadius: 4, backgroundColor: '#00D664' },
-  statusText: { color: '#fff', fontSize: 12, fontWeight: '500' },
-  petInfo: { backgroundColor: 'transparent', margin: 12 },
-  petHeader: { flexDirection: 'row', alignItems: 'center', marginBottom: 8 },
-  petName: {
-    fontSize: 36,
-    fontWeight: 'bold',
+  activeDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: '#00D664',
+  },
+  activeText: {
+    fontSize: 12,
     color: '#fff',
+    fontWeight: '500',
     textShadowColor: 'rgba(0,0,0,0.5)',
     textShadowOffset: { width: 0, height: 1 },
+    textShadowRadius: 2,
+  },
+  nameRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 8,
+    gap: 8,
+  },
+  petName: {
+    fontSize: 32,
+    fontWeight: 'bold',
+    color: '#fff',
+    textShadowColor: 'rgba(0,0,0,0.7)',
+    textShadowOffset: { width: 0, height: 2 },
     textShadowRadius: 4,
   },
   petAge: {
-    fontSize: 32,
+    fontSize: 28,
     color: '#fff',
-    fontWeight: '400',
-    textShadowColor: 'rgba(0,0,0,0.5)',
-    textShadowOffset: { width: 0, height: 1 },
+    fontWeight: '600',
+    textShadowColor: 'rgba(0,0,0,0.7)',
+    textShadowOffset: { width: 0, height: 2 },
     textShadowRadius: 4,
   },
-  verified: {
+  verifiedIcon: {
     fontSize: 20,
     color: '#4ECFFF',
-    marginLeft: 6,
-    textShadowColor: 'rgba(0,0,0,0.5)',
-    textShadowOffset: { width: 0, height: 1 },
+    fontWeight: 'bold',
+    textShadowColor: 'rgba(0,0,0,0.7)',
+    textShadowOffset: { width: 0, height: 2 },
     textShadowRadius: 4,
   },
-  infoRow: { flexDirection: 'row', alignItems: 'center', marginBottom: 6 },
-  infoIcon: { fontSize: 16, marginRight: 8 },
-  infoText: {
-    fontSize: 16,
-    color: '#fff',
-    fontWeight: '500',
-    textShadowColor: 'rgba(0,0,0,0.5)',
-    textShadowOffset: { width: 0, height: 1 },
-    textShadowRadius: 4,
-  },
-  sellerInfo: {
+  infoRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: 'rgba(0,0,0,0.4)',
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    borderRadius: 12,
-    gap: 10,
-    alignSelf: 'flex-start',
-    margin: 12,
-  },
-  sellerAvatar: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    borderWidth: 2,
-    borderColor: '#fff',
-  },
-  sellerName: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: '#fff',
-    textShadowColor: 'rgba(0,0,0,0.5)',
-    textShadowOffset: { width: 0, height: 1 },
-    textShadowRadius: 2,
-  },
-  statsBadge: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginTop: 4,
+    marginBottom: 4,
     gap: 6,
   },
-  statText: {
-    fontSize: 12,
+  icon: {
+    marginRight: 0,
+  },
+  infoText: {
+    fontSize: 14,
     color: '#fff',
     fontWeight: '500',
-    textShadowColor: 'rgba(0,0,0,0.5)',
+    textShadowColor: 'rgba(0,0,0,0.7)',
     textShadowOffset: { width: 0, height: 1 },
-    textShadowRadius: 2,
-  },
-  statSeparator: {
-    color: 'rgba(255,255,255,0.6)',
-    fontSize: 12,
+    textShadowRadius: 3,
   },
   actions: {
     flexDirection: 'row',

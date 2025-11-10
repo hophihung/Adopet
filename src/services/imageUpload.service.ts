@@ -101,6 +101,18 @@ class ImageUploadService {
     }
   }
 
+  // Helper function to get correct MIME type
+  private getMimeType(fileExtension: string): string {
+    const mimeTypes: Record<string, string> = {
+      'jpg': 'image/jpeg',
+      'jpeg': 'image/jpeg',
+      'png': 'image/png',
+      'webp': 'image/webp',
+      'gif': 'image/gif',
+    };
+    return mimeTypes[fileExtension.toLowerCase()] || 'image/jpeg';
+  }
+
   // Upload image to Supabase Storage
   async uploadImage(
     imageUri: string,
@@ -123,11 +135,14 @@ class ImageUploadService {
       // Convert base64 to ArrayBuffer for Supabase
       const arrayBuffer = Uint8Array.from(atob(base64), c => c.charCodeAt(0));
 
+      // Get correct MIME type
+      const contentType = this.getMimeType(fileExtension);
+
       // Upload to Supabase Storage
       const { data, error } = await supabase.storage
         .from(bucket)
         .upload(filePath, arrayBuffer, {
-          contentType: `image/${fileExtension}`,
+          contentType,
           upsert: false,
         });
 

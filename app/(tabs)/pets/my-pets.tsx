@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -7,8 +7,9 @@ import {
   TouchableOpacity,
   Alert,
   RefreshControl,
+  Platform,
 } from 'react-native';
-import { useRouter } from 'expo-router';
+import { useRouter, usePathname } from 'expo-router';
 import { usePetManagement } from '../../../src/features/pets/hooks/usePetManagement';
 import { PetLimitBanner } from '../../../src/features/pets/components/PetLimitBanner';
 import { PetCard } from '../../../src/features/pets/components/PetCard';
@@ -17,6 +18,27 @@ import { Plus, Edit2, Trash2, PawPrint } from 'lucide-react-native';
 
 export default function MyPetsScreen() {
   const router = useRouter();
+  const pathname = usePathname();
+  const [activeTab, setActiveTab] = useState<'my-pets' | 'virtual-pet'>('my-pets');
+  
+  // Navigate between my-pets and virtual-pet
+  const handleTabChange = (tab: 'my-pets' | 'virtual-pet') => {
+    setActiveTab(tab);
+    if (tab === 'virtual-pet') {
+      router.replace('/(tabs)/pets/virtual-pet');
+    } else {
+      router.replace('/(tabs)/pets/my-pets');
+    }
+  };
+
+  // Update active tab based on current pathname
+  useEffect(() => {
+    if (pathname?.includes('/virtual-pet')) {
+      setActiveTab('virtual-pet');
+    } else {
+      setActiveTab('my-pets');
+    }
+  }, [pathname]);
   const {
     userPets,
     petLimitInfo,
@@ -107,11 +129,32 @@ export default function MyPetsScreen() {
       <LinearGradient
         colors={['#FF6B6B', '#FF8E53']}
         style={styles.headerGradient}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 0 }}
       >
-        <View style={styles.header}>
-          <View style={styles.headerLeft}>
-            <PawPrint size={28} color="#fff" />
-            <Text style={styles.title}>Pet của tôi</Text>
+        <View style={styles.headerRow}>
+          <View style={styles.headerTabsContainer}>
+            <TouchableOpacity
+              style={styles.headerTab}
+              onPress={() => handleTabChange('my-pets')}
+              activeOpacity={0.7}
+            >
+              <Text style={[styles.headerTabText, activeTab === 'my-pets' && styles.headerTabTextActive]}>
+                Pets của tôi
+              </Text>
+              {activeTab === 'my-pets' && <View style={styles.headerTabIndicator} />}
+            </TouchableOpacity>
+            <View style={styles.headerTabDivider} />
+            <TouchableOpacity
+              style={styles.headerTab}
+              onPress={() => handleTabChange('virtual-pet')}
+              activeOpacity={0.7}
+            >
+              <Text style={[styles.headerTabText, activeTab === 'virtual-pet' && styles.headerTabTextActive]}>
+                Pet ảo
+              </Text>
+              {activeTab === 'virtual-pet' && <View style={styles.headerTabIndicator} />}
+            </TouchableOpacity>
           </View>
           <TouchableOpacity
             style={[
@@ -120,9 +163,9 @@ export default function MyPetsScreen() {
             ]}
             onPress={handleCreatePet}
             disabled={!petLimitInfo?.canCreate}
+            activeOpacity={0.8}
           >
-            <Plus size={18} color="#fff" />
-            <Text style={styles.createButtonText}>Tạo Pet</Text>
+            <Plus size={24} color="#FF6B6B" strokeWidth={2.5} />
           </TouchableOpacity>
         </View>
       </LinearGradient>
@@ -224,7 +267,61 @@ const styles = StyleSheet.create({
     backgroundColor: '#F5F7FA',
   },
   headerGradient: {
-    paddingTop: 40,
+    paddingTop: Platform.OS === 'ios' ? 50 : 30,
+    paddingBottom: 16,
+    paddingHorizontal: 20,
+    zIndex: 10,
+  },
+  headerRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  headerTabsContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 20,
+    flex: 1,
+  },
+  headerTab: {
+    alignItems: 'center',
+    paddingVertical: 6,
+    paddingHorizontal: 4,
+    position: 'relative',
+  },
+  headerTabDivider: {
+    width: 1,
+    height: 16,
+    backgroundColor: 'rgba(255, 255, 255, 0.3)',
+  },
+  headerTabText: {
+    fontSize: 17,
+    fontWeight: '600',
+    color: 'rgba(255, 255, 255, 0.7)',
+    textShadowColor: 'rgba(0, 0, 0, 0.3)',
+    textShadowOffset: { width: 0, height: 1 },
+    textShadowRadius: 2,
+  },
+  headerTabTextActive: {
+    color: '#fff',
+    fontWeight: '700',
+    textShadowColor: 'rgba(0, 0, 0, 0.5)',
+    textShadowOffset: { width: 0, height: 2 },
+    textShadowRadius: 3,
+  },
+  headerTabIndicator: {
+    position: 'absolute',
+    bottom: 2,
+    left: '50%',
+    transform: [{ translateX: -20 }],
+    width: 40,
+    height: 3,
+    backgroundColor: '#fff',
+    borderRadius: 2,
+    shadowColor: '#fff',
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0.5,
+    shadowRadius: 3,
   },
   header: {
     flexDirection: 'row',
@@ -244,19 +341,22 @@ const styles = StyleSheet.create({
     color: '#fff',
   },
   createButton: {
-    backgroundColor: 'rgba(255, 255, 255, 0.25)',
-    paddingHorizontal: 16,
-    paddingVertical: 10,
-    borderRadius: 12,
-    flexDirection: 'row',
+    backgroundColor: 'rgba(255, 255, 255, 0.95)',
+    width: 48,
+    height: 48,
+    borderRadius: 24,
     alignItems: 'center',
-    gap: 6,
-    borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.3)',
+    justifyContent: 'center',
+    borderWidth: 0,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 4,
+    elevation: 5,
   },
   createButtonDisabled: {
-    backgroundColor: 'rgba(255, 255, 255, 0.1)',
-    borderColor: 'rgba(255, 255, 255, 0.15)',
+    backgroundColor: 'rgba(255, 255, 255, 0.3)',
+    opacity: 0.5,
   },
   createButtonText: {
     color: '#fff',

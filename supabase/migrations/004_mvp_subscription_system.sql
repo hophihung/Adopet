@@ -225,7 +225,7 @@ BEGIN
   LEFT JOIN public.plan_features pf ON sp.id = pf.plan_id
   WHERE s.profile_id = user_profile_id 
     AND s.status = 'active'
-  GROUP BY sp.id, sp.name, sp.display_name, sp.price_monthly, sp.price_yearly, sp.color, sp.icon, sp.is_popular
+  GROUP BY sp.id, sp.name, sp.display_name, sp.price_monthly, sp.price_yearly, sp.color, sp.icon, sp.is_popular, s.created_at
   ORDER BY s.created_at DESC
   LIMIT 1;
 END;

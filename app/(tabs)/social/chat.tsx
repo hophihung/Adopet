@@ -10,6 +10,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { MessageCircle, Bell } from 'lucide-react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useAuth } from '@/contexts/AuthContext';
+import { useRouter, usePathname } from 'expo-router';
 import { ChatScreen, ChatList } from '@/src/components';
 import { Conversation, ChatService, type Notification as ChatNotification } from '@/src/features/chat';
 import { colors } from '@/src/theme/colors';
@@ -17,11 +18,33 @@ import { colors } from '@/src/theme/colors';
 
 export default function ChatTabScreen() {
   const { user } = useAuth();
+  const router = useRouter();
+  const pathname = usePathname();
   const [selectedConversation, setSelectedConversation] =
     useState<Conversation | null>(null);
   const [notifications, setNotifications] = useState<ChatNotification[]>([]);
   const [unreadCount, setUnreadCount] = useState(0);
   const [loading, setLoading] = useState(true);
+  const [activeTab, setActiveTab] = useState<'community' | 'chat'>('chat');
+  
+  // Navigate between community and chat
+  const handleTabChange = (tab: 'community' | 'chat') => {
+    setActiveTab(tab);
+    if (tab === 'community') {
+      router.replace('/(tabs)/social/community');
+    } else {
+      router.replace('/(tabs)/social/chat');
+    }
+  };
+
+  // Update active tab based on current pathname
+  useEffect(() => {
+    if (pathname?.includes('/community')) {
+      setActiveTab('community');
+    } else {
+      setActiveTab('chat');
+    }
+  }, [pathname]);
 
   useEffect(() => {
     if (user?.id) {
@@ -122,16 +145,37 @@ export default function ChatTabScreen() {
         style={styles.headerGradient}
       >
         <View style={styles.headerRow}>
-          <View style={styles.headerLeft}>
-            <MessageCircle size={28} color="#fff" />
-            <Text style={styles.headerTitle}>Tin nhắn</Text>
-            {unreadCount > 0 && (
-              <View style={styles.unreadBadge}>
-                <Text style={styles.unreadText}>
-                  {unreadCount > 99 ? '99+' : unreadCount}
+          <View style={styles.headerTabsContainer}>
+            <TouchableOpacity
+              style={styles.headerTab}
+              onPress={() => handleTabChange('community')}
+              activeOpacity={0.7}
+            >
+              <Text style={[styles.headerTabText, activeTab === 'community' && styles.headerTabTextActive]}>
+                Cộng đồng
+              </Text>
+              {activeTab === 'community' && <View style={styles.headerTabIndicator} />}
+            </TouchableOpacity>
+            <View style={styles.headerTabDivider} />
+            <TouchableOpacity
+              style={styles.headerTab}
+              onPress={() => handleTabChange('chat')}
+              activeOpacity={0.7}
+            >
+              <View style={styles.headerTabContent}>
+                <Text style={[styles.headerTabText, activeTab === 'chat' && styles.headerTabTextActive]}>
+                  Tin nhắn
                 </Text>
+                {unreadCount > 0 && (
+                  <View style={styles.unreadBadge}>
+                    <Text style={styles.unreadText}>
+                      {unreadCount > 99 ? '99+' : unreadCount}
+                    </Text>
+                  </View>
+                )}
               </View>
-            )}
+              {activeTab === 'chat' && <View style={styles.headerTabIndicator} />}
+            </TouchableOpacity>
           </View>
 
           <TouchableOpacity
@@ -175,6 +219,57 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: 12,
   },
+  headerTabsContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 20,
+    flex: 1,
+  },
+  headerTab: {
+    alignItems: 'center',
+    paddingVertical: 6,
+    paddingHorizontal: 4,
+    position: 'relative',
+  },
+  headerTabContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+  },
+  headerTabDivider: {
+    width: 1,
+    height: 16,
+    backgroundColor: 'rgba(255, 255, 255, 0.3)',
+  },
+  headerTabText: {
+    fontSize: 17,
+    fontWeight: '600',
+    color: 'rgba(255, 255, 255, 0.7)',
+    textShadowColor: 'rgba(0, 0, 0, 0.3)',
+    textShadowOffset: { width: 0, height: 1 },
+    textShadowRadius: 2,
+  },
+  headerTabTextActive: {
+    color: '#fff',
+    fontWeight: '700',
+    textShadowColor: 'rgba(0, 0, 0, 0.5)',
+    textShadowOffset: { width: 0, height: 2 },
+    textShadowRadius: 3,
+  },
+  headerTabIndicator: {
+    position: 'absolute',
+    bottom: 2,
+    left: '50%',
+    transform: [{ translateX: -15 }],
+    width: 30,
+    height: 3,
+    backgroundColor: '#fff',
+    borderRadius: 2,
+    shadowColor: '#fff',
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0.5,
+    shadowRadius: 3,
+  },
   headerTitle: {
     fontSize: 24,
     fontWeight: '700',
@@ -187,7 +282,7 @@ const styles = StyleSheet.create({
     height: 20,
     justifyContent: 'center',
     alignItems: 'center',
-    marginLeft: 8,
+    paddingHorizontal: 4,
   },
   unreadText: {
     color: colors.primary,

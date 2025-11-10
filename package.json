@@ -26,6 +26,7 @@
     "base64-arraybuffer": "^1.0.2",
     "expo": "54.0.20",
     "expo-auth-session": "^7.0.8",
+    "expo-av": "~16.0.7",
     "expo-blur": "~15.0.7",
     "expo-camera": "~17.0.8",
     "expo-constants": "~18.0.9",

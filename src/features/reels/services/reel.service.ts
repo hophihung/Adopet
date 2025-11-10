@@ -3,7 +3,9 @@ import { supabase } from '@/lib/supabase';
 export interface Reel {
   id: string;
   user_id: string;
-  video_url: string;
+  media_type: 'image' | 'video';
+  video_url?: string;
+  image_url?: string;
   thumbnail_url?: string;
   caption?: string;
   like_count: number;
@@ -14,12 +16,24 @@ export interface Reel {
   moderation_reason?: string;
   is_sensitive: boolean;
   is_pet_related: boolean;
+  music_track_id?: string;
+  music_start_time?: number;
+  music_volume?: number;
   created_at: string;
   updated_at: string;
   profiles?: {
     id: string;
     full_name: string;
     avatar_url?: string;
+  };
+  music_tracks?: {
+    id: string;
+    title: string;
+    artist: string;
+    audio_url: string;
+    cover_image_url?: string;
+    duration: number;
+    is_premium: boolean;
   };
 }
 
@@ -38,10 +52,15 @@ export interface ReelComment {
 }
 
 export interface CreateReelInput {
-  video_url: string;
+  media_type: 'image' | 'video';
+  video_url?: string;
+  image_url?: string;
   thumbnail_url?: string;
   caption?: string;
   duration?: number;
+  music_track_id?: string;
+  music_start_time?: number;
+  music_volume?: number;
 }
 
 export const ReelService = {
@@ -49,7 +68,18 @@ export const ReelService = {
   async getAll(limit: number = 20, offset: number = 0): Promise<Reel[]> {
     const { data, error } = await supabase
       .from('reels')
-      .select('*')
+      .select(`
+        *,
+        music_tracks (
+          id,
+          title,
+          artist,
+          audio_url,
+          cover_image_url,
+          duration,
+          is_premium
+        )
+      `)
       .eq('status', 'approved')
       .order('created_at', { ascending: false })
       .range(offset, offset + limit - 1);
@@ -70,6 +100,7 @@ export const ReelService = {
     return data.map(reel => ({
       ...reel,
       profiles: profileMap.get(reel.user_id),
+      music_tracks: reel.music_tracks?.[0] || undefined,
     }));
   },
 
@@ -125,17 +156,37 @@ export const ReelService = {
     const { data: user } = await supabase.auth.getUser();
     if (!user?.user) throw new Error('User not authenticated');
 
+    // Prepare insert data - include both user_id and seller_id for backward compatibility
+    const insertData: any = {
+      user_id: user.user.id,
+      seller_id: user.user.id, // Set seller_id = user_id for backward compatibility
+      media_type: input.media_type,
+      video_url: input.video_url,
+      image_url: input.image_url,
+      thumbnail_url: input.thumbnail_url,
+      caption: input.caption,
+      duration: input.duration,
+      music_track_id: input.music_track_id,
+      music_start_time: input.music_start_time || 0,
+      music_volume: input.music_volume || 0.5,
+      status: 'pending', // Will be approved after moderation
+    };
+
     const { data, error } = await supabase
       .from('reels')
-      .insert({
-        user_id: user.user.id,
-        video_url: input.video_url,
-        thumbnail_url: input.thumbnail_url,
-        caption: input.caption,
-        duration: input.duration,
-        status: 'pending', // Will be approved after moderation
-      })
-      .select('*')
+      .insert(insertData)
+      .select(`
+        *,
+        music_tracks (
+          id,
+          title,
+          artist,
+          audio_url,
+          cover_image_url,
+          duration,
+          is_premium
+        )
+      `)
       .single();
 
     if (error) throw error;
@@ -151,6 +202,7 @@ export const ReelService = {
     return {
       ...data,
       profiles: profile || undefined,
+      music_tracks: data.music_tracks?.[0] || undefined,
     };
   },
 

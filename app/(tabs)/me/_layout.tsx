@@ -10,12 +10,7 @@ export default function MeTabLayout() {
         tabBarActiveTintColor: colors.primary,
         tabBarInactiveTintColor: colors.textTertiary,
         tabBarStyle: {
-          backgroundColor: colors.tabBarBackground,
-          borderTopWidth: 1,
-          borderTopColor: colors.border,
-          height: 50,
-          paddingBottom: 4,
-          paddingTop: 4,
+          display: 'none', // Ẩn tab bar - chỉ hiển thị header tabs
         },
         tabBarLabelStyle: {
           fontSize: 12,

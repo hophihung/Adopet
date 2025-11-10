@@ -38,7 +38,7 @@ export default function CreatePostScreen() {
       }
 
       const result = await ImagePicker.launchImageLibraryAsync({
-        mediaTypes: ImagePicker.MediaTypeOptions.Images, // Correct enum usage
+        mediaTypes: ['images'],
         allowsEditing: true,
         quality: 0.8,
       });

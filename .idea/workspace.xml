@@ -5,19 +5,72 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="9fcd68c1-d0d0-4c8c-a8ff-2b8e56742dc1" name="Changes" comment="">
+      <change beforePath="$PROJECT_DIR$/.idea/caches/deviceStreaming.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/caches/deviceStreaming.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/CONTENT_MODERATION_SETUP.md" beforeDir="false" afterPath="$PROJECT_DIR$/CONTENT_MODERATION_SETUP.md" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/FIX_PAYOS_ERROR.md" beforeDir="false" afterPath="$PROJECT_DIR$/FIX_PAYOS_ERROR.md" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/REELS_SYSTEM_GUIDE.md" beforeDir="false" afterPath="$PROJECT_DIR$/REELS_SYSTEM_GUIDE.md" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/FIX_PAYOS_ERROR.md" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/FLOW.md" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/FOLDER_STRUCTURE.md" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/IMAGE_UPLOAD_GUIDE.md" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/IMPLEMENTATION_SUMMARY.md" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/IP_TRACKING_GUIDE.md" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/MVP_SUBSCRIPTION_GUIDE.md" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/NAVIGATION_UPDATE_SUMMARY.md" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/OAUTH_DEBUG.md" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/PAYOS_DEEP_LINKING_GUIDE.md" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/PAYOS_DNS_ERROR_FIX.md" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/PAYOS_ERROR_CODE_20_FIX.md" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/PAYOS_METHOD_NOT_ALLOWED_FIX.md" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/PAYOS_PROXY_DEBUG.md" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/PAYOS_PROXY_SOLUTION.md" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/PAYOS_SIGNATURE_FIX.md" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/PAYOS_TRANSACTION_SETUP.md" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/PET_CREATION_SUBSCRIPTION_FLOW.md" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/PET_ENHANCEMENT_SUMMARY.md" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/QUICK_FIX_PAYOS.md" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/REALTIME_SETUP.md" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/REELS_SYSTEM_GUIDE.md" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/ROUTING_GUIDE.md" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/RUN_MIGRATIONS.md" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/SELLER_SUBSCRIPTION_FIX.md" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/SETUP_GUIDE.md" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/STRIPE_IMPLEMENTATION_SUMMARY.md" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/STRIPE_QUICKSTART.md" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/STRIPE_SETUP.md" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/STRIPE_TRANSACTION_SETUP.md" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/SUBSCRIPTION_GUIDE.md" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/SWIPE_IMPLEMENTATION.md" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/SWIPE_QUICK_REFERENCE.md" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/(auth)/_layout.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/app/(auth)/_layout.tsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/(auth)/login.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/app/(auth)/login.tsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/(auth)/select-role.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/app/(auth)/select-role.tsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/(tabs)/_layout.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/app/(tabs)/_layout.tsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/(tabs)/discover/_layout.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/app/(tabs)/discover/_layout.tsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/(tabs)/discover/match.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/app/(tabs)/discover/match.tsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/(tabs)/discover/reel.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/app/(tabs)/discover/reel.tsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/(tabs)/me/_layout.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/app/(tabs)/me/_layout.tsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/(tabs)/me/profile.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/app/(tabs)/me/profile.tsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/(tabs)/me/reminders.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/app/(tabs)/me/reminders.tsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/(tabs)/pets/_layout.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/app/(tabs)/pets/_layout.tsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/(tabs)/pets/my-pets.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/app/(tabs)/pets/my-pets.tsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/(tabs)/pets/virtual-pet.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/app/(tabs)/pets/virtual-pet.tsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/(tabs)/social/_layout.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/app/(tabs)/social/_layout.tsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/(tabs)/social/chat.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/app/(tabs)/social/chat.tsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/(tabs)/social/community.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/app/(tabs)/social/community.tsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/post/create-post.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/app/post/create-post.tsx" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/app/reel/create-reel.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/app/reel/create-reel.tsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/features/chat/components/TransactionCard.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/src/features/chat/components/TransactionCard.tsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/features/chat/services/payos-transaction.service.ts" beforeDir="false" afterPath="$PROJECT_DIR$/src/features/chat/services/payos-transaction.service.ts" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/contexts/AuthContext.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/contexts/AuthContext.tsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/package-lock.json" beforeDir="false" afterPath="$PROJECT_DIR$/package-lock.json" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/package.json" beforeDir="false" afterPath="$PROJECT_DIR$/package.json" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/features/reels/index.ts" beforeDir="false" afterPath="$PROJECT_DIR$/src/features/reels/index.ts" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/features/reels/services/contentModeration.service.ts" beforeDir="false" afterPath="$PROJECT_DIR$/src/features/reels/services/contentModeration.service.ts" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/supabase/functions/create-payos-payment-link/index.ts" beforeDir="false" afterPath="$PROJECT_DIR$/supabase/functions/create-payos-payment-link/index.ts" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/features/reels/services/reel.service.ts" beforeDir="false" afterPath="$PROJECT_DIR$/src/features/reels/services/reel.service.ts" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/services/imageUpload.service.ts" beforeDir="false" afterPath="$PROJECT_DIR$/src/services/imageUpload.service.ts" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/supabase/functions/moderate-content/aws-rekognition-implementation.ts" beforeDir="false" afterPath="$PROJECT_DIR$/supabase/functions/moderate-content/aws-rekognition-implementation.ts" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/supabase/functions/moderate-content/google-vision-implementation.ts" beforeDir="false" afterPath="$PROJECT_DIR$/supabase/functions/moderate-content/google-vision-implementation.ts" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/supabase/functions/moderate-content/openai-implementation.ts" beforeDir="false" afterPath="$PROJECT_DIR$/supabase/functions/moderate-content/openai-implementation.ts" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/supabase/migrations/004_mvp_subscription_system.sql" beforeDir="false" afterPath="$PROJECT_DIR$/supabase/migrations/004_mvp_subscription_system.sql" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/supabase/migrations/005_auto_create_subscription_for_sellers.sql" beforeDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -29,6 +82,9 @@
   </component>
   <component name="Git.Settings">
     <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
+  </component>
+  <component name="HighlightingSettingsPerFile">
+    <setting file="file://$PROJECT_DIR$/README.md" root0="FORCE_HIGHLIGHTING" root1="FORCE_HIGHLIGHTING" />
   </component>
   <component name="ProjectColorInfo">{
   &quot;customColor&quot;: &quot;&quot;,
