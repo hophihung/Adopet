@@ -6,11 +6,11 @@
 import React, { useState } from 'react';
 import { View, StyleSheet, KeyboardAvoidingView, Platform, ScrollView, Alert, TouchableOpacity, Dimensions } from 'react-native';
 import { Button, TextInput, Text, ActivityIndicator, Card } from 'react-native-paper';
-import { LinearGradient } from 'expo-linear-gradient';
 import { useAuth } from '../../contexts/AuthContext';
 import { router } from 'expo-router';
 import * as WebBrowser from 'expo-web-browser';
-import { Egg, PawPrint } from 'lucide-react-native';
+import { PawPrint } from 'lucide-react-native';
+import { colors } from '@/src/theme/colors';
 
 const { width } = Dimensions.get('window');
 
@@ -65,12 +65,7 @@ export default function LoginScreen() {
   };
 
   return (
-    <LinearGradient
-      colors={['#FFE5B4', '#FFDAB9', '#FFB6C1']}
-      style={styles.gradient}
-      start={{ x: 1, y: 0 }}
-      end={{ x: 1, y: 1 }}
-    >
+    <View style={styles.container}>
       <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         style={styles.container}
@@ -112,8 +107,8 @@ export default function LoginScreen() {
                   mode="outlined"
                   disabled={loading}
                   left={<TextInput.Icon icon="email" />}
-                  outlineColor="#FFB6C1"
-                  activeOutlineColor="#FF69B4"
+                  outlineColor={colors.border}
+                  activeOutlineColor={colors.primary}
                 />
                 <TextInput
                   label="Password"
@@ -125,13 +120,13 @@ export default function LoginScreen() {
                   disabled={loading}
                   left={<TextInput.Icon icon="lock" />}
                   right={<TextInput.Icon icon="eye" />}
-                  outlineColor="#FFB6C1"
-                  activeOutlineColor="#FF69B4"
+                  outlineColor={colors.border}
+                  activeOutlineColor={colors.primary}
                 />
 
                 {loading ? (
                   <View style={styles.loaderContainer}>
-                    <ActivityIndicator size="large" color="#FF69B4" />
+                    <ActivityIndicator size="large" color={colors.primary} />
                     <Text style={styles.loaderText}>🐾 Đang đăng nhập...</Text>
                   </View>
                 ) : (
@@ -140,7 +135,7 @@ export default function LoginScreen() {
                       mode="contained"
                       onPress={handleEmailAuth}
                       style={styles.button}
-                      buttonColor="#FF69B4"
+                      buttonColor={colors.primary}
                       contentStyle={styles.buttonContent}
                       icon="paw"
                     >
@@ -218,16 +213,14 @@ export default function LoginScreen() {
           </View>
         </ScrollView>
       </KeyboardAvoidingView>
-    </LinearGradient>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  gradient: {
-    flex: 1,
-  },
   container: {
     flex: 1,
+    backgroundColor: colors.background,
   },
   scrollContent: {
     flexGrow: 1,
@@ -235,7 +228,7 @@ const styles = StyleSheet.create({
     paddingBottom: 40,
   },
   content: {
-    paddingTop: 40,
+    paddingTop: 60,
     flex: 1,
     padding: 20,
     justifyContent: 'center',
@@ -256,13 +249,17 @@ const styles = StyleSheet.create({
   },
 
   logoContainer: {
-    width: 70,
-    height: 70,
-    borderRadius: 35,
-    backgroundColor: '#fff',
+    width: 80,
+    height: 80,
+    borderRadius: 40,
+    backgroundColor: colors.primarySoft,
     justifyContent: 'center',
     alignItems: 'center',
+    shadowColor: colors.primary,
     shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.2,
+    shadowRadius: 8,
+    elevation: 4,
   },
   logo: {
     fontSize: 56,
@@ -289,15 +286,15 @@ const styles = StyleSheet.create({
   },
   card: {
     borderRadius: 24,
-    elevation: 8,
-    shadowColor: '#FF69B4',
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.2,
-    shadowRadius: 16,
-    backgroundColor: '#fff',
+    elevation: 4,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.1,
+    shadowRadius: 12,
+    backgroundColor: colors.surface,
     marginBottom: 20,
-    borderWidth: 2,
-    borderColor: '#FFE4E1',
+    borderWidth: 1,
+    borderColor: colors.border,
   },
   cardContent: {
     padding: 24,
@@ -306,17 +303,19 @@ const styles = StyleSheet.create({
     marginBottom: 20,
   },
   formTitle: {
-    fontSize: 32,
-    fontWeight: 'bold',
-    color: '#8B4513',
-    marginBottom: 4,
-    textAlign: 'center', // ✅ căn giữa chữ theo chiều ngang
+    fontSize: 28,
+    fontWeight: '800',
+    color: colors.text,
+    marginBottom: 8,
+    textAlign: 'center',
+    letterSpacing: 0.5,
   },
 
   formSubtitle: {
     textAlign: 'center',
-    fontSize: 14,
-    color: '#999',
+    fontSize: 15,
+    color: colors.textSecondary,
+    fontWeight: '500',
   },
   input: {
     marginBottom: 16,
@@ -326,6 +325,10 @@ const styles = StyleSheet.create({
     marginTop: 8,
     borderRadius: 16,
     elevation: 4,
+    shadowColor: colors.primary,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
   },
   buttonContent: {
     paddingVertical: 10,
@@ -340,8 +343,8 @@ const styles = StyleSheet.create({
     fontSize: 14,
   },
   toggleTextBold: {
-    color: '#FF69B4',
-    fontWeight: 'bold',
+    color: colors.primary,
+    fontWeight: '700',
   },
   loaderContainer: {
     marginVertical: 24,
@@ -349,7 +352,7 @@ const styles = StyleSheet.create({
   },
   loaderText: {
     marginTop: 12,
-    color: '#FF69B4',
+    color: colors.primary,
     fontSize: 14,
     fontWeight: '600',
   },
@@ -360,16 +363,16 @@ const styles = StyleSheet.create({
   },
   dividerLine: {
     flex: 1,
-    height: 2,
-    backgroundColor: '#FFE4E1',
+    height: 1,
+    backgroundColor: colors.border,
     borderRadius: 1,
   },
   dividerTextContainer: {
     paddingHorizontal: 16,
-    backgroundColor: '#FFE5B4',
+    backgroundColor: colors.background,
   },
   dividerText: {
-    color: '#8B4513',
+    color: colors.textSecondary,
     fontSize: 13,
     fontWeight: '600',
   },
@@ -380,17 +383,17 @@ const styles = StyleSheet.create({
   },
   socialButton: {
     flex: 1,
-    backgroundColor: '#fff',
+    backgroundColor: colors.surface,
     borderRadius: 16,
     paddingVertical: 18,
     alignItems: 'center',
-    shadowColor: '#FF69B4',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.15,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
     shadowRadius: 8,
-    elevation: 4,
-    borderWidth: 2,
-    borderColor: '#FFE4E1',
+    elevation: 2,
+    borderWidth: 1,
+    borderColor: colors.border,
   },
   socialButtonContent: {
     alignItems: 'center',
@@ -399,7 +402,7 @@ const styles = StyleSheet.create({
     width: 40,
     height: 40,
     borderRadius: 20,
-    backgroundColor: '#FFF0F5',
+    backgroundColor: colors.primarySoft,
     justifyContent: 'center',
     alignItems: 'center',
     marginBottom: 8,
@@ -410,7 +413,7 @@ const styles = StyleSheet.create({
   socialButtonText: {
     fontSize: 13,
     fontWeight: '700',
-    color: '#8B4513',
+    color: colors.text,
   },
   footerContainer: {
     alignItems: 'center',
@@ -422,14 +425,13 @@ const styles = StyleSheet.create({
   },
   footer: {
     textAlign: 'center',
-    color: '#8B4513',
+    color: colors.text,
     fontWeight: '600',
     marginBottom: 12,
   },
   footerTerms: {
     textAlign: 'center',
-    color: '#8B4513',
-    opacity: 0.7,
+    color: colors.textSecondary,
     fontSize: 11,
   },
   footerLink: {

@@ -49,6 +49,23 @@ export default function CreatePetScreen() {
     location: '',
     price: undefined,
     images: [],
+    // Enhanced fields
+    breed: '',
+    weight_kg: undefined,
+    color: '',
+    health_status: undefined,
+    vaccination_status: undefined,
+    spayed_neutered: undefined,
+    microchipped: undefined,
+    house_trained: undefined,
+    good_with_kids: undefined,
+    good_with_pets: undefined,
+    energy_level: undefined,
+    size: undefined,
+    special_needs: '',
+    adoption_fee: undefined,
+    contact_phone: '',
+    contact_email: '',
   });
 
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -334,6 +351,276 @@ export default function CreatePetScreen() {
             )}
           </View>
 
+          {/* Breed */}
+          <View style={styles.inputGroup}>
+            <Text style={styles.label}>Giống</Text>
+            <TextInput
+              style={styles.input}
+              value={formData.breed || ''}
+              onChangeText={(text) =>
+                setFormData((prev) => ({ ...prev, breed: text }))
+              }
+              placeholder="Nhập giống (ví dụ: Golden Retriever)"
+            />
+          </View>
+
+          {/* Weight */}
+          <View style={styles.inputGroup}>
+            <Text style={styles.label}>Cân nặng (kg)</Text>
+            <TextInput
+              style={styles.input}
+              value={formData.weight_kg?.toString() || ''}
+              onChangeText={(text) =>
+                setFormData((prev) => ({
+                  ...prev,
+                  weight_kg: text ? parseFloat(text) : undefined,
+                }))
+              }
+              placeholder="Nhập cân nặng"
+              keyboardType="numeric"
+            />
+          </View>
+
+          {/* Color */}
+          <View style={styles.inputGroup}>
+            <Text style={styles.label}>Màu sắc</Text>
+            <TextInput
+              style={styles.input}
+              value={formData.color || ''}
+              onChangeText={(text) =>
+                setFormData((prev) => ({ ...prev, color: text }))
+              }
+              placeholder="Nhập màu sắc"
+            />
+          </View>
+
+          {/* Size */}
+          <View style={styles.inputGroup}>
+            <Text style={styles.label}>Kích thước</Text>
+            <View style={styles.typeGrid}>
+              {[
+                { value: 'small', label: 'Nhỏ' },
+                { value: 'medium', label: 'Vừa' },
+                { value: 'large', label: 'Lớn' },
+                { value: 'extra_large', label: 'Rất lớn' },
+              ].map((size) => (
+                <TouchableOpacity
+                  key={size.value}
+                  style={[
+                    styles.typeButton,
+                    formData.size === size.value && styles.typeButtonSelected,
+                  ]}
+                  onPress={() =>
+                    setFormData((prev) => ({
+                      ...prev,
+                      size: size.value as any,
+                    }))
+                  }
+                >
+                  <Text
+                    style={[
+                      styles.typeButtonText,
+                      formData.size === size.value &&
+                        styles.typeButtonTextSelected,
+                    ]}
+                  >
+                    {size.label}
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+          </View>
+
+          {/* Energy Level */}
+          <View style={styles.inputGroup}>
+            <Text style={styles.label}>Mức năng lượng</Text>
+            <View style={styles.typeGrid}>
+              {[
+                { value: 'low', label: 'Thấp' },
+                { value: 'medium', label: 'Vừa' },
+                { value: 'high', label: 'Cao' },
+              ].map((level) => (
+                <TouchableOpacity
+                  key={level.value}
+                  style={[
+                    styles.typeButton,
+                    formData.energy_level === level.value && styles.typeButtonSelected,
+                  ]}
+                  onPress={() =>
+                    setFormData((prev) => ({
+                      ...prev,
+                      energy_level: level.value as any,
+                    }))
+                  }
+                >
+                  <Text
+                    style={[
+                      styles.typeButtonText,
+                      formData.energy_level === level.value &&
+                        styles.typeButtonTextSelected,
+                    ]}
+                  >
+                    {level.label}
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+          </View>
+
+          {/* Health Status */}
+          <View style={styles.inputGroup}>
+            <Text style={styles.label}>Tình trạng sức khỏe</Text>
+            <View style={styles.typeGrid}>
+              {[
+                { value: 'healthy', label: 'Khỏe mạnh' },
+                { value: 'vaccinated', label: 'Đã tiêm phòng' },
+                { value: 'sick', label: 'Đang bệnh' },
+                { value: 'needs_attention', label: 'Cần chú ý' },
+              ].map((status) => (
+                <TouchableOpacity
+                  key={status.value}
+                  style={[
+                    styles.typeButton,
+                    formData.health_status === status.value && styles.typeButtonSelected,
+                  ]}
+                  onPress={() =>
+                    setFormData((prev) => ({
+                      ...prev,
+                      health_status: status.value as any,
+                    }))
+                  }
+                >
+                  <Text
+                    style={[
+                      styles.typeButtonText,
+                      formData.health_status === status.value &&
+                        styles.typeButtonTextSelected,
+                    ]}
+                  >
+                    {status.label}
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+          </View>
+
+          {/* Vaccination Status */}
+          <View style={styles.inputGroup}>
+            <Text style={styles.label}>Tình trạng tiêm phòng</Text>
+            <View style={styles.genderRow}>
+              {[
+                { value: 'up_to_date', label: 'Đầy đủ' },
+                { value: 'partial', label: 'Một phần' },
+                { value: 'not_vaccinated', label: 'Chưa tiêm' },
+                { value: 'unknown', label: 'Không rõ' },
+              ].map((status) => (
+                <TouchableOpacity
+                  key={status.value}
+                  style={[
+                    styles.genderButton,
+                    formData.vaccination_status === status.value &&
+                      styles.genderButtonSelected,
+                  ]}
+                  onPress={() =>
+                    setFormData((prev) => ({
+                      ...prev,
+                      vaccination_status: status.value as any,
+                    }))
+                  }
+                >
+                  <Text
+                    style={[
+                      styles.genderButtonText,
+                      formData.vaccination_status === status.value &&
+                        styles.genderButtonTextSelected,
+                    ]}
+                  >
+                    {status.label}
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+          </View>
+
+          {/* Boolean Fields */}
+          <View style={styles.inputGroup}>
+            <Text style={styles.label}>Đặc điểm</Text>
+            <View style={styles.booleanRow}>
+              {[
+                { key: 'spayed_neutered', label: 'Đã triệt sản' },
+                { key: 'microchipped', label: 'Có chip' },
+                { key: 'house_trained', label: 'Biết đi vệ sinh' },
+                { key: 'good_with_kids', label: 'Thân thiện trẻ em' },
+                { key: 'good_with_pets', label: 'Thân thiện thú cưng khác' },
+              ].map((item) => {
+                const isSelected = Boolean(formData[item.key as keyof PetCreateData]);
+                return (
+                  <TouchableOpacity
+                    key={item.key}
+                    style={[
+                      styles.booleanButton,
+                      isSelected && styles.booleanButtonSelected,
+                    ]}
+                    onPress={() =>
+                      setFormData((prev) => ({
+                        ...prev,
+                        [item.key]: !isSelected,
+                      }))
+                    }
+                  >
+                    <Text
+                      style={[
+                        styles.booleanButtonText,
+                        isSelected && styles.booleanButtonTextSelected,
+                      ]}
+                    >
+                      {item.label}
+                    </Text>
+                  </TouchableOpacity>
+                );
+              })}
+            </View>
+          </View>
+
+          {/* Special Needs */}
+          <View style={styles.inputGroup}>
+            <Text style={styles.label}>Nhu cầu đặc biệt</Text>
+            <TextInput
+              style={[styles.input, styles.textArea]}
+              value={formData.special_needs || ''}
+              onChangeText={(text) =>
+                setFormData((prev) => ({ ...prev, special_needs: text }))
+              }
+              placeholder="Mô tả nhu cầu đặc biệt (nếu có)..."
+              multiline
+              numberOfLines={3}
+            />
+          </View>
+
+          {/* Contact Info */}
+          <View style={styles.inputGroup}>
+            <Text style={styles.label}>Thông tin liên hệ</Text>
+            <TextInput
+              style={styles.input}
+              value={formData.contact_phone || ''}
+              onChangeText={(text) =>
+                setFormData((prev) => ({ ...prev, contact_phone: text }))
+              }
+              placeholder="Số điện thoại"
+              keyboardType="phone-pad"
+            />
+            <TextInput
+              style={[styles.input, { marginTop: 12 }]}
+              value={formData.contact_email || ''}
+              onChangeText={(text) =>
+                setFormData((prev) => ({ ...prev, contact_email: text }))
+              }
+              placeholder="Email"
+              keyboardType="email-address"
+              autoCapitalize="none"
+            />
+          </View>
+
           {/* Description */}
           <View style={styles.inputGroup}>
             <Text style={styles.label}>Mô tả</Text>
@@ -604,5 +891,39 @@ const styles = StyleSheet.create({
   },
   addImageButtonDisabled: {
     opacity: 0.5,
+  },
+  booleanRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 10,
+  },
+  booleanButton: {
+    backgroundColor: '#fff',
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    borderRadius: 20,
+    borderWidth: 2,
+    borderColor: '#E0E0E0',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 2,
+    elevation: 1,
+  },
+  booleanButtonSelected: {
+    backgroundColor: '#FF6B6B',
+    borderColor: '#FF6B6B',
+    shadowColor: '#FF6B6B',
+    shadowOpacity: 0.3,
+    elevation: 3,
+  },
+  booleanButtonText: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: '#666',
+  },
+  booleanButtonTextSelected: {
+    color: '#fff',
+    fontWeight: '700',
   },
 });

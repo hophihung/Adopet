@@ -11,24 +11,30 @@ export default function TabLayout() {
         tabBarInactiveTintColor: colors.textTertiary,
         tabBarStyle: {
           backgroundColor: colors.tabBarBackground,
-          height: 65,
-          paddingBottom: 8,
-          paddingTop: 8,
-          paddingHorizontal: 12,
-          marginHorizontal: 16,
-          marginBottom: 16,
-          borderRadius: 24,
-          borderTopWidth: 0, // Xóa border top
+          height: 70,
+          paddingBottom: 10,
+          paddingTop: 10,
+          paddingHorizontal: 16,
+          marginHorizontal: 20,
+          marginBottom: 20,
+          borderRadius: 28, // More rounded
+          borderTopWidth: 0,
           position: 'absolute',
           elevation: 12,
           shadowColor: '#000',
-          shadowOffset: { width: 0, height: 4 },
+          shadowOffset: { width: 0, height: -4 },
           shadowOpacity: 0.15,
           shadowRadius: 12,
+          borderWidth: 1,
+          borderColor: colors.border,
         },
         tabBarLabelStyle: {
           fontSize: 11,
-          fontWeight: '600',
+          fontWeight: '700',
+          letterSpacing: 0.3,
+        },
+        tabBarIconStyle: {
+          marginTop: 4,
         },
       }}
     >

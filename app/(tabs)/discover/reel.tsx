@@ -567,8 +567,8 @@ export default function ReelScreen() {
               <View style={[styles.actionIconContainer, isLiked && styles.actionIconContainerLiked]}>
                 <Heart
                   size={28}
-                  color={isLiked ? '#fff' : '#fff'}
-                  fill={isLiked ? '#FF3040' : 'transparent'}
+                  color={isLiked ? '#FF8C42' : '#fff'}
+                  fill={isLiked ? '#FF8C42' : 'transparent'}
                   strokeWidth={2.5}
                 />
               </View>
@@ -1024,8 +1024,8 @@ const styles = StyleSheet.create({
     borderColor: 'rgba(255, 255, 255, 0.2)',
   },
   actionIconContainerLiked: {
-    backgroundColor: 'rgba(255, 48, 64, 0.2)',
-    borderColor: 'rgba(255, 48, 64, 0.4)',
+    backgroundColor: 'rgba(255, 140, 66, 0.2)', // #FF8C42 với opacity
+    borderColor: 'rgba(255, 140, 66, 0.4)',
   },
   actionText: {
     fontSize: 12,

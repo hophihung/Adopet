@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useRef } from 'react';
 import {
   TouchableOpacity,
   Text,
@@ -6,6 +6,7 @@ import {
   ActivityIndicator,
   ViewStyle,
   TextStyle,
+  Animated,
 } from 'react-native';
 import { colors } from '@/src/theme/colors';
 
@@ -32,6 +33,26 @@ export function Button({
   style,
   textStyle,
 }: ButtonProps) {
+  const scaleAnim = useRef(new Animated.Value(1)).current;
+
+  const handlePressIn = () => {
+    Animated.spring(scaleAnim, {
+      toValue: 0.96,
+      useNativeDriver: true,
+      tension: 300,
+      friction: 10,
+    }).start();
+  };
+
+  const handlePressOut = () => {
+    Animated.spring(scaleAnim, {
+      toValue: 1,
+      useNativeDriver: true,
+      tension: 300,
+      friction: 10,
+    }).start();
+  };
+
   const buttonStyle = [
     styles.button,
     styles[variant],
@@ -49,61 +70,78 @@ export function Button({
   ];
 
   return (
-    <TouchableOpacity
-      style={buttonStyle}
-      onPress={onPress}
-      disabled={disabled || loading}
-      activeOpacity={0.7}
-    >
-      {loading ? (
-        <ActivityIndicator
-          size="small"
-          color={variant === 'primary' ? colors.textInverse : colors.primary}
-        />
-      ) : (
-        <Text style={buttonTextStyle}>{title}</Text>
-      )}
-    </TouchableOpacity>
+    <Animated.View style={{ transform: [{ scale: scaleAnim }] }}>
+      <TouchableOpacity
+        style={buttonStyle}
+        onPress={onPress}
+        onPressIn={handlePressIn}
+        onPressOut={handlePressOut}
+        disabled={disabled || loading}
+        activeOpacity={0.9}
+      >
+        {loading ? (
+          <ActivityIndicator
+            size="small"
+            color={variant === 'primary' ? colors.textInverse : colors.primary}
+          />
+        ) : (
+          <Text style={buttonTextStyle}>{title}</Text>
+        )}
+      </TouchableOpacity>
+    </Animated.View>
   );
 }
 
 const styles = StyleSheet.create({
   button: {
-    borderRadius: 12,
+    borderRadius: 28, // More rounded, modern look
     alignItems: 'center',
     justifyContent: 'center',
     flexDirection: 'row',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 6,
   },
-  // Variants
+  // Variants - Modern styles
   primary: {
     backgroundColor: colors.primary,
+    shadowColor: colors.primary,
+    shadowOpacity: 0.4,
   },
   secondary: {
-    backgroundColor: colors.backgroundSecondary,
+    backgroundColor: colors.surfaceElevated,
+    borderWidth: 1,
+    borderColor: colors.border,
   },
   outline: {
     backgroundColor: 'transparent',
-    borderWidth: 1.5,
+    borderWidth: 2,
     borderColor: colors.primary,
+    shadowOpacity: 0.2,
   },
   ghost: {
     backgroundColor: 'transparent',
   },
-  // Sizes
+  // Sizes - Modern proportions
   small: {
-    paddingVertical: 8,
-    paddingHorizontal: 16,
-    minHeight: 36,
+    paddingVertical: 10,
+    paddingHorizontal: 20,
+    minHeight: 40,
+    borderRadius: 20,
   },
   medium: {
-    paddingVertical: 12,
-    paddingHorizontal: 24,
-    minHeight: 44,
+    paddingVertical: 14,
+    paddingHorizontal: 28,
+    minHeight: 48,
+    borderRadius: 24,
   },
   large: {
-    paddingVertical: 16,
-    paddingHorizontal: 32,
-    minHeight: 52,
+    paddingVertical: 18,
+    paddingHorizontal: 36,
+    minHeight: 56,
+    borderRadius: 28,
   },
   fullWidth: {
     width: '100%',
@@ -111,9 +149,10 @@ const styles = StyleSheet.create({
   disabled: {
     opacity: 0.5,
   },
-  // Text
+  // Text - Modern typography
   text: {
-    fontWeight: '600',
+    fontWeight: '700',
+    letterSpacing: 0.5,
   },
   primaryText: {
     color: colors.textInverse,
@@ -123,9 +162,11 @@ const styles = StyleSheet.create({
   },
   outlineText: {
     color: colors.primary,
+    fontWeight: '700',
   },
   ghostText: {
     color: colors.primary,
+    fontWeight: '600',
   },
   smallText: {
     fontSize: 14,

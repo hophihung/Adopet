@@ -11,9 +11,11 @@ import { Ionicons } from '@expo/vector-icons';
 import { useAuth } from '../../contexts/AuthContext';
 import { router } from 'expo-router';
 import { paymentService, SubscriptionPlan } from '../../src/services/payment.service';
+import { useSubscription } from '../../contexts/SubscriptionContext';
 
 export default function SubscriptionScreen() {
   const { user, profile } = useAuth();
+  const { createSubscription } = useSubscription();
   const [plans, setPlans] = useState<SubscriptionPlan[]>([]);
   const [selectedPlan, setSelectedPlan] = useState<string | null>(null);
   const [billingCycle, setBillingCycle] = useState<'monthly' | 'yearly'>('monthly');
@@ -60,10 +62,23 @@ export default function SubscriptionScreen() {
       return;
     }
 
-    // Nếu chọn free plan, tiếp tục luôn
+    // Nếu chọn free plan, tạo subscription và tiếp tục
     if (plan.name === 'free') {
-      console.log('🔵 Continuing with free plan');
-      router.replace('/(auth)/filter-pets');
+      console.log('🔵 Creating free plan subscription...');
+      try {
+        setUpgrading(true);
+        await createSubscription('free');
+        console.log('✅ Free plan subscription created successfully');
+        router.replace('/(auth)/filter-pets');
+      } catch (error) {
+        console.error('🔴 Error creating free subscription:', error);
+        Alert.alert(
+          'Lỗi',
+          error instanceof Error ? error.message : 'Không thể tạo subscription. Vui lòng thử lại.'
+        );
+      } finally {
+        setUpgrading(false);
+      }
       return;
     }
 

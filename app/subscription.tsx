@@ -42,30 +42,29 @@ const PLANS = [
     imagesPerPet: 4,
     popular: false,
   },
-  // Premium plan - hidden for now
-  // {
-  //   id: 'premium',
-  //   name: 'Premium',
-  //   price: 99000,
-  //   originalPrice: 149000,
-  //   period: '/tháng',
-  //   description: 'Trải nghiệm nâng cao',
-  //   color: '#007AFF',
-  //   gradient: ['#007AFF', '#5856D6'],
-  //   features: [
-  //     'Tạo tối đa 6 pet objects',
-  //     'Mỗi pet tối đa 4 ảnh',
-  //     'Xem không giới hạn',
-  //     'Liên hệ ưu tiên',
-  //     'Ẩn số điện thoại',
-  //     'Pet nổi bật',
-  //     'Hỗ trợ ưu tiên',
-  //   ],
-  //   limitations: [],
-  //   petLimit: 6,
-  //   imagesPerPet: 4,
-  //   popular: true,
-  // },
+  {
+    id: 'premium',
+    name: 'Premium',
+    price: 99000,
+    originalPrice: 149000,
+    period: '/tháng',
+    description: 'Trải nghiệm nâng cao',
+    color: '#007AFF',
+    gradient: ['#007AFF', '#5856D6'],
+    features: [
+      'Tạo tối đa 6 pet objects',
+      'Mỗi pet tối đa 4 ảnh',
+      'Xem không giới hạn',
+      'Liên hệ ưu tiên',
+      'Ẩn số điện thoại',
+      'Pet nổi bật',
+      'Hỗ trợ ưu tiên',
+    ],
+    limitations: [],
+    petLimit: 6,
+    imagesPerPet: 4,
+    popular: true,
+  },
   {
     id: 'pro',
     name: 'Pro',
@@ -112,24 +111,73 @@ export default function SubscriptionScreen() {
       setIsProcessing(true);
       setSelectedPlan(plan);
 
+      // Free plan - create directly without payment
+      if (plan === 'free') {
+        // Nếu đang có subscription active và không phải free, hỏi xác nhận
+        if (subscription?.status === 'active' && subscription.plan !== 'free') {
+          Alert.alert(
+            'Xác nhận hủy gói',
+            `Bạn đang sử dụng gói ${subscription.plan.toUpperCase()}. Bạn có chắc chắn muốn hủy và chuyển sang gói Free không?`,
+            [
+              {
+                text: 'Hủy',
+                style: 'cancel',
+                onPress: () => {
+                  setIsProcessing(false);
+                  setSelectedPlan(null);
+                }
+              },
+              {
+                text: 'Xác nhận',
+                style: 'destructive',
+                onPress: async () => {
+                  try {
+                    await upgradeSubscription(plan);
+                    Alert.alert('Thành công', 'Đã chuyển sang gói Free thành công!');
+                    setTimeout(() => {
+                      router.replace('/(tabs)/discover/match');
+                    }, 1000);
+                  } catch (error) {
+                    Alert.alert(
+                      'Lỗi',
+                      error instanceof Error ? error.message : 'Có lỗi xảy ra'
+                    );
+                  } finally {
+                    setIsProcessing(false);
+                    setSelectedPlan(null);
+                  }
+                }
+              }
+            ]
+          );
+          return;
+        } else if (!subscription || subscription.status !== 'active') {
+          await createSubscription(plan);
+          Alert.alert('Thành công', 'Đăng ký gói Free thành công!');
+          setTimeout(() => {
+            router.replace('/(tabs)/discover/match');
+          }, 1000);
+        }
+        return;
+      }
+
+      // Paid plans - process PayOS payment
       if (subscription?.status === 'active' && subscription.plan !== plan) {
         // Upgrade hoặc downgrade
         await upgradeSubscription(plan);
-        Alert.alert('Thành công', `Cập nhật gói ${plan} thành công!`);
+        // Don't show success alert here, PayOS will handle it
+        return;
       } else if (!subscription || subscription.status !== 'active') {
         // Tạo mới subscription
         await createSubscription(plan);
-        Alert.alert('Thành công', `Đăng ký gói ${plan} thành công!`);
+        // Don't show success alert here, PayOS will handle it
+        return;
       }
-
-      // Navigate to home
-      setTimeout(() => {
-        router.replace('/(tabs)/discover/match');
-      }, 1000);
     } catch (error) {
+      console.error('Error selecting plan:', error);
       Alert.alert(
         'Lỗi',
-        error instanceof Error ? error.message : 'Có lỗi xảy ra'
+        error instanceof Error ? error.message : 'Có lỗi xảy ra khi đăng ký gói'
       );
     } finally {
       setIsProcessing(false);

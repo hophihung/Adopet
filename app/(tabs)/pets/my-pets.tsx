@@ -13,8 +13,10 @@ import { useRouter, usePathname } from 'expo-router';
 import { usePetManagement } from '../../../src/features/pets/hooks/usePetManagement';
 import { PetLimitBanner } from '../../../src/features/pets/components/PetLimitBanner';
 import { PetCard } from '../../../src/features/pets/components/PetCard';
+import { SubscriptionModal } from '../../../src/components/SubscriptionModal';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Plus, Edit2, Trash2, PawPrint } from 'lucide-react-native';
+import { colors } from '@/src/theme/colors';
 
 export default function MyPetsScreen() {
   const router = useRouter();
@@ -50,6 +52,7 @@ export default function MyPetsScreen() {
   } = usePetManagement();
 
   const [refreshing, setRefreshing] = useState(false);
+  const [showSubscriptionModal, setShowSubscriptionModal] = useState(false);
 
   const handleRefresh = async () => {
     setRefreshing(true);
@@ -59,17 +62,8 @@ export default function MyPetsScreen() {
 
   const handleCreatePet = () => {
     if (!petLimitInfo?.canCreate) {
-      Alert.alert(
-        'Đã đạt giới hạn',
-        `Bạn đã tạo ${petLimitInfo?.currentCount}/${petLimitInfo?.limit} pet objects. Hãy nâng cấp gói để tạo thêm!`,
-        [
-          { text: 'Hủy', style: 'cancel' },
-          {
-            text: 'Nâng cấp',
-            onPress: () => router.push('/(auth)/subscription'),
-          },
-        ]
-      );
+      // Mở modal subscription thay vì navigate
+      setShowSubscriptionModal(true);
       return;
     }
     router.push('/pet/create-pet');
@@ -127,7 +121,7 @@ export default function MyPetsScreen() {
     <View style={styles.container}>
       {/* Header with Gradient */}
       <LinearGradient
-        colors={['#FF6B6B', '#FF8E53']}
+        colors={[colors.primary, colors.primaryDark]}
         style={styles.headerGradient}
         start={{ x: 0, y: 0 }}
         end={{ x: 1, y: 0 }}
@@ -178,6 +172,12 @@ export default function MyPetsScreen() {
           plan={petLimitInfo.plan}
         />
       )}
+
+      {/* Subscription Modal */}
+      <SubscriptionModal
+        visible={showSubscriptionModal}
+        onClose={() => setShowSubscriptionModal(false)}
+      />
 
       {/* Pet Stats */}
       <View style={styles.statsContainer}>
@@ -264,11 +264,11 @@ export default function MyPetsScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#F5F7FA',
+    backgroundColor: colors.background,
   },
   headerGradient: {
-    paddingTop: Platform.OS === 'ios' ? 50 : 30,
-    paddingBottom: 16,
+    paddingTop: 50,
+    paddingBottom: 12,
     paddingHorizontal: 20,
     zIndex: 10,
   },

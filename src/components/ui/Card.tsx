@@ -4,7 +4,7 @@ import { colors } from '@/src/theme/colors';
 
 interface CardProps {
   children: React.ReactNode;
-  variant?: 'default' | 'elevated' | 'outlined';
+  variant?: 'default' | 'elevated' | 'outlined' | 'glass';
   padding?: 'none' | 'small' | 'medium' | 'large';
   style?: ViewStyle;
 }
@@ -28,8 +28,9 @@ export function Card({
 
 const styles = StyleSheet.create({
   card: {
-    borderRadius: 16,
+    borderRadius: 20, // More rounded, modern
     backgroundColor: colors.surface,
+    overflow: 'hidden',
   },
   default: {
     backgroundColor: colors.surface,
@@ -37,27 +38,39 @@ const styles = StyleSheet.create({
   elevated: {
     backgroundColor: colors.surfaceElevated,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.05,
-    shadowRadius: 8,
-    elevation: 2,
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.3,
+    shadowRadius: 16,
+    elevation: 8,
+    borderWidth: 1,
+    borderColor: colors.border,
   },
   outlined: {
     backgroundColor: colors.surface,
-    borderWidth: 1,
+    borderWidth: 1.5,
     borderColor: colors.border,
+  },
+  glass: {
+    backgroundColor: colors.glassBackground,
+    borderWidth: 1,
+    borderColor: colors.glassBorder,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.2,
+    shadowRadius: 12,
+    elevation: 4,
   },
   paddingNone: {
     padding: 0,
   },
   paddingSmall: {
-    padding: 12,
+    padding: 14,
   },
   paddingMedium: {
-    padding: 16,
+    padding: 20,
   },
   paddingLarge: {
-    padding: 24,
+    padding: 28,
   },
 });
 

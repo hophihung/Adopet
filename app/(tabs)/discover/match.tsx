@@ -15,6 +15,7 @@ import { Heart, X, RotateCcw, Star, Send, PawPrint, Video, Home, MapPin } from '
 import { useRouter, usePathname } from 'expo-router';
 import Swiper from 'react-native-deck-swiper';
 import { PetService } from '@/src/features/pets/services/pet.service';
+import { colors } from '@/src/theme/colors';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
@@ -435,14 +436,14 @@ export default function MatchScreen() {
             color={
               currentIndex < pets.length &&
               likedPets.has(pets[currentIndex]?.id)
-                ? '#FF3B5C'
-                : '#00D664'
+                ? '#FF8C42'
+                : '#FF8C42'
             }
             fill={
               currentIndex < pets.length &&
               likedPets.has(pets[currentIndex]?.id)
-                ? '#FF3B5C'
-                : '#00D664'
+                ? '#FF8C42'
+                : 'transparent'
             }
           />
         </TouchableOpacity>
@@ -455,7 +456,7 @@ export default function MatchScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#FFFFFF' },
+  container: { flex: 1, backgroundColor: colors.background },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -463,7 +464,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     paddingTop: 50,
     paddingBottom: 16,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: colors.background,
   },
   brand: {
     flexDirection: 'row',
@@ -474,10 +475,12 @@ const styles = StyleSheet.create({
   topNav: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#F8F9FA',
+    backgroundColor: colors.surfaceElevated,
     borderRadius: 24,
     padding: 4,
     marginHorizontal: 16,
+    borderWidth: 1,
+    borderColor: colors.border,
   },
   topNavButton: {
     paddingVertical: 6,
@@ -485,30 +488,32 @@ const styles = StyleSheet.create({
     borderRadius: 20,
   },
   topNavButtonActive: {
-    backgroundColor: '#EEF2FF',
+    backgroundColor: colors.primarySoft,
   },
   topNavText: {
     fontSize: 14,
     fontWeight: '600',
-    color: '#6B7280',
+    color: colors.textSecondary,
   },
   topNavTextActive: {
-    color: '#6366F1',
+    color: colors.primary,
   },
   headerActionButton: {
     width: 44,
     height: 44,
     borderRadius: 22,
-    backgroundColor: '#F8F9FA',
+    backgroundColor: colors.surfaceElevated,
     alignItems: 'center',
     justifyContent: 'center',
+    borderWidth: 1,
+    borderColor: colors.border,
   },
   cardContainer: { flex: 1, paddingTop: 10 },
   card: {
     height: SCREEN_WIDTH * 1.4,
-    borderRadius: 12,
+    borderRadius: 20,
     overflow: 'hidden',
-    backgroundColor: '#f0f0f0',
+    backgroundColor: colors.surfaceElevated,
   },
   imageContainer: {
     width: SCREEN_WIDTH - 40,
@@ -647,6 +652,8 @@ const styles = StyleSheet.create({
     gap: 16,
     paddingVertical: 20,
     paddingHorizontal: 20,
+    paddingBottom: 100, // Thêm padding để tránh bị tab bar che
+    zIndex: 10, // Đảm bảo hiển thị trên tab bar
   },
   actionButton: {
     width: 60,

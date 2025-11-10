@@ -281,7 +281,7 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     paddingHorizontal: 20,
     paddingTop: 50,
-    paddingBottom: 16,
+    paddingBottom: 12,
   },
   brand: {
     flexDirection: 'row',
@@ -400,7 +400,8 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     flexWrap: 'wrap',
     justifyContent: 'space-between',
-    gap: 16,
+    gap: 12,
+    paddingHorizontal: 0,
   },
   petCard: {
     width: '48%',
@@ -412,10 +413,12 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.08,
     shadowRadius: 12,
     elevation: 4,
+    marginBottom: 12,
   },
   petImage: {
     width: '100%',
-    height: 150,
+    height: 180,
+    resizeMode: 'cover',
   },
   petInfo: {
     padding: 14,
@@ -427,9 +430,10 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   petName: {
-    fontSize: 16,
+    fontSize: 15,
     fontWeight: '700',
     color: '#1F2937',
+    flex: 1,
   },
   typeBadge: {
     backgroundColor: '#FFE8F0',

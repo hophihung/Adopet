@@ -416,9 +416,9 @@ const CommunityScreen: React.FC = () => {
             onPress={() => void handleLike(item.id)}
           >
             <Heart
-              color="#FF6B6B"
+              color="#FF8C42"
               size={24}
-              fill={item.like_count > 0 ? '#FF6B6B' : 'transparent'}
+              fill={item.like_count > 0 ? '#FF8C42' : 'transparent'}
             />
             <Text style={styles.count}>{item.like_count}</Text>
           </TouchableOpacity>

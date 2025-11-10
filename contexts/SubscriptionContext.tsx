@@ -1,7 +1,8 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { supabase } from '../lib/supabaseClient';
 import { useAuth } from './AuthContext';
-import { processSubscriptionPayment } from '../lib/stripe';
+import { PayOSSubscriptionService } from '../src/services/payos-subscription.service';
+import { Linking, Alert } from 'react-native';
 
 export type SubscriptionPlan = 'free' | 'premium' | 'pro';
 export type SubscriptionStatus = 'active' | 'canceled' | 'expired';
@@ -89,6 +90,48 @@ export function SubscriptionProvider({
 
       // Free plan - create directly without payment
       if (plan === 'free') {
+        console.log('🔵 Creating free subscription for user:', user!.id);
+        
+        // Kiểm tra xem đã có subscription chưa
+        const { data: existingSub, error: checkError } = await supabase
+          .from('subscriptions')
+          .select('*')
+          .eq('profile_id', user!.id)
+          .maybeSingle();
+
+        if (checkError && checkError.code !== 'PGRST116') {
+          console.error('🔴 Error checking existing subscription:', checkError);
+          throw checkError;
+        }
+
+        // Nếu đã có subscription, update nó
+        if (existingSub) {
+          console.log('🔵 Updating existing subscription to free plan');
+          const { data, error: updateError } = await supabase
+            .from('subscriptions')
+            .update({
+              plan,
+              status: 'active',
+              start_date: new Date().toISOString(),
+              updated_at: new Date().toISOString(),
+            })
+            .eq('profile_id', user!.id)
+            .select()
+            .single();
+
+          if (updateError) {
+            console.error('🔴 Error updating subscription:', updateError);
+            throw updateError;
+          }
+          
+          console.log('✅ Subscription updated successfully:', data);
+          setSubscription(data);
+          // Refresh để đảm bảo data được sync
+          await fetchSubscription();
+          return;
+        }
+
+        // Nếu chưa có, tạo mới
         const { data, error: insertError } = await supabase
           .from('subscriptions')
           .insert({
@@ -100,24 +143,75 @@ export function SubscriptionProvider({
           .select()
           .single();
 
-        if (insertError) throw insertError;
+        if (insertError) {
+          console.error('🔴 Error inserting subscription:', insertError);
+          throw insertError;
+        }
+        
+        console.log('✅ Subscription created successfully:', data);
         setSubscription(data);
+        // Refresh để đảm bảo data được sync
+        await fetchSubscription();
         return;
       }
 
-      // Paid plans - process Stripe payment
-      const paymentResult = await processSubscriptionPayment({
-        plan,
-        profileId: user!.id,
-      });
+      // Paid plans - process PayOS payment
+      // First create a temporary subscription record
+      const { data: tempSubscription, error: insertError } = await supabase
+        .from('subscriptions')
+        .insert({
+          profile_id: user!.id,
+          plan,
+          status: 'pending', // Will be updated to 'active' after payment
+          start_date: new Date().toISOString(),
+        })
+        .select()
+        .single();
 
-      if (!paymentResult.success) {
-        throw new Error(paymentResult.error || 'Payment failed');
+      if (insertError) throw insertError;
+
+      // Get plan price
+      const planPrices: Record<SubscriptionPlan, number> = {
+        free: 0,
+        premium: 99000,
+        pro: 149000,
+      };
+      const amount = planPrices[plan] || 0;
+
+      if (amount <= 0) {
+        throw new Error('Invalid plan price');
       }
 
-      // Payment successful - webhook will create subscription
-      // Refresh subscription to get the updated data
-      await fetchSubscription();
+      // Create PayOS payment link
+      const paymentLink = await PayOSSubscriptionService.createSubscriptionPaymentLink(
+        tempSubscription.id,
+        plan,
+        amount,
+        'monthly' // Default to monthly
+      );
+
+      // Open payment link
+      const canOpen = await Linking.canOpenURL(paymentLink.payment_url);
+      if (canOpen) {
+        await Linking.openURL(paymentLink.payment_url);
+        Alert.alert(
+          'Thanh toán',
+          'Vui lòng hoàn tất thanh toán. Subscription sẽ được kích hoạt sau khi thanh toán thành công.',
+          [
+            {
+              text: 'OK',
+              onPress: () => {
+                // Refresh subscription after a delay to check payment status
+                setTimeout(() => {
+                  fetchSubscription();
+                }, 2000);
+              }
+            }
+          ]
+        );
+      } else {
+        throw new Error('Không thể mở payment link');
+      }
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Failed to create subscription';
       setError(message);
@@ -170,33 +264,71 @@ export function SubscriptionProvider({
 
       // Downgrade to free - no payment needed
       if (newPlan === 'free') {
+        console.log('🔵 Downgrading to free plan');
         const { data, error: updateError } = await supabase
           .from('subscriptions')
           .update({
             plan: newPlan,
+            status: 'active',
             updated_at: new Date().toISOString(),
           })
           .eq('id', subscription.id)
           .select()
           .single();
 
-        if (updateError) throw updateError;
+        if (updateError) {
+          console.error('🔴 Error updating subscription:', updateError);
+          throw updateError;
+        }
+        
+        console.log('✅ Subscription downgraded to free:', data);
         setSubscription(data);
         return;
       }
 
-      // Upgrade to paid plan - process payment
-      const paymentResult = await processSubscriptionPayment({
-        plan: newPlan,
-        profileId: user!.id,
-      });
+      // Upgrade to paid plan - process PayOS payment
+      // Get plan price
+      const planPrices: Record<SubscriptionPlan, number> = {
+        free: 0,
+        premium: 99000,
+        pro: 149000,
+      };
+      const amount = planPrices[newPlan] || 0;
 
-      if (!paymentResult.success) {
-        throw new Error(paymentResult.error || 'Payment failed');
+      if (amount <= 0) {
+        throw new Error('Invalid plan price');
       }
 
-      // Payment successful - webhook will update subscription
-      await fetchSubscription();
+      // Create PayOS payment link
+      const paymentLink = await PayOSSubscriptionService.createSubscriptionPaymentLink(
+        subscription.id,
+        newPlan,
+        amount,
+        'monthly' // Default to monthly
+      );
+
+      // Open payment link
+      const canOpen = await Linking.canOpenURL(paymentLink.payment_url);
+      if (canOpen) {
+        await Linking.openURL(paymentLink.payment_url);
+        Alert.alert(
+          'Thanh toán',
+          'Vui lòng hoàn tất thanh toán. Subscription sẽ được cập nhật sau khi thanh toán thành công.',
+          [
+            {
+              text: 'OK',
+              onPress: () => {
+                // Refresh subscription after a delay to check payment status
+                setTimeout(() => {
+                  fetchSubscription();
+                }, 2000);
+              }
+            }
+          ]
+        );
+      } else {
+        throw new Error('Không thể mở payment link');
+      }
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Failed to upgrade subscription';
       setError(message);

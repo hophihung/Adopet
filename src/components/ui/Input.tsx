@@ -37,31 +37,39 @@ export function Input({
 
 const styles = StyleSheet.create({
   container: {
-    marginBottom: 16,
+    marginBottom: 20,
   },
   label: {
     fontSize: 14,
     fontWeight: '600',
     color: colors.text,
-    marginBottom: 8,
+    marginBottom: 10,
+    letterSpacing: 0.3,
   },
   input: {
-    height: 48,
-    backgroundColor: colors.backgroundSecondary,
-    borderRadius: 12,
-    paddingHorizontal: 16,
+    height: 52, // Taller for better touch target
+    backgroundColor: colors.surfaceElevated,
+    borderRadius: 16, // More rounded
+    paddingHorizontal: 18,
     fontSize: 16,
     color: colors.text,
-    borderWidth: 1,
+    borderWidth: 1.5,
     borderColor: colors.border,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 2,
   },
   inputError: {
     borderColor: colors.error,
+    borderWidth: 2,
   },
   error: {
     fontSize: 12,
     color: colors.error,
-    marginTop: 4,
+    marginTop: 6,
+    fontWeight: '500',
   },
 });
 
