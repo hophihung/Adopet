@@ -346,6 +346,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         await supabase.rpc('ensure_seller_has_subscription', {
           user_profile_id: user.id
         });
+        console.log('✅ Seller subscription ensured');
       } catch (subscriptionError) {
         console.warn('⚠️ Error ensuring seller subscription:', subscriptionError);
         // Không throw error vì subscription có thể được tạo sau
@@ -356,6 +357,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     await AsyncStorage.setItem('onboarding_completed', 'false');
     setHasCompletedOnboarding(false);
 
+    // Refresh profile để đảm bảo UI cập nhật
     await refreshProfile();
     
     console.log('🔵 Returning role:', role);

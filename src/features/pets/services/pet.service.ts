@@ -15,6 +15,7 @@ export interface PetCreateData {
   color?: string;
   health_status?: 'healthy' | 'sick' | 'vaccinated' | 'needs_attention';
   vaccination_status?: 'up_to_date' | 'partial' | 'not_vaccinated' | 'unknown';
+  vaccination_images?: string[]; // Array of vaccination certificate image URLs
   spayed_neutered?: boolean;
   microchipped?: boolean;
   house_trained?: boolean;
@@ -26,6 +27,8 @@ export interface PetCreateData {
   adoption_fee?: number;
   contact_phone?: string;
   contact_email?: string;
+  latitude?: number;
+  longitude?: number;
 }
 
 export interface PetUpdateData extends Partial<PetCreateData> {
@@ -80,7 +83,8 @@ export const PetService = {
 
   // Lấy tất cả pets có sẵn (cho swipe)
   // Loại trừ các pet đã pass (swipe left) - giống Tinder
-  async getAvailablePets(userId?: string) {
+  // Chỉ hiển thị pets đã được admin duyệt (verification_status = 'approved')
+  async getAvailablePets(userId?: string, userLocation?: { latitude: number; longitude: number }, radiusKm: number = 50) {
     let query = supabase
       .from('pets')
       .select(`
@@ -92,6 +96,7 @@ export const PetService = {
         )
       `)
       .eq('is_available', true)
+      .eq('verification_status', 'approved') // Chỉ hiển thị pets đã được duyệt
       .order('created_at', { ascending: false });
 
     // Nếu có userId, loại trừ pets của chính user đó

@@ -5,6 +5,7 @@ import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { AuthProvider, useAuth } from '../contexts/AuthContext';
 import { SubscriptionProvider } from '../contexts/SubscriptionContext';
 import { ProfileProvider } from '../src/features/profile/context/ProfileContext';
+import { LocationProvider } from '../contexts/LocationContext';
 
 function RootLayoutNav() {
   const { user, profile, loading, hasCompletedOnboarding } = useAuth();
@@ -61,7 +62,9 @@ export default function RootLayout() {
       <AuthProvider>
         <SubscriptionProvider>
           <ProfileProvider>
-            <RootLayoutNav />
+            <LocationProvider>
+              <RootLayoutNav />
+            </LocationProvider>
           </ProfileProvider>
         </SubscriptionProvider>
       </AuthProvider>

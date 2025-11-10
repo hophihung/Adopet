@@ -16,7 +16,9 @@
           {
             "CFBundleURLSchemes": ["petadoption"]
           }
-        ]
+        ],
+        "NSLocationWhenInUseUsageDescription": "Ứng dụng cần quyền truy cập vị trí để kết nối bạn với các người dùng và thú cưng xung quanh.",
+        "NSLocationAlwaysAndWhenInUseUsageDescription": "Ứng dụng cần quyền truy cập vị trí để kết nối bạn với các người dùng và thú cưng xung quanh."
       }
     },
     "android": {
@@ -52,6 +54,14 @@
           "schemes": [
             "petadoption"
           ]
+        }
+      ],
+      [
+        "expo-location",
+        {
+          "locationAlwaysAndWhenInUsePermission": "Ứng dụng cần quyền truy cập vị trí để kết nối bạn với các người dùng và thú cưng xung quanh.",
+          "locationAlwaysPermission": "Ứng dụng cần quyền truy cập vị trí để kết nối bạn với các người dùng và thú cưng xung quanh.",
+          "locationWhenInUsePermission": "Ứng dụng cần quyền truy cập vị trí để kết nối bạn với các người dùng và thú cưng xung quanh."
         }
       ]
     ],

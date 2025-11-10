@@ -69,6 +69,8 @@ export default function SubscriptionScreen() {
         setUpgrading(true);
         await createSubscription('free');
         console.log('✅ Free plan subscription created successfully');
+        // Đợi một chút để đảm bảo subscription được sync
+        await new Promise(resolve => setTimeout(resolve, 500));
         router.replace('/(auth)/filter-pets');
       } catch (error) {
         console.error('🔴 Error creating free subscription:', error);

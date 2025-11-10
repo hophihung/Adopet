@@ -58,14 +58,50 @@ export function SubscriptionProvider({
       setLoading(true);
       setError(null);
 
+      // Query subscription
       const { data, error: fetchError } = await supabase
         .from('subscriptions')
         .select('*')
         .eq('profile_id', user!.id)
+        .eq('status', 'active')
+        .order('created_at', { ascending: false })
+        .limit(1)
         .maybeSingle();
 
       if (fetchError && fetchError.code !== 'PGRST116') {
         throw fetchError;
+      }
+
+      // Nếu có data, đảm bảo có cả plan (text) và plan_id
+      if (data) {
+        // Nếu có plan_id nhưng không có plan (text), lấy từ subscription_plans
+        if (data.plan_id && !data.plan) {
+          const { data: planData } = await supabase
+            .from('subscription_plans')
+            .select('name')
+            .eq('id', data.plan_id)
+            .maybeSingle();
+          if (planData) {
+            data.plan = planData.name as SubscriptionPlan;
+          }
+        }
+        // Nếu có plan (text) nhưng không có plan_id, lấy từ subscription_plans
+        if (data.plan && !data.plan_id) {
+          const { data: planData } = await supabase
+            .from('subscription_plans')
+            .select('id')
+            .eq('name', data.plan)
+            .eq('is_active', true)
+            .maybeSingle();
+          if (planData) {
+            data.plan_id = planData.id;
+            // Cập nhật subscription với plan_id
+            await supabase
+              .from('subscriptions')
+              .update({ plan_id: planData.id })
+              .eq('id', data.id);
+          }
+        }
       }
 
       setSubscription(data);
@@ -92,6 +128,26 @@ export function SubscriptionProvider({
       if (plan === 'free') {
         console.log('🔵 Creating free subscription for user:', user!.id);
         
+        // Lấy plan_id từ subscription_plans
+        const { data: planData, error: planError } = await supabase
+          .from('subscription_plans')
+          .select('id')
+          .eq('name', plan)
+          .eq('is_active', true)
+          .maybeSingle();
+
+        if (planError) {
+          console.error('🔴 Error fetching plan:', planError);
+          throw planError;
+        }
+
+        if (!planData) {
+          throw new Error('Free plan not found in database');
+        }
+
+        const planId = planData.id;
+        console.log('🔵 Found plan_id:', planId);
+        
         // Kiểm tra xem đã có subscription chưa
         const { data: existingSub, error: checkError } = await supabase
           .from('subscriptions')
@@ -111,6 +167,7 @@ export function SubscriptionProvider({
             .from('subscriptions')
             .update({
               plan,
+              plan_id: planId,
               status: 'active',
               start_date: new Date().toISOString(),
               updated_at: new Date().toISOString(),
@@ -137,6 +194,7 @@ export function SubscriptionProvider({
           .insert({
             profile_id: user!.id,
             plan,
+            plan_id: planId,
             status: 'active',
             start_date: new Date().toISOString(),
           })
@@ -156,12 +214,32 @@ export function SubscriptionProvider({
       }
 
       // Paid plans - process PayOS payment
+      // Lấy plan_id từ subscription_plans
+      const { data: planData, error: planError } = await supabase
+        .from('subscription_plans')
+        .select('id')
+        .eq('name', plan)
+        .eq('is_active', true)
+        .maybeSingle();
+
+      if (planError) {
+        console.error('🔴 Error fetching plan:', planError);
+        throw planError;
+      }
+
+      if (!planData) {
+        throw new Error(`Plan ${plan} not found in database`);
+      }
+
+      const planId = planData.id;
+
       // First create a temporary subscription record
       const { data: tempSubscription, error: insertError } = await supabase
         .from('subscriptions')
         .insert({
           profile_id: user!.id,
           plan,
+          plan_id: planId,
           status: 'pending', // Will be updated to 'active' after payment
           start_date: new Date().toISOString(),
         })
@@ -265,10 +343,31 @@ export function SubscriptionProvider({
       // Downgrade to free - no payment needed
       if (newPlan === 'free') {
         console.log('🔵 Downgrading to free plan');
+        
+        // Lấy plan_id từ subscription_plans
+        const { data: planData, error: planError } = await supabase
+          .from('subscription_plans')
+          .select('id')
+          .eq('name', newPlan)
+          .eq('is_active', true)
+          .maybeSingle();
+
+        if (planError) {
+          console.error('🔴 Error fetching plan:', planError);
+          throw planError;
+        }
+
+        if (!planData) {
+          throw new Error('Free plan not found in database');
+        }
+
+        const planId = planData.id;
+
         const { data, error: updateError } = await supabase
           .from('subscriptions')
           .update({
             plan: newPlan,
+            plan_id: planId,
             status: 'active',
             updated_at: new Date().toISOString(),
           })
@@ -283,6 +382,7 @@ export function SubscriptionProvider({
         
         console.log('✅ Subscription downgraded to free:', data);
         setSubscription(data);
+        await fetchSubscription();
         return;
       }
 

@@ -33,7 +33,7 @@ export default function ProfileScreen() {
   const pathname = usePathname();
   const { profile, stats, loading, refreshing, refreshProfile } = useProfile();
   const { signOut } = useAuth();
-  const { subscription } = useSubscription();
+  const { subscription, refreshSubscription } = useSubscription();
   const [showSubscriptionModal, setShowSubscriptionModal] = useState(false);
   const [activeTab, setActiveTab] = useState<'reminders' | 'profile'>('profile');
   
@@ -54,6 +54,11 @@ export default function ProfileScreen() {
     } else {
       setActiveTab('profile');
     }
+  }, [pathname]);
+
+  // Refresh subscription when profile screen is focused
+  useEffect(() => {
+    refreshSubscription();
   }, [pathname]);
 
   if (loading) {

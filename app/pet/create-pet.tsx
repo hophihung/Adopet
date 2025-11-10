@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -9,6 +9,7 @@ import {
   Alert,
   Image,
   ActivityIndicator,
+  Modal,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { usePetManagement } from '../../src/features/pets/hooks/usePetManagement';
@@ -20,6 +21,8 @@ import {
   Check,
   Camera,
 } from 'lucide-react-native';
+import { SubscriptionModal } from '../../src/components/SubscriptionModal';
+import { useLocation } from '../../contexts/LocationContext';
 
 const PET_TYPES = [
   { value: 'dog', label: 'Chó' },
@@ -38,7 +41,28 @@ const GENDER_OPTIONS = [
 
 export default function CreatePetScreen() {
   const router = useRouter();
-  const { createPet, petLimitInfo, loading } = usePetManagement();
+  const { createPet, petLimitInfo, loading, fetchPetLimitInfo } = usePetManagement();
+  const { location, requestPermission } = useLocation();
+
+  const [showSubscriptionModal, setShowSubscriptionModal] = useState(false);
+  const [vaccinationImages, setVaccinationImages] = useState<string[]>([]); // Local vaccination image URIs
+
+  // Refresh pet limit info when screen mounts
+  useEffect(() => {
+    fetchPetLimitInfo();
+  }, []);
+
+  // Request location permission on mount (optional - don't block if unavailable)
+  useEffect(() => {
+    // Only request if we don't have location yet
+    // Don't block if location services are unavailable
+    if (!location) {
+      requestPermission().catch((error) => {
+        console.warn('Location permission request failed:', error);
+        // Don't show error - location is optional for creating pet
+      });
+    }
+  }, []);
 
   const [formData, setFormData] = useState<PetCreateData>({
     name: '',
@@ -87,6 +111,13 @@ export default function CreatePetScreen() {
       newErrors.images = 'Tối đa 4 ảnh cho mỗi pet';
     }
 
+    // Kiểm tra vaccination images nếu chọn "up_to_date" hoặc "partial"
+    if (formData.vaccination_status === 'up_to_date' || formData.vaccination_status === 'partial') {
+      if (vaccinationImages.length === 0) {
+        newErrors.vaccination_images = 'Vui lòng upload ảnh chứng nhận tiêm phòng';
+      }
+    }
+
     if (formData.price && formData.price < 0) {
       newErrors.price = 'Giá không thể âm';
     }
@@ -97,6 +128,22 @@ export default function CreatePetScreen() {
 
   const handleSubmit = async () => {
     if (!validateForm()) return;
+
+    // Kiểm tra giới hạn trước khi tạo pet
+    if (!petLimitInfo?.canCreate) {
+      Alert.alert(
+        'Đã đạt giới hạn',
+        `Bạn đã tạo ${petLimitInfo?.currentCount || 0}/${petLimitInfo?.limit || 0} pet với gói ${petLimitInfo?.plan || 'free'}. Vui lòng nâng cấp gói để tạo thêm pet!`,
+        [
+          { text: 'Hủy', style: 'cancel' },
+          {
+            text: 'Nâng cấp ngay',
+            onPress: () => setShowSubscriptionModal(true),
+          },
+        ]
+      );
+      return;
+    }
 
     try {
       setUploadingImages(true);
@@ -113,10 +160,24 @@ export default function CreatePetScreen() {
         return;
       }
 
+      // Upload vaccination images if needed
+      let vaccinationImageUrls: string[] = [];
+      if (vaccinationImages.length > 0) {
+        const vaccinationUploadResults = await imageUploadService.uploadMultipleImages(
+          vaccinationImages,
+          'pet-images',
+          'vaccination'
+        );
+        vaccinationImageUrls = vaccinationUploadResults.map(result => result.url);
+      }
+
       // Create pet with uploaded image URLs
       const petDataWithImages: PetCreateData = {
         ...formData,
-        images: uploadResults.map(result => result.url)
+        images: uploadResults.map(result => result.url),
+        vaccination_images: vaccinationImageUrls.length > 0 ? vaccinationImageUrls : undefined,
+        latitude: location?.latitude,
+        longitude: location?.longitude,
       };
 
       await createPet(petDataWithImages);
@@ -128,10 +189,24 @@ export default function CreatePetScreen() {
       );
     } catch (error) {
       console.error('Create pet error:', error);
-      Alert.alert(
-        'Lỗi',
-        error instanceof Error ? error.message : 'Không thể tạo pet'
-      );
+      const errorMessage = error instanceof Error ? error.message : 'Không thể tạo pet';
+      
+      // Nếu lỗi là do giới hạn, hiển thị modal subscription
+      if (errorMessage.includes('limit') || errorMessage.includes('giới hạn')) {
+        Alert.alert(
+          'Đã đạt giới hạn',
+          `Bạn đã đạt giới hạn pet cho gói hiện tại. Vui lòng nâng cấp để tạo thêm pet!`,
+          [
+            { text: 'Hủy', style: 'cancel' },
+            {
+              text: 'Nâng cấp ngay',
+              onPress: () => setShowSubscriptionModal(true),
+            },
+          ]
+        );
+      } else {
+        Alert.alert('Lỗi', errorMessage);
+      }
     } finally {
       setUploadingImages(false);
     }
@@ -540,6 +615,68 @@ export default function CreatePetScreen() {
                 </TouchableOpacity>
               ))}
             </View>
+            
+            {/* Vaccination Images - Required if up_to_date or partial */}
+            {(formData.vaccination_status === 'up_to_date' || formData.vaccination_status === 'partial') && (
+              <View style={styles.inputGroup}>
+                <Text style={styles.label}>
+                  Ảnh chứng nhận tiêm phòng *
+                  <Text style={styles.requiredNote}>
+                    {' '}(Cần admin duyệt)
+                  </Text>
+                </Text>
+                <Text style={styles.imageLimitText}>
+                  Upload ảnh chứng nhận tiêm phòng ({vaccinationImages.length}/10)
+                </Text>
+
+                <View style={styles.imageContainer}>
+                  {vaccinationImages.map((image, index) => (
+                    <View key={index} style={styles.imageItem}>
+                      <Image source={{ uri: image }} style={styles.image} />
+                      <TouchableOpacity
+                        style={styles.removeImageButton}
+                        onPress={() => setVaccinationImages(prev => prev.filter((_, i) => i !== index))}
+                      >
+                        <Text style={styles.removeImageText}>×</Text>
+                      </TouchableOpacity>
+                    </View>
+                  ))}
+
+                  {vaccinationImages.length < 10 && (
+                    <TouchableOpacity
+                      style={styles.addImageButton}
+                      onPress={async () => {
+                        try {
+                          const imageUri = await imageUploadService.pickImage({
+                            quality: 0.8,
+                            maxWidth: 1024,
+                            maxHeight: 1024,
+                            allowsEditing: true,
+                          });
+
+                          if (imageUri) {
+                            setVaccinationImages(prev => [...prev, imageUri]);
+                          }
+                        } catch (error) {
+                          console.error('Error adding vaccination image:', error);
+                          Alert.alert('Lỗi', 'Không thể thêm ảnh');
+                        }
+                      }}
+                      disabled={loading || uploadingImages}
+                    >
+                      <Camera size={32} color="#999" />
+                    </TouchableOpacity>
+                  )}
+                </View>
+
+                {errors.vaccination_images && (
+                  <Text style={styles.errorText}>{errors.vaccination_images}</Text>
+                )}
+                <Text style={styles.helperText}>
+                  ⚠️ Pet sẽ ở trạng thái "Chờ duyệt" cho đến khi admin xác minh ảnh tiêm phòng
+                </Text>
+              </View>
+            )}
           </View>
 
           {/* Boolean Fields */}
@@ -673,6 +810,16 @@ export default function CreatePetScreen() {
           </View>
         </View>
       </ScrollView>
+
+      {/* Subscription Modal */}
+      <SubscriptionModal
+        visible={showSubscriptionModal}
+        onClose={() => {
+          setShowSubscriptionModal(false);
+          // Refresh pet limit info after closing modal
+          fetchPetLimitInfo();
+        }}
+      />
     </View>
   );
 }
@@ -925,5 +1072,16 @@ const styles = StyleSheet.create({
   booleanButtonTextSelected: {
     color: '#fff',
     fontWeight: '700',
+  },
+  requiredNote: {
+    fontSize: 12,
+    color: '#FF6B6B',
+    fontWeight: '600',
+  },
+  helperText: {
+    fontSize: 12,
+    color: '#FF9500',
+    marginTop: 8,
+    fontStyle: 'italic',
   },
 });
