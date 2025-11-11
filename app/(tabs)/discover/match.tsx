@@ -40,6 +40,7 @@ interface Pet {
   };
   energy_level?: string;
   size?: string;
+  distance_km?: number;
 }
 
 export default function MatchScreen() {
@@ -95,6 +96,8 @@ export default function MatchScreen() {
   const loadPets = async () => {
     try {
       setLoading(true);
+      
+      // Load tất cả pets
       const availablePets = await PetService.getAvailablePets(user?.id);
 
       const parsedPets = availablePets.map((pet: any) => ({
@@ -282,9 +285,11 @@ export default function MatchScreen() {
           </TouchableOpacity>
         </View>
 
-        <TouchableOpacity style={styles.headerActionButton} onPress={handleOpenReel}>
-          <Video size={22} color="#FF3B5C" />
-        </TouchableOpacity>
+        <View style={styles.headerActions}>
+          <TouchableOpacity style={styles.headerActionButton} onPress={handleOpenReel}>
+            <Video size={22} color="#FF3B5C" />
+          </TouchableOpacity>
+        </View>
       </View>
 
       <View style={styles.cardContainer}>
@@ -373,11 +378,15 @@ export default function MatchScreen() {
                     </View>
                   )}
 
-                  {/* Distance - Mock data for now */}
-                  <View style={styles.infoRow}>
-                    <MapPin size={14} color="#fff" style={styles.icon} />
-                    <Text style={styles.infoText}>Cách xa 2 km</Text>
-                  </View>
+                  {/* Distance */}
+                  {pet.distance_km !== undefined && (
+                    <View style={styles.infoRow}>
+                      <MapPin size={14} color="#fff" style={styles.icon} />
+                      <Text style={styles.infoText}>
+                        Cách xa {pet.distance_km.toFixed(1)} km
+                      </Text>
+                    </View>
+                  )}
                 </View>
               </View>
             </View>
@@ -498,6 +507,11 @@ const styles = StyleSheet.create({
   topNavTextActive: {
     color: colors.primary,
   },
+  headerActions: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
   headerActionButton: {
     width: 44,
     height: 44,
@@ -507,6 +521,10 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     borderWidth: 1,
     borderColor: colors.border,
+  },
+  headerActionButtonActive: {
+    backgroundColor: '#FFF0F2',
+    borderColor: colors.primary,
   },
   cardContainer: { flex: 1, paddingTop: 10 },
   card: {

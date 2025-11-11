@@ -7,11 +7,15 @@ export interface Profile {
   created_at: string;
   updated_at: string;
   subscription_id?: number | null;
+  latitude?: number | null;
+  longitude?: number | null;
+  search_radius_km?: number | null;
 }
 
 export interface UpdateProfileInput {
   full_name?: string;
   avatar_url?: string;
+  search_radius_km?: number;
 }
 
 export interface ProfileStats {

@@ -7,16 +7,9 @@
     <list default="true" id="9fcd68c1-d0d0-4c8c-a8ff-2b8e56742dc1" name="Changes" comment="">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/CONTENT_MODERATION_SETUP.md" beforeDir="false" afterPath="$PROJECT_DIR$/CONTENT_MODERATION_SETUP.md" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/android/app/src/main/AndroidManifest.xml" beforeDir="false" afterPath="$PROJECT_DIR$/android/app/src/main/AndroidManifest.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/(auth)/subscription.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/app/(auth)/subscription.tsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/(tabs)/discover/match.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/app/(tabs)/discover/match.tsx" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/app/(tabs)/me/profile.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/app/(tabs)/me/profile.tsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/_layout.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/app/_layout.tsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/pet/create-pet.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/app/pet/create-pet.tsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/contexts/AuthContext.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/contexts/AuthContext.tsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/contexts/SubscriptionContext.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/contexts/SubscriptionContext.tsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/package-lock.json" beforeDir="false" afterPath="$PROJECT_DIR$/package-lock.json" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/package.json" beforeDir="false" afterPath="$PROJECT_DIR$/package.json" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/features/pets/services/pet.service.ts" beforeDir="false" afterPath="$PROJECT_DIR$/src/features/pets/services/pet.service.ts" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/features/profile/types/profile.types.ts" beforeDir="false" afterPath="$PROJECT_DIR$/src/features/profile/types/profile.types.ts" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/features/reels/components/MusicPickerModal.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/src/features/reels/components/MusicPickerModal.tsx" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/features/reels/services/music.service.ts" beforeDir="false" afterPath="$PROJECT_DIR$/src/features/reels/services/music.service.ts" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/supabase/functions/moderate-content/aws-rekognition-implementation.ts" beforeDir="false" afterPath="$PROJECT_DIR$/supabase/functions/moderate-content/aws-rekognition-implementation.ts" afterDir="false" />

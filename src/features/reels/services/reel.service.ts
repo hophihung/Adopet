@@ -66,42 +66,78 @@ export interface CreateReelInput {
 export const ReelService = {
   // Get all approved reels
   async getAll(limit: number = 20, offset: number = 0): Promise<Reel[]> {
-    const { data, error } = await supabase
-      .from('reels')
-      .select(`
-        *,
-        music_tracks (
-          id,
-          title,
-          artist,
-          audio_url,
-          cover_image_url,
-          duration,
-          is_premium
-        )
-      `)
-      .eq('status', 'approved')
-      .order('created_at', { ascending: false })
-      .range(offset, offset + limit - 1);
+    try {
+      console.log('ReelService.getAll: Fetching reels with status = approved');
+      const { data, error } = await supabase
+        .from('reels')
+        .select(`
+          *,
+          music_tracks (
+            id,
+            title,
+            artist,
+            audio_url,
+            cover_image_url,
+            duration,
+            is_premium
+          )
+        `)
+        .eq('status', 'approved')
+        .order('created_at', { ascending: false })
+        .range(offset, offset + limit - 1);
 
-    if (error) throw error;
-    if (!data || data.length === 0) return [];
-    
-    // Batch fetch all profiles at once
-    const userIds = [...new Set(data.map(reel => reel.user_id))];
-    const { data: profiles } = await supabase
-      .from('profiles')
-      .select('id, full_name, avatar_url')
-      .in('id', userIds);
-    
-    const profileMap = new Map((profiles || []).map(p => [p.id, p]));
-    
-    // Map profiles to reels
-    return data.map(reel => ({
-      ...reel,
-      profiles: profileMap.get(reel.user_id),
-      music_tracks: reel.music_tracks?.[0] || undefined,
-    }));
+      if (error) {
+        console.error('ReelService.getAll error:', error);
+        throw error;
+      }
+      
+      console.log('ReelService.getAll: Raw data from DB:', data?.length || 0, 'reels');
+      
+      if (!data || data.length === 0) {
+        console.warn('ReelService.getAll: No reels found with status = approved');
+        return [];
+      }
+      
+      // Batch fetch all profiles at once
+      const userIds = [...new Set(data.map(reel => reel.user_id))];
+      const { data: profiles, error: profilesError } = await supabase
+        .from('profiles')
+        .select('id, full_name, avatar_url')
+        .in('id', userIds);
+      
+      if (profilesError) {
+        console.error('ReelService.getAll: Error fetching profiles:', profilesError);
+      }
+      
+      const profileMap = new Map((profiles || []).map(p => [p.id, p]));
+      
+      // Map profiles to reels and validate data
+      const mappedReels = data.map(reel => {
+        const mappedReel = {
+          ...reel,
+          profiles: profileMap.get(reel.user_id),
+          music_tracks: reel.music_tracks?.[0] || undefined,
+        };
+        
+        // Log warning if video_url is missing for video reels
+        if (reel.media_type === 'video' && !reel.video_url) {
+          console.warn(`Reel ${reel.id}: video_url is missing for video reel`);
+        }
+        
+        // Log warning if image_url is missing for image reels
+        if (reel.media_type === 'image' && !reel.image_url && !reel.thumbnail_url) {
+          console.warn(`Reel ${reel.id}: image_url and thumbnail_url are missing for image reel`);
+        }
+        
+        return mappedReel;
+      });
+      
+      console.log('ReelService.getAll: Mapped reels:', mappedReels.length);
+      return mappedReels;
+    } catch (error) {
+      console.error('ReelService.getAll: Unexpected error:', error);
+      throw error;
+    }
   },
 
   // Get reel by ID

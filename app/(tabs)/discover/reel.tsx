@@ -105,11 +105,27 @@ export default function ReelScreen() {
   const loadReels = async () => {
     try {
       setLoading(true);
+      console.log('Loading reels...');
       const data = await ReelService.getAll(50);
+      console.log('Reels loaded:', data.length, 'reels');
+      console.log('Reels data:', data.map(r => ({ id: r.id, status: r.status, video_url: r.video_url, media_type: r.media_type })));
       setReels(data);
-    } catch (error) {
+      
+      if (data.length === 0) {
+        console.warn('No reels found. This could mean:');
+        console.warn('1. No reels with status = "approved"');
+        console.warn('2. RLS policy blocking access');
+        console.warn('3. Database is empty');
+      }
+    } catch (error: any) {
       console.error('Error loading reels:', error);
-      Alert.alert('Lỗi', 'Không thể tải reels');
+      console.error('Error details:', {
+        message: error.message,
+        code: error.code,
+        details: error.details,
+        hint: error.hint,
+      });
+      Alert.alert('Lỗi', `Không thể tải reels: ${error.message || 'Unknown error'}`);
     } finally {
       setLoading(false);
     }
@@ -455,7 +471,14 @@ export default function ReelScreen() {
                   }
                 }}
                 onError={(error) => {
-                  console.error('Video error:', error);
+                  console.error('Video error for reel:', item.id, error);
+                  console.error('Video URL:', item.video_url);
+                  // Show error message to user
+                  Alert.alert(
+                    'Lỗi phát video',
+                    'Không thể phát video. Vui lòng thử lại sau.',
+                    [{ text: 'OK' }]
+                  );
                 }}
               />
             </View>
@@ -601,6 +624,34 @@ export default function ReelScreen() {
     return (
       <View style={styles.loadingContainer}>
         <ActivityIndicator size="large" color={colors.primary} />
+        <Text style={{ marginTop: 16, color: '#fff', fontSize: 14 }}>
+          Đang tải reels...
+        </Text>
+      </View>
+    );
+  }
+
+  if (reels.length === 0) {
+    return (
+      <View style={styles.loadingContainer}>
+        <Text style={{ color: '#fff', fontSize: 18, fontWeight: '600', marginBottom: 8 }}>
+          Chưa có reels
+        </Text>
+        <Text style={{ color: '#999', fontSize: 14, textAlign: 'center', paddingHorizontal: 40 }}>
+          Chưa có reels nào được duyệt. Hãy tạo reel đầu tiên của bạn!
+        </Text>
+        <TouchableOpacity
+          style={{
+            marginTop: 20,
+            paddingHorizontal: 24,
+            paddingVertical: 12,
+            backgroundColor: colors.primary,
+            borderRadius: 8,
+          }}
+          onPress={() => router.push('/reel/create-reel')}
+        >
+          <Text style={{ color: '#fff', fontWeight: '600' }}>Tạo Reel</Text>
+        </TouchableOpacity>
       </View>
     );
   }

@@ -110,7 +110,11 @@ export default function ProfileScreen() {
                 {activeTab === 'profile' && <View style={styles.headerTabIndicator} />}
               </TouchableOpacity>
             </View>
-            <TouchableOpacity style={styles.settingsButton} activeOpacity={0.8}>
+            <TouchableOpacity 
+              style={styles.settingsButton} 
+              activeOpacity={0.8}
+              onPress={() => router.push('/(tabs)/me/settings')}
+            >
               <Settings size={24} color="#FF6B6B" strokeWidth={2.5} />
             </TouchableOpacity>
           </View>
