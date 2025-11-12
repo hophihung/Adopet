@@ -98,8 +98,37 @@ export const ReelService = {
         return [];
       }
       
+      // Filter out reels without video_url or image_url (phải có ít nhất một URL)
+      const validReels = data.filter(reel => {
+        const hasVideoUrl = reel.video_url && reel.video_url.trim() !== '';
+        const hasImageUrl = reel.image_url && reel.image_url.trim() !== '';
+        const hasThumbnailUrl = reel.thumbnail_url && reel.thumbnail_url.trim() !== '';
+        
+        // Video reels phải có video_url
+        if (reel.media_type === 'video' && !hasVideoUrl) {
+          console.warn(`Reel ${reel.id}: video_url is missing for video reel, filtering out`);
+          return false;
+        }
+        
+        // Image reels phải có image_url hoặc thumbnail_url
+        if (reel.media_type === 'image' && !hasImageUrl && !hasThumbnailUrl) {
+          console.warn(`Reel ${reel.id}: image_url and thumbnail_url are missing for image reel, filtering out`);
+          return false;
+        }
+        
+        // Phải có ít nhất một URL hợp lệ
+        return hasVideoUrl || hasImageUrl || hasThumbnailUrl;
+      });
+      
+      console.log('ReelService.getAll: Valid reels (with URLs):', validReels.length, 'out of', data.length);
+      
+      if (validReels.length === 0) {
+        console.warn('ReelService.getAll: No reels with valid video_url or image_url');
+        return [];
+      }
+      
       // Batch fetch all profiles at once
-      const userIds = [...new Set(data.map(reel => reel.user_id))];
+      const userIds = [...new Set(validReels.map(reel => reel.user_id))];
       const { data: profiles, error: profilesError } = await supabase
         .from('profiles')
         .select('id, full_name, avatar_url')
@@ -111,26 +140,12 @@ export const ReelService = {
       
       const profileMap = new Map((profiles || []).map(p => [p.id, p]));
       
-      // Map profiles to reels and validate data
-      const mappedReels = data.map(reel => {
-        const mappedReel = {
-          ...reel,
-          profiles: profileMap.get(reel.user_id),
-          music_tracks: reel.music_tracks?.[0] || undefined,
-        };
-        
-        // Log warning if video_url is missing for video reels
-        if (reel.media_type === 'video' && !reel.video_url) {
-          console.warn(`Reel ${reel.id}: video_url is missing for video reel`);
-        }
-        
-        // Log warning if image_url is missing for image reels
-        if (reel.media_type === 'image' && !reel.image_url && !reel.thumbnail_url) {
-          console.warn(`Reel ${reel.id}: image_url and thumbnail_url are missing for image reel`);
-        }
-        
-        return mappedReel;
-      });
+      // Map profiles to reels
+      const mappedReels = validReels.map(reel => ({
+        ...reel,
+        profiles: profileMap.get(reel.user_id),
+        music_tracks: reel.music_tracks?.[0] || undefined,
+      }));
       
       console.log('ReelService.getAll: Mapped reels:', mappedReels.length);
       return mappedReels;

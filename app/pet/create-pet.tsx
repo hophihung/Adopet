@@ -12,6 +12,7 @@ import {
   Modal,
 } from 'react-native';
 import { useRouter } from 'expo-router';
+import * as Location from 'expo-location';
 import { usePetManagement } from '../../src/features/pets/hooks/usePetManagement';
 import { PetCreateData } from '../../src/features/pets/services/pet.service';
 import { imageUploadService } from '../../src/services/imageUpload.service';
@@ -20,9 +21,11 @@ import {
   X,
   Check,
   Camera,
+  MapPin,
 } from 'lucide-react-native';
 import { SubscriptionModal } from '../../src/components/SubscriptionModal';
 import { useLocation } from '../../contexts/LocationContext';
+import { locationService } from '../../src/services/location.service';
 
 const PET_TYPES = [
   { value: 'dog', label: 'Chó' },
@@ -42,27 +45,118 @@ const GENDER_OPTIONS = [
 export default function CreatePetScreen() {
   const router = useRouter();
   const { createPet, petLimitInfo, loading, fetchPetLimitInfo } = usePetManagement();
-  const { location, requestPermission } = useLocation();
+  const { location, requestPermission, updateLocation } = useLocation();
 
   const [showSubscriptionModal, setShowSubscriptionModal] = useState(false);
   const [vaccinationImages, setVaccinationImages] = useState<string[]>([]); // Local vaccination image URIs
+  const [locationLoading, setLocationLoading] = useState(false);
+  const [currentCoordinates, setCurrentCoordinates] = useState<{ latitude: number; longitude: number } | null>(null);
+  const [locationAutoFilled, setLocationAutoFilled] = useState(false);
 
   // Refresh pet limit info when screen mounts
   useEffect(() => {
     fetchPetLimitInfo();
   }, []);
 
-  // Request location permission on mount (optional - don't block if unavailable)
+  // Auto-fetch location when screen mounts
   useEffect(() => {
-    // Only request if we don't have location yet
-    // Don't block if location services are unavailable
-    if (!location) {
-      requestPermission().catch((error) => {
-        console.warn('Location permission request failed:', error);
-        // Don't show error - location is optional for creating pet
-      });
-    }
+    // Auto-load location when screen opens
+    loadCurrentLocation(false);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  const loadCurrentLocation = async (forceUpdate: boolean = false) => {
+    try {
+      setLocationLoading(true);
+      // Request permission first
+      const hasPermission = await locationService.checkPermission();
+      if (!hasPermission) {
+        const granted = await locationService.requestPermission();
+        if (!granted) {
+          setLocationLoading(false);
+          return;
+        }
+      }
+
+      // Get current location with silent mode to avoid warnings (only when auto-loading)
+      const currentLocation = await locationService.getCurrentLocation({
+        timeout: 30000,
+        accuracy: Location.Accuracy.Low,
+        useCached: !forceUpdate, // Don't use cache if forcing update
+        silent: !forceUpdate, // Show warnings if user explicitly requested
+      });
+
+      if (currentLocation) {
+        setCurrentCoordinates(currentLocation);
+        // Reverse geocode to get address
+        // forceUpdate = true means user clicked button, so always update
+        await reverseGeocodeLocation(currentLocation.latitude, currentLocation.longitude, !forceUpdate);
+      }
+    } catch (error) {
+      console.warn('Error loading current location:', error);
+      if (forceUpdate) {
+        // Only show error if user explicitly requested location
+        Alert.alert('Lỗi', 'Không thể lấy vị trí. Vui lòng thử lại sau.');
+      }
+    } finally {
+      setLocationLoading(false);
+    }
+  };
+
+  const reverseGeocodeLocation = async (latitude: number, longitude: number, updateOnlyIfEmpty: boolean = true) => {
+    try {
+      const addresses = await Location.reverseGeocodeAsync({
+        latitude,
+        longitude,
+      });
+
+      if (addresses && addresses.length > 0) {
+        const address = addresses[0];
+        // Chỉ lấy tên thành phố (city) hoặc region (tỉnh/thành phố)
+        // Ưu tiên: city -> region -> subregion
+        const cityName = address.city || address.region || address.subregion;
+        
+        const formattedAddress = cityName || `${latitude.toFixed(6)}, ${longitude.toFixed(6)}`;
+        
+        setFormData((prev) => {
+          // Only update if location is empty or updateOnlyIfEmpty is false
+          if (!updateOnlyIfEmpty || !prev.location) {
+            return {
+              ...prev,
+              location: formattedAddress,
+            };
+          }
+          return prev;
+        });
+        setLocationAutoFilled(true);
+      } else {
+        // If reverse geocoding fails, use coordinates
+        setFormData((prev) => {
+          if (!updateOnlyIfEmpty || !prev.location) {
+            return {
+              ...prev,
+              location: `${latitude.toFixed(6)}, ${longitude.toFixed(6)}`,
+            };
+          }
+          return prev;
+        });
+        setLocationAutoFilled(true);
+      }
+    } catch (error) {
+      console.warn('Error reverse geocoding:', error);
+      // If reverse geocoding fails, use coordinates
+      setFormData((prev) => {
+        if (!updateOnlyIfEmpty || !prev.location) {
+          return {
+            ...prev,
+            location: `${latitude.toFixed(6)}, ${longitude.toFixed(6)}`,
+          };
+        }
+        return prev;
+      });
+      setLocationAutoFilled(true);
+    }
+  };
 
   const [formData, setFormData] = useState<PetCreateData>({
     name: '',
@@ -176,8 +270,8 @@ export default function CreatePetScreen() {
         ...formData,
         images: uploadResults.map(result => result.url),
         vaccination_images: vaccinationImageUrls.length > 0 ? vaccinationImageUrls : undefined,
-        latitude: location?.latitude,
-        longitude: location?.longitude,
+        latitude: currentCoordinates?.latitude || location?.latitude,
+        longitude: currentCoordinates?.longitude || location?.longitude,
       };
 
       await createPet(petDataWithImages);
@@ -395,15 +489,37 @@ export default function CreatePetScreen() {
 
           {/* Location */}
           <View style={styles.inputGroup}>
-            <Text style={styles.label}>Địa điểm</Text>
+            <View style={styles.locationHeader}>
+              <Text style={styles.label}>Địa điểm</Text>
+              <TouchableOpacity
+                onPress={() => loadCurrentLocation(true)}
+                disabled={locationLoading}
+                style={styles.locationButton}
+              >
+                {locationLoading ? (
+                  <ActivityIndicator size="small" color="#FF6B6B" />
+                ) : (
+                  <>
+                    <MapPin size={16} color="#FF6B6B" />
+                    <Text style={styles.locationButtonText}>Lấy vị trí</Text>
+                  </>
+                )}
+              </TouchableOpacity>
+            </View>
             <TextInput
               style={styles.input}
               value={formData.location}
               onChangeText={(text) =>
                 setFormData((prev) => ({ ...prev, location: text }))
               }
-              placeholder="Nhập địa điểm"
+              placeholder={locationLoading ? "Đang lấy vị trí..." : "Nhập địa điểm hoặc lấy vị trí hiện tại"}
+              editable={!locationLoading}
             />
+            {currentCoordinates && (
+              <Text style={styles.locationHint}>
+                📍 Tọa độ: {currentCoordinates.latitude.toFixed(6)}, {currentCoordinates.longitude.toFixed(6)}
+              </Text>
+            )}
           </View>
 
           {/* Price */}
@@ -1082,6 +1198,34 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: '#FF9500',
     marginTop: 8,
+    fontStyle: 'italic',
+  },
+  locationHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 12,
+  },
+  locationButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    backgroundColor: '#fff',
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: '#FF6B6B',
+  },
+  locationButtonText: {
+    fontSize: 13,
+    color: '#FF6B6B',
+    fontWeight: '600',
+  },
+  locationHint: {
+    fontSize: 12,
+    color: '#666',
+    marginTop: 6,
     fontStyle: 'italic',
   },
 });
