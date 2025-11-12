@@ -121,7 +121,7 @@ export function ChatList({ onConversationSelect }: ChatListProps) {
           <View style={styles.avatarContainer}>
             <Image
               source={{ 
-                uri: otherUser?.avatar_url || 'https://via.placeholder.com/50'
+                uri: String(otherUser?.avatar_url || 'https://via.placeholder.com/50')
               }}
               style={styles.avatar}
             />
@@ -133,7 +133,7 @@ export function ChatList({ onConversationSelect }: ChatListProps) {
           <View style={styles.conversationContent}>
             <View style={styles.conversationHeader}>
               <Text style={styles.userName}>
-                {otherUser?.full_name || 'Unknown User'}
+                {String(otherUser?.full_name || 'Unknown User')}
               </Text>
               {item.unread_count && item.unread_count > 0 && (
                 <View style={styles.newBadge}>
@@ -190,7 +190,7 @@ export function ChatList({ onConversationSelect }: ChatListProps) {
           renderItem={({ item }) => {
             const pet = item.pet;
             const petImage = pet?.images && Array.isArray(pet.images) && pet.images.length > 0
-              ? pet.images[0]
+              ? String(pet.images[0])
               : 'https://via.placeholder.com/100';
 
             return (
@@ -212,7 +212,7 @@ export function ChatList({ onConversationSelect }: ChatListProps) {
                   )}
                 </View>
                 <Text style={styles.matchName} numberOfLines={1}>
-                  {pet?.name || 'Pet'}
+                  {String(pet?.name || 'Pet')}
                 </Text>
               </TouchableOpacity>
             );
