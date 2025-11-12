@@ -6,18 +6,13 @@
   <component name="ChangeListManager">
     <list default="true" id="9fcd68c1-d0d0-4c8c-a8ff-2b8e56742dc1" name="Changes" comment="">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/CONTENT_MODERATION_SETUP.md" beforeDir="false" afterPath="$PROJECT_DIR$/CONTENT_MODERATION_SETUP.md" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/pet/create-pet.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/app/pet/create-pet.tsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/contexts/LocationContext.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/contexts/LocationContext.tsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/features/reels/components/MusicPickerModal.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/src/features/reels/components/MusicPickerModal.tsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/features/reels/services/music.service.ts" beforeDir="false" afterPath="$PROJECT_DIR$/src/features/reels/services/music.service.ts" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/features/reels/services/reel.service.ts" beforeDir="false" afterPath="$PROJECT_DIR$/src/features/reels/services/reel.service.ts" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/services/location.service.ts" beforeDir="false" afterPath="$PROJECT_DIR$/src/services/location.service.ts" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/supabase/functions/moderate-content/aws-rekognition-implementation.ts" beforeDir="false" afterPath="$PROJECT_DIR$/supabase/functions/moderate-content/aws-rekognition-implementation.ts" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/supabase/functions/moderate-content/google-vision-implementation.ts" beforeDir="false" afterPath="$PROJECT_DIR$/supabase/functions/moderate-content/google-vision-implementation.ts" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/supabase/functions/moderate-content/openai-implementation.ts" beforeDir="false" afterPath="$PROJECT_DIR$/supabase/functions/moderate-content/openai-implementation.ts" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/supabase/migrations/023_create_music_storage_bucket.sql" beforeDir="false" afterPath="$PROJECT_DIR$/supabase/migrations/023_create_music_storage_bucket.sql" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/supabase/migrations/032_auto_approve_reels_on_moderation_pass.sql" beforeDir="false" afterPath="$PROJECT_DIR$/supabase/migrations/032_auto_approve_reels_on_moderation_pass.sql" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/(tabs)/discover/explore.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/app/(tabs)/discover/explore.tsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/(tabs)/discover/match.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/app/(tabs)/discover/match.tsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/(tabs)/pets/my-pets.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/app/(tabs)/pets/my-pets.tsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/(tabs)/social/chat.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/app/(tabs)/social/chat.tsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/features/chat/components/ChatList.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/src/features/chat/components/ChatList.tsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/features/chat/components/ChatScreen.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/src/features/chat/components/ChatScreen.tsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/features/pets/components/PetCard.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/src/features/pets/components/PetCard.tsx" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />

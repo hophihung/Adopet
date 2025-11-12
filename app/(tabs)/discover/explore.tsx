@@ -18,6 +18,7 @@ import {
 } from 'lucide-react-native';
 import { useAuth } from '@/contexts/AuthContext';
 import { PetService } from '@/src/features/pets/services/pet.service';
+import { PetCard } from '@/src/features/pets/components';
 
 interface Pet {
   id: string;

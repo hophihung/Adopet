@@ -16,6 +16,7 @@ import { useRouter, usePathname } from 'expo-router';
 import Swiper from 'react-native-deck-swiper';
 import { PetService } from '@/src/features/pets/services/pet.service';
 import { colors } from '@/src/theme/colors';
+import { PetCardNew } from '@/src/features/pets/components';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
@@ -42,6 +43,9 @@ interface Pet {
   size?: string;
   distance_km?: number;
 }
+
+// Feature flag to toggle between old and new card design
+const USE_NEW_CARD_DESIGN = true;
 
 export default function MatchScreen() {
   const { user } = useAuth();
@@ -296,7 +300,27 @@ export default function MatchScreen() {
         <Swiper
           ref={swiperRef}
           cards={pets}
-          renderCard={(pet: Pet) => (
+          renderCard={(pet: Pet) => 
+            USE_NEW_CARD_DESIGN ? (
+              <PetCardNew
+                pet={pet}
+                onPress={() => router.push(`/pet/${pet.id}`)}
+                onLike={() => handleToggleLike(pet.id)}
+                onFavorite={() => handleToggleLike(pet.id)}
+                onShare={async (pet) => {
+                  try {
+                    await PetService.sharePet(pet.id);
+                  } catch (error) {
+                    console.error('Error sharing pet:', error);
+                  }
+                }}
+                onBack={() => swiperRef.current?.jumpToCardIndex(Math.max(currentIndex - 1, 0))}
+                onClose={() => swiperRef.current?.swipeLeft()}
+                isLiked={likedPets.has(pet.id)}
+                isFavorited={likedPets.has(pet.id)}
+                showActions={true}
+              />
+            ) : (
             <View style={styles.card}>
               <View style={styles.imageContainer}>
                 <Animated.View
@@ -390,7 +414,8 @@ export default function MatchScreen() {
                 </View>
               </View>
             </View>
-          )}
+            )
+          }
           onSwipedLeft={async (cardIndex) => {
             if (cardIndex < pets.length && user?.id) {
               const petId = pets[cardIndex].id;

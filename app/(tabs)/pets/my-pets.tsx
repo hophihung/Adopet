@@ -8,6 +8,7 @@ import {
   Alert,
   RefreshControl,
   Platform,
+  Image,
 } from 'react-native';
 import { useRouter, usePathname } from 'expo-router';
 import { usePetManagement } from '../../../src/features/pets/hooks/usePetManagement';
@@ -228,12 +229,47 @@ export default function MyPetsScreen() {
           </View>
         ) : (
           userPets.map((pet) => (
-            <View key={pet.id} style={styles.petItem}>
-              <PetCard
-                pet={pet}
-                showOwnerActions={true}
-                onToggleAvailability={handleToggleAvailability}
-              />
+            <View key={pet.id} style={styles.petCardWrapper}>
+              <TouchableOpacity
+                style={styles.petCardContainer}
+                activeOpacity={0.95}
+                onPress={() => router.push(`/pet/${pet.id}`)}
+              >
+                {/* Pet Image */}
+                {pet.images && pet.images.length > 0 ? (
+                  <Image
+                    source={{ uri: pet.images[0] }}
+                    style={styles.petCardImage}
+                    resizeMode="cover"
+                  />
+                ) : (
+                  <View style={styles.petCardImagePlaceholder}>
+                    <PawPrint size={48} color="#CCC" />
+                  </View>
+                )}
+
+                {/* Status Badge */}
+                <View style={[
+                  styles.petStatusBadge,
+                  pet.is_available ? styles.petStatusAvailable : styles.petStatusSold
+                ]}>
+                  <Text style={styles.petStatusText}>
+                    {pet.is_available ? '● Có hoạt động gần đây' : '● Đã bán'}
+                  </Text>
+                </View>
+
+                {/* Pet Info */}
+                <View style={styles.petCardInfo}>
+                  <Text style={styles.petCardName} numberOfLines={1}>
+                    {`${pet.name}${pet.age_months ? `, ${pet.age_months} tháng` : ''}`}
+                  </Text>
+                  {pet.location && (
+                    <Text style={styles.petCardLocation} numberOfLines={1}>
+                      {`📍 ${pet.location}`}
+                    </Text>
+                  )}
+                </View>
+              </TouchableOpacity>
 
               {/* Action Buttons */}
               <View style={styles.actionButtons}>
@@ -396,17 +432,81 @@ const styles = StyleSheet.create({
     flex: 1,
     paddingTop: 8,
   },
-  petItem: {
-    marginBottom: 12,
+  petCardWrapper: {
+    marginBottom: 16,
     marginHorizontal: 16,
-    backgroundColor: '#fff',
+  },
+  petCardContainer: {
+    position: 'relative',
+    height: 400,
+    borderRadius: 20,
+    overflow: 'hidden',
+    backgroundColor: '#F0F2F5',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.15,
+    shadowRadius: 12,
+    elevation: 6,
+  },
+  petCardImage: {
+    width: '100%',
+    height: '100%',
+  },
+  petCardImagePlaceholder: {
+    width: '100%',
+    height: '100%',
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: '#F0F2F5',
+  },
+  petStatusBadge: {
+    position: 'absolute',
+    top: 16,
+    left: 16,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
     borderRadius: 16,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 8,
+    shadowOpacity: 0.3,
+    shadowRadius: 4,
     elevation: 3,
-    overflow: 'hidden',
+  },
+  petStatusAvailable: {
+    backgroundColor: 'rgba(76, 217, 100, 0.95)',
+  },
+  petStatusSold: {
+    backgroundColor: 'rgba(255, 59, 48, 0.95)',
+  },
+  petStatusText: {
+    color: '#FFFFFF',
+    fontSize: 12,
+    fontWeight: '600',
+  },
+  petCardInfo: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    padding: 20,
+    backgroundColor: 'linear-gradient(to top, rgba(0,0,0,0.8), transparent)',
+  },
+  petCardName: {
+    fontSize: 24,
+    fontWeight: '700',
+    color: '#FFFFFF',
+    marginBottom: 4,
+    textShadowColor: 'rgba(0, 0, 0, 0.75)',
+    textShadowOffset: { width: 0, height: 2 },
+    textShadowRadius: 4,
+  },
+  petCardLocation: {
+    fontSize: 14,
+    color: '#FFFFFF',
+    fontWeight: '500',
+    textShadowColor: 'rgba(0, 0, 0, 0.75)',
+    textShadowOffset: { width: 0, height: 1 },
+    textShadowRadius: 3,
   },
   actionButtons: {
     flexDirection: 'row',

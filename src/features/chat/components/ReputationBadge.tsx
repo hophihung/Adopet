@@ -42,7 +42,7 @@ export function ReputationBadge({
       </View>
       {showPoints && (
         <Text style={[styles.points, { fontSize }]}>
-          {reputationPoints}
+          {String(reputationPoints)}
         </Text>
       )}
     </View>

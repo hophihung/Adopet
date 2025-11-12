@@ -169,7 +169,7 @@ export default function ChatTabScreen() {
                 {unreadCount > 0 && (
                   <View style={styles.unreadBadge}>
                     <Text style={styles.unreadText}>
-                      {unreadCount > 99 ? '99+' : unreadCount}
+                      {unreadCount > 99 ? '99+' : String(unreadCount)}
                     </Text>
                   </View>
                 )}

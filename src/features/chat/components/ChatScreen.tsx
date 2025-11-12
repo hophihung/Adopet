@@ -287,7 +287,7 @@ export function ChatScreen({ conversation, onBack }: ChatScreenProps) {
           )}
           <View style={[styles.messageBubble, isMe ? styles.otherMessageBubble : styles.otherMessageBubble]}> 
             <Text style={styles.otherMessageText}>
-              {item.sender?.full_name || 'Người dùng'} {item.content}
+              {`${item.sender?.full_name || 'Người dùng'} ${item.content}`}
             </Text>
             <TouchableOpacity
               style={styles.petPreviewCard}
@@ -300,7 +300,7 @@ export function ChatScreen({ conversation, onBack }: ChatScreenProps) {
               <View style={{ flex: 1 }}>
                 <Text style={styles.petTitle}>{meta?.name || 'Thú cưng'}</Text>
                 <Text style={styles.petSubtitle}>
-                  {(meta?.type || '').toString()} {meta?.price ? `• ${meta.price}` : ''}
+                  {`${(meta?.type || '').toString()}${meta?.price ? ` • ${meta.price}` : ''}`}
                 </Text>
               </View>
             </TouchableOpacity>

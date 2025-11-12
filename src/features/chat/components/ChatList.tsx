@@ -126,11 +126,7 @@ export function ChatList({ onConversationSelect }: ChatListProps) {
               style={styles.avatar}
             />
             {item.unread_count && item.unread_count > 0 ? (
-              <View style={styles.unreadBadge}>
-                <Text style={styles.unreadText}>
-                  {item.unread_count > 99 ? '99+' : String(item.unread_count)}
-                </Text>
-              </View>
+              <View style={styles.onlineDot} />
             ) : null}
           </View>
 
@@ -139,23 +135,15 @@ export function ChatList({ onConversationSelect }: ChatListProps) {
               <Text style={styles.userName}>
                 {otherUser?.full_name || 'Unknown User'}
               </Text>
-              <Text style={styles.timeText}>
-                {formatTime(item.last_message_at)}
-              </Text>
+              {item.unread_count && item.unread_count > 0 && (
+                <View style={styles.newBadge}>
+                  <Text style={styles.newBadgeText}>User mới</Text>
+                </View>
+              )}
             </View>
 
-            <View style={styles.petInfo}>
-              <Heart size={12} color={colors.primary} />
-              <Text style={styles.petName}>
-                {`${pet?.name || 'Unknown Pet'} • ${pet?.type || 'Pet'}`}
-              </Text>
-            </View>
-
-            <Text style={styles.lastMessage} numberOfLines={1}>
-              {item.unread_count && item.unread_count > 0 
-                ? `${item.unread_count} tin nhắn mới`
-                : 'Nhấn để xem cuộc trò chuyện'
-              }
+            <Text style={styles.statusText} numberOfLines={1}>
+              Có hoạt động gần đây, tương hợp ngay!
             </Text>
           </View>
         </TouchableOpacity>
@@ -184,11 +172,64 @@ export function ChatList({ onConversationSelect }: ChatListProps) {
     );
   }
 
+  const renderHeader = () => {
+    // Get recent matches (conversations with pets)
+    const recentMatches = conversations
+      .filter(c => c.pet)
+      .slice(0, 10);
+
+    if (recentMatches.length === 0) return null;
+
+    return (
+      <View style={styles.matchesSection}>
+        <Text style={styles.sectionTitle}>Người Mua mới</Text>
+        <FlatList
+          horizontal
+          data={recentMatches}
+          keyExtractor={(item) => `match-${item.id}`}
+          renderItem={({ item }) => {
+            const pet = item.pet;
+            const petImage = pet?.images && Array.isArray(pet.images) && pet.images.length > 0
+              ? pet.images[0]
+              : 'https://via.placeholder.com/100';
+
+            return (
+              <TouchableOpacity
+                style={styles.matchItem}
+                onPress={() => onConversationSelect(item)}
+              >
+                <View style={styles.matchImageContainer}>
+                  <Image
+                    source={{ uri: petImage }}
+                    style={styles.matchImage}
+                  />
+                  {item.unread_count && item.unread_count > 0 && (
+                    <View style={styles.matchBadge}>
+                      <Text style={styles.matchBadgeText}>
+                        {String(item.unread_count)}
+                      </Text>
+                    </View>
+                  )}
+                </View>
+                <Text style={styles.matchName} numberOfLines={1}>
+                  {pet?.name || 'Pet'}
+                </Text>
+              </TouchableOpacity>
+            );
+          }}
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={styles.matchesContent}
+        />
+      </View>
+    );
+  };
+
   return (
     <FlatList
       data={conversations}
       keyExtractor={(item) => item.id}
       renderItem={renderConversation}
+      ListHeaderComponent={renderHeader}
       style={styles.list}
       showsVerticalScrollIndicator={false}
     />
@@ -198,7 +239,65 @@ export function ChatList({ onConversationSelect }: ChatListProps) {
 const styles = StyleSheet.create({
   list: {
     flex: 1,
-    backgroundColor: colors.background,
+    backgroundColor: '#F0F2F5',
+  },
+  matchesSection: {
+    backgroundColor: '#FFFFFF',
+    paddingVertical: 16,
+    borderBottomWidth: 8,
+    borderBottomColor: '#F0F2F5',
+  },
+  sectionTitle: {
+    fontSize: 17,
+    fontWeight: '700',
+    color: '#050505',
+    paddingHorizontal: 16,
+    marginBottom: 12,
+  },
+  matchesContent: {
+    paddingHorizontal: 12,
+  },
+  matchItem: {
+    alignItems: 'center',
+    marginHorizontal: 4,
+    width: 80,
+  },
+  matchImageContainer: {
+    position: 'relative',
+    marginBottom: 6,
+  },
+  matchImage: {
+    width: 72,
+    height: 72,
+    borderRadius: 12,
+    backgroundColor: '#F0F2F5',
+    borderWidth: 3,
+    borderColor: '#FFD700',
+  },
+  matchBadge: {
+    position: 'absolute',
+    top: -4,
+    right: -4,
+    backgroundColor: '#FF3B30',
+    borderRadius: 12,
+    minWidth: 24,
+    height: 24,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: 6,
+    borderWidth: 2,
+    borderColor: '#FFFFFF',
+  },
+  matchBadgeText: {
+    color: '#FFFFFF',
+    fontSize: 12,
+    fontWeight: '700',
+  },
+  matchName: {
+    fontSize: 12,
+    fontWeight: '500',
+    color: '#050505',
+    textAlign: 'center',
   },
   loadingContainer: {
     flex: 1,
@@ -235,47 +334,31 @@ const styles = StyleSheet.create({
   },
   conversationItem: {
     flexDirection: 'row',
-    paddingHorizontal: 20,
-    paddingVertical: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: colors.border,
-    backgroundColor: colors.surface,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    backgroundColor: '#FFFFFF',
+    alignItems: 'center',
   },
   avatarContainer: {
     position: 'relative',
     marginRight: 12,
   },
   avatar: {
-    width: 50,
-    height: 50,
-    borderRadius: 25,
-    backgroundColor: colors.backgroundSecondary,
-    borderWidth: 2,
-    borderColor: colors.border,
+    width: 60,
+    height: 60,
+    borderRadius: 30,
+    backgroundColor: '#F0F2F5',
   },
-  unreadBadge: {
+  onlineDot: {
     position: 'absolute',
-    top: -4,
-    right: -4,
-    backgroundColor: colors.error,
-    borderRadius: 10,
-    minWidth: 20,
-    height: 20,
-    justifyContent: 'center',
-    alignItems: 'center',
-    paddingHorizontal: 4,
+    bottom: 2,
+    right: 2,
+    width: 14,
+    height: 14,
+    borderRadius: 7,
+    backgroundColor: '#31A24C',
     borderWidth: 2,
-    borderColor: colors.background,
-    shadowColor: colors.error,
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.3,
-    shadowRadius: 4,
-    elevation: 3,
-  },
-  unreadText: {
-    color: colors.textInverse,
-    fontSize: 10,
-    fontWeight: '700',
+    borderColor: '#FFFFFF',
   },
   conversationContent: {
     flex: 1,
@@ -283,38 +366,30 @@ const styles = StyleSheet.create({
   },
   conversationHeader: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
     alignItems: 'center',
     marginBottom: 4,
+    gap: 8,
   },
   userName: {
-    fontSize: 16,
+    fontSize: 15,
     fontWeight: '600',
-    color: colors.text,
-    flex: 1,
+    color: '#050505',
   },
-  timeText: {
-    fontSize: 12,
-    color: colors.textTertiary,
-    fontWeight: '500',
+  newBadge: {
+    backgroundColor: '#FFD700',
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+    borderRadius: 4,
   },
-  petInfo: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 4,
-    marginTop: 2,
+  newBadgeText: {
+    fontSize: 11,
+    fontWeight: '700',
+    color: '#000000',
   },
-  petName: {
-    fontSize: 12,
-    color: colors.primary,
-    marginLeft: 4,
-    fontWeight: '500',
-  },
-  lastMessage: {
-    fontSize: 14,
-    color: colors.textSecondary,
-    fontWeight: '400',
-    marginTop: 2,
+  statusText: {
+    fontSize: 13,
+    color: '#65676B',
+    lineHeight: 18,
   },
   rightActions: {
     flexDirection: 'row',
