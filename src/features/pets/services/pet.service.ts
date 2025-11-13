@@ -230,8 +230,7 @@ export const PetService = {
         profiles!pets_seller_id_fkey(
           id,
           full_name,
-          avatar_url,
-          phone
+          avatar_url
         )
       `)
       .eq('id', petId)

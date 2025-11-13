@@ -12,6 +12,7 @@ import {
   Alert,
   ActivityIndicator,
 } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Send, ArrowLeft, Heart, CreditCard } from 'lucide-react-native';
 import { useRouter } from 'expo-router';
 import { ChatService, Message, Conversation } from '../services/chat.service';
@@ -28,6 +29,7 @@ interface ChatScreenProps {
 export function ChatScreen({ conversation, onBack }: ChatScreenProps) {
   const { user } = useAuth();
   const router = useRouter();
+  const insets = useSafeAreaInsets();
   const [messages, setMessages] = useState<Message[]>([]);
   const [newMessage, setNewMessage] = useState('');
   const [loading, setLoading] = useState(true);
@@ -36,6 +38,11 @@ export function ChatScreen({ conversation, onBack }: ChatScreenProps) {
   const [loadingTransactions, setLoadingTransactions] = useState(false);
   const [creatingTransaction, setCreatingTransaction] = useState(false);
   const flatListRef = useRef<FlatList>(null);
+  
+  // Tab bar height (70) + marginBottom (20) + safe area bottom
+  const tabBarHeight = 70;
+  const tabBarMarginBottom = 20;
+  const bottomPadding = tabBarHeight + tabBarMarginBottom + insets.bottom;
 
   const otherUser = user?.id === conversation.buyer_id ? conversation.seller : conversation.buyer;
   const pet = conversation.pet;
@@ -458,7 +465,7 @@ export function ChatScreen({ conversation, onBack }: ChatScreenProps) {
       />
 
       {/* Input */}
-      <View style={styles.inputContainer}>
+      <View style={[styles.inputContainer, { paddingBottom: bottomPadding }]}>
         <TextInput
           style={styles.textInput}
           value={newMessage}

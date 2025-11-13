@@ -11,7 +11,7 @@ import {
   Modal,
   Platform,
 } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import {
   Settings,
   Edit,
@@ -31,11 +31,17 @@ import { useRouter, usePathname } from 'expo-router';
 export default function ProfileScreen() {
   const router = useRouter();
   const pathname = usePathname();
+  const insets = useSafeAreaInsets();
   const { profile, stats, loading, refreshing, refreshProfile } = useProfile();
   const { signOut } = useAuth();
   const { subscription, refreshSubscription } = useSubscription();
   const [showSubscriptionModal, setShowSubscriptionModal] = useState(false);
   const [activeTab, setActiveTab] = useState<'reminders' | 'profile'>('profile');
+  
+  // Tab bar height (70) + marginBottom (20) + safe area bottom
+  const tabBarHeight = 70;
+  const tabBarMarginBottom = 20;
+  const bottomPadding = tabBarHeight + tabBarMarginBottom + insets.bottom;
   
   // Navigate between reminders and profile
   const handleTabChange = (tab: 'reminders' | 'profile') => {
@@ -75,6 +81,7 @@ export default function ProfileScreen() {
     <SafeAreaView style={styles.container} edges={['top']}>
       <ScrollView
         style={styles.scrollView}
+        contentContainerStyle={{ paddingBottom: bottomPadding }}
         refreshControl={
           <RefreshControl refreshing={refreshing} onRefresh={refreshProfile} />
         }

@@ -8,6 +8,7 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter, usePathname } from 'expo-router';
 import { LinearGradient } from 'expo-linear-gradient';
 import {
@@ -45,12 +46,18 @@ export default function ExploreScreen() {
   const { user } = useAuth();
   const router = useRouter();
   const pathname = usePathname();
+  const insets = useSafeAreaInsets();
   const [pets, setPets] = useState<Pet[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedFilter, setSelectedFilter] = useState<string>('all');
   const [activeTopTab, setActiveTopTab] = useState<'match' | 'explore'>(
     'explore'
   );
+  
+  // Tab bar height (70) + marginBottom (20) + safe area bottom
+  const tabBarHeight = 70;
+  const tabBarMarginBottom = 20;
+  const bottomPadding = tabBarHeight + tabBarMarginBottom + insets.bottom;
 
   useEffect(() => {
     loadPets();
@@ -164,7 +171,7 @@ export default function ExploreScreen() {
       </View>
 
       <ScrollView
-        contentContainerStyle={styles.scrollContent}
+        contentContainerStyle={[styles.scrollContent, { paddingBottom: bottomPadding }]}
         showsVerticalScrollIndicator={false}
       >
         <LinearGradient colors={['#FFE4EC', '#FFF7F9']} style={styles.heroCard}>

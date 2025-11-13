@@ -10,6 +10,7 @@ import {
   Platform,
   Image,
 } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter, usePathname } from 'expo-router';
 import { usePetManagement } from '../../../src/features/pets/hooks/usePetManagement';
 import { PetLimitBanner } from '../../../src/features/pets/components/PetLimitBanner';
@@ -22,7 +23,13 @@ import { colors } from '@/src/theme/colors';
 export default function MyPetsScreen() {
   const router = useRouter();
   const pathname = usePathname();
+  const insets = useSafeAreaInsets();
   const [activeTab, setActiveTab] = useState<'my-pets' | 'virtual-pet'>('my-pets');
+  
+  // Tab bar height (70) + marginBottom (20) + safe area bottom
+  const tabBarHeight = 70;
+  const tabBarMarginBottom = 20;
+  const bottomPadding = tabBarHeight + tabBarMarginBottom + insets.bottom;
   
   // Navigate between my-pets and virtual-pet
   const handleTabChange = (tab: 'my-pets' | 'virtual-pet') => {
@@ -205,6 +212,7 @@ export default function MyPetsScreen() {
       {/* Pet List */}
       <ScrollView
         style={styles.petList}
+        contentContainerStyle={{ paddingBottom: bottomPadding }}
         refreshControl={
           <RefreshControl refreshing={refreshing} onRefresh={handleRefresh} />
         }

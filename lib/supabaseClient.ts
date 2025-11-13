@@ -128,6 +128,10 @@ export type VirtualPet = {
   exp_to_next_level: number;
   mood: number; // 0-100
   last_checkin_date: string | null;
+  last_feed_date: string | null;
+  last_clean_date: string | null;
+  last_play_time: string | null;
+  last_minigame_date: string | null;
   streak_days: number;
   skin_id: string;
   background_id: string;

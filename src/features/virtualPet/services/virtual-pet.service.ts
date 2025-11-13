@@ -205,5 +205,192 @@ export const VirtualPetService = {
 
     return diffDays;
   },
+
+  /**
+   * Feed pet - Tăng mood và exp (chỉ 1 lần/ngày)
+   */
+  async feedPet(petId: string): Promise<{ success: boolean; exp_gain: number; mood_gain: number; pet?: VirtualPet; error?: string }> {
+    const { data: pet, error: fetchError } = await supabase
+      .from('virtual_pets')
+      .select('*')
+      .eq('id', petId)
+      .single();
+
+    if (fetchError) {
+      return { success: false, exp_gain: 0, mood_gain: 0, error: fetchError.message };
+    }
+
+    // Check if already fed today
+    if (pet.last_feed_date) {
+      const today = new Date().toISOString().split('T')[0];
+      const lastFeed = new Date(pet.last_feed_date).toISOString().split('T')[0];
+      if (today === lastFeed) {
+        return { success: false, exp_gain: 0, mood_gain: 0, error: 'Đã cho ăn hôm nay rồi! Hãy đợi đến ngày mai.' };
+      }
+    }
+
+    const expGain = 15;
+    const moodGain = 5;
+    const today = new Date().toISOString().split('T')[0];
+
+    const { data, error } = await supabase
+      .from('virtual_pets')
+      .update({
+        exp: pet.exp + expGain,
+        mood: Math.min(100, pet.mood + moodGain),
+        last_feed_date: today,
+        updated_at: new Date().toISOString(),
+      })
+      .eq('id', petId)
+      .select()
+      .single();
+
+    if (error) {
+      return { success: false, exp_gain: 0, mood_gain: 0, error: error.message };
+    }
+
+    return { success: true, exp_gain: expGain, mood_gain: moodGain, pet: data };
+  },
+
+  /**
+   * Play with pet - Tăng mood và exp nhiều hơn (cooldown 5 phút)
+   */
+  async playWithPet(petId: string): Promise<{ success: boolean; exp_gain: number; mood_gain: number; pet?: VirtualPet; error?: string }> {
+    const { data: pet, error: fetchError } = await supabase
+      .from('virtual_pets')
+      .select('*')
+      .eq('id', petId)
+      .single();
+
+    if (fetchError) {
+      return { success: false, exp_gain: 0, mood_gain: 0, error: fetchError.message };
+    }
+
+    // Check cooldown (5 minutes)
+    if (pet.last_play_time) {
+      const now = new Date().getTime();
+      const lastPlay = new Date(pet.last_play_time).getTime();
+      const cooldown = 5 * 60 * 1000; // 5 minutes
+      if (now - lastPlay < cooldown) {
+        const remaining = cooldown - (now - lastPlay);
+        const minutes = Math.floor(remaining / 60000);
+        const seconds = Math.floor((remaining % 60000) / 1000);
+        return { 
+          success: false, 
+          exp_gain: 0, 
+          mood_gain: 0, 
+          error: `Còn ${minutes}:${seconds.toString().padStart(2, '0')} để chơi lại` 
+        };
+      }
+    }
+
+    const expGain = 25;
+    const moodGain = 10;
+
+    const { data, error } = await supabase
+      .from('virtual_pets')
+      .update({
+        exp: pet.exp + expGain,
+        mood: Math.min(100, pet.mood + moodGain),
+        last_play_time: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      })
+      .eq('id', petId)
+      .select()
+      .single();
+
+    if (error) {
+      return { success: false, exp_gain: 0, mood_gain: 0, error: error.message };
+    }
+
+    return { success: true, exp_gain: expGain, mood_gain: moodGain, pet: data };
+  },
+
+  /**
+   * Clean pet - Tăng mood (chỉ 1 lần/ngày)
+   */
+  async cleanPet(petId: string): Promise<{ success: boolean; mood_gain: number; pet?: VirtualPet; error?: string }> {
+    const { data: pet, error: fetchError } = await supabase
+      .from('virtual_pets')
+      .select('*')
+      .eq('id', petId)
+      .single();
+
+    if (fetchError) {
+      return { success: false, mood_gain: 0, error: fetchError.message };
+    }
+
+    // Check if already cleaned today
+    if (pet.last_clean_date) {
+      const today = new Date().toISOString().split('T')[0];
+      const lastClean = new Date(pet.last_clean_date).toISOString().split('T')[0];
+      if (today === lastClean) {
+        return { success: false, mood_gain: 0, error: 'Đã tắm hôm nay rồi! Hãy đợi đến ngày mai.' };
+      }
+    }
+
+    const moodGain = 8;
+    const today = new Date().toISOString().split('T')[0];
+
+    const { data, error } = await supabase
+      .from('virtual_pets')
+      .update({
+        mood: Math.min(100, pet.mood + moodGain),
+        last_clean_date: today,
+        updated_at: new Date().toISOString(),
+      })
+      .eq('id', petId)
+      .select()
+      .single();
+
+    if (error) {
+      return { success: false, mood_gain: 0, error: error.message };
+    }
+
+    return { success: true, mood_gain: moodGain, pet: data };
+  },
+
+  /**
+   * Mini game reward - Thưởng EXP từ mini game (chỉ 1 lần/ngày)
+   */
+  async miniGameReward(petId: string, expGain: number): Promise<{ success: boolean; pet?: VirtualPet; error?: string }> {
+    const { data: pet, error: fetchError } = await supabase
+      .from('virtual_pets')
+      .select('*')
+      .eq('id', petId)
+      .single();
+
+    if (fetchError) {
+      return { success: false, error: fetchError.message };
+    }
+
+    // Check if already played mini game today
+    if (pet.last_minigame_date) {
+      const today = new Date().toISOString().split('T')[0];
+      const lastMinigame = new Date(pet.last_minigame_date).toISOString().split('T')[0];
+      if (today === lastMinigame) {
+        return { success: false, error: 'Đã chơi mini game hôm nay rồi! Hãy đợi đến ngày mai.' };
+      }
+    }
+
+    const today = new Date().toISOString().split('T')[0];
+
+    const { data, error } = await supabase
+      .from('virtual_pets')
+      .update({
+        exp: pet.exp + expGain,
+        last_minigame_date: today,
+        updated_at: new Date().toISOString(),
+      })
+      .eq('id', petId)
+      .select()
+      .single();
+
+    if (error) {
+      return { success: false, error: error.message };
+    }
+
+    return { success: true, pet: data };
+  },
 };
 

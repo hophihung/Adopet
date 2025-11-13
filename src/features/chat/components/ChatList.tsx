@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   View,
   Text,
@@ -10,7 +10,9 @@ import {
   Animated,
 } from 'react-native';
 import { Swipeable } from 'react-native-gesture-handler';
-import { MessageCircle, Heart } from 'lucide-react-native';
+import { MessageCircle } from 'lucide-react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { ChatService, Conversation } from '../services/chat.service';
 import { useAuth } from '../../../../contexts/AuthContext';
 import { colors } from '@/src/theme/colors';
@@ -21,17 +23,41 @@ interface ChatListProps {
 
 export function ChatList({ onConversationSelect }: ChatListProps) {
   const { user } = useAuth();
+  const insets = useSafeAreaInsets();
   const [conversations, setConversations] = useState<Conversation[]>([]);
   const [loading, setLoading] = useState(true);
+  const [hiddenBuyerIds, setHiddenBuyerIds] = useState<Set<string>>(new Set());
+  
+  // Tab bar height (70) + marginBottom (20) + safe area bottom
+  const tabBarHeight = 70;
+  const tabBarMarginBottom = 20;
+  const bottomPadding = tabBarHeight + tabBarMarginBottom + insets.bottom;
 
-  useEffect(() => {
-    if (user?.id) {
-      loadConversations();
-      subscribeToUpdates();
+  const loadHiddenBuyers = useCallback(async () => {
+    if (!user?.id) return;
+    try {
+      const key = `hidden_buyers_${user.id}`;
+      const stored = await AsyncStorage.getItem(key);
+      if (stored) {
+        const hiddenIds = JSON.parse(stored) as string[];
+        setHiddenBuyerIds(new Set(hiddenIds));
+      }
+    } catch (error) {
+      console.error('Error loading hidden buyers:', error);
     }
   }, [user?.id]);
 
-  const loadConversations = async () => {
+  const saveHiddenBuyers = useCallback(async (hiddenIds: Set<string>) => {
+    if (!user?.id) return;
+    try {
+      const key = `hidden_buyers_${user.id}`;
+      await AsyncStorage.setItem(key, JSON.stringify(Array.from(hiddenIds)));
+    } catch (error) {
+      console.error('Error saving hidden buyers:', error);
+    }
+  }, [user?.id]);
+
+  const loadConversations = useCallback(async () => {
     if (!user?.id) return;
 
     try {
@@ -43,9 +69,9 @@ export function ChatList({ onConversationSelect }: ChatListProps) {
     } finally {
       setLoading(false);
     }
-  };
+  }, [user?.id]);
 
-  const subscribeToUpdates = () => {
+  const subscribeToUpdates = useCallback(() => {
     if (!user?.id) return;
 
     const subscription = ChatService.subscribeToConversationList(
@@ -65,31 +91,19 @@ export function ChatList({ onConversationSelect }: ChatListProps) {
     return () => {
       subscription.unsubscribe();
     };
-  };
+  }, [user?.id]);
 
-  const formatTime = (dateString: string) => {
-    const date = new Date(dateString);
-    const now = new Date();
-    const diffInHours = (now.getTime() - date.getTime()) / (1000 * 60 * 60);
-
-    if (diffInHours < 24) {
-      return date.toLocaleTimeString('vi-VN', { 
-        hour: '2-digit', 
-        minute: '2-digit' 
-      });
-    } else if (diffInHours < 168) { // 7 days
-      return date.toLocaleDateString('vi-VN', { weekday: 'short' });
-    } else {
-      return date.toLocaleDateString('vi-VN', { 
-        day: '2-digit', 
-        month: '2-digit' 
-      });
+  useEffect(() => {
+    if (user?.id) {
+      loadHiddenBuyers();
+      loadConversations();
+      const unsubscribe = subscribeToUpdates();
+      return unsubscribe;
     }
-  };
+  }, [user?.id, loadHiddenBuyers, loadConversations, subscribeToUpdates]);
 
   const renderConversation = ({ item }: { item: Conversation }) => {
     const otherUser = user?.id === item.buyer_id ? item.seller : item.buyer;
-    const pet = item.pet;
 
     const renderRightActions = (_: any, dragX: Animated.AnimatedInterpolation<number>) => {
       return (
@@ -133,13 +147,13 @@ export function ChatList({ onConversationSelect }: ChatListProps) {
           <View style={styles.conversationContent}>
             <View style={styles.conversationHeader}>
               <Text style={styles.userName}>
-                {String(otherUser?.full_name || 'Unknown User')}
+                {otherUser?.full_name ? String(otherUser.full_name) : 'Unknown User'}
               </Text>
-              {item.unread_count && item.unread_count > 0 && (
+              {item.unread_count && item.unread_count > 0 ? (
                 <View style={styles.newBadge}>
                   <Text style={styles.newBadgeText}>User mới</Text>
                 </View>
-              )}
+              ) : null}
             </View>
 
             <Text style={styles.statusText} numberOfLines={1}>
@@ -173,9 +187,17 @@ export function ChatList({ onConversationSelect }: ChatListProps) {
   }
 
   const renderHeader = () => {
-    // Get recent matches (conversations with pets)
+    // Chỉ lấy conversations mà user là seller (người khác đã swipe pet của user)
+    // Và loại bỏ những buyer đã bị ẩn
     const recentMatches = conversations
-      .filter(c => c.pet)
+      .filter(c => {
+        // Chỉ lấy conversations mà user là seller
+        if (user?.id !== c.seller_id) return false;
+        // Loại bỏ những buyer đã bị ẩn
+        if (hiddenBuyerIds.has(c.buyer_id)) return false;
+        // Phải có pet
+        return c.pet;
+      })
       .slice(0, 10);
 
     if (recentMatches.length === 0) return null;
@@ -188,31 +210,41 @@ export function ChatList({ onConversationSelect }: ChatListProps) {
           data={recentMatches}
           keyExtractor={(item) => `match-${item.id}`}
           renderItem={({ item }) => {
-            const pet = item.pet;
-            const petImage = pet?.images && Array.isArray(pet.images) && pet.images.length > 0
-              ? String(pet.images[0])
+            const buyer = item.buyer;
+            const buyerAvatar = buyer?.avatar_url 
+              ? String(buyer.avatar_url)
               : 'https://via.placeholder.com/100';
+            const buyerName = buyer?.full_name 
+              ? String(buyer.full_name)
+              : 'Unknown';
 
             return (
               <TouchableOpacity
                 style={styles.matchItem}
-                onPress={() => onConversationSelect(item)}
+                onPress={() => {
+                  // Ẩn profile khi click vào
+                  const newHiddenIds = new Set(hiddenBuyerIds).add(item.buyer_id);
+                  setHiddenBuyerIds(newHiddenIds);
+                  saveHiddenBuyers(newHiddenIds);
+                  // Vẫn mở conversation
+                  onConversationSelect(item);
+                }}
               >
                 <View style={styles.matchImageContainer}>
                   <Image
-                    source={{ uri: petImage }}
+                    source={{ uri: buyerAvatar || 'https://via.placeholder.com/100' }}
                     style={styles.matchImage}
                   />
-                  {item.unread_count && item.unread_count > 0 && (
+                  {item.unread_count && item.unread_count > 0 ? (
                     <View style={styles.matchBadge}>
                       <Text style={styles.matchBadgeText}>
                         {String(item.unread_count)}
                       </Text>
                     </View>
-                  )}
+                  ) : null}
                 </View>
                 <Text style={styles.matchName} numberOfLines={1}>
-                  {String(pet?.name || 'Pet')}
+                  {buyerName}
                 </Text>
               </TouchableOpacity>
             );
@@ -231,6 +263,7 @@ export function ChatList({ onConversationSelect }: ChatListProps) {
       renderItem={renderConversation}
       ListHeaderComponent={renderHeader}
       style={styles.list}
+      contentContainerStyle={{ paddingBottom: bottomPadding }}
       showsVerticalScrollIndicator={false}
     />
   );

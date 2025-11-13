@@ -10,12 +10,14 @@ import {
   Platform,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
-import { Calendar, TrendingUp, Heart, Star, Sparkles, ArrowLeft } from 'lucide-react-native';
+import { Calendar, TrendingUp, Heart, Star, Sparkles, ArrowLeft, Gamepad2 } from 'lucide-react-native';
 import { useRouter } from 'expo-router';
 import { useVirtualPet } from '@/src/features/virtualPet/hooks/useVirtualPet';
 import { LevelUpModal, petColors, petEmojis, PetSelectionModal, PetType } from '@/src/features/virtualPet';
 import { CheckinCalendar } from '@/src/features/virtualPet/components/CheckinCalendar';
 import { PixelPetAnimation } from '@/src/features/virtualPet/components/PixelPetAnimation';
+import { MiniGame } from '@/src/features/virtualPet/components/MiniGame';
+import { PetInteractions } from '@/src/features/virtualPet/components/PetInteractions';
 import { getEvolutionStageName, getEvolutionStage } from '@/src/config/virtualPet/animations';
 import { GamerBackground } from '@/src/components/backgrounds/GamerBackground';
 import { colors } from '@/src/theme/colors';
@@ -37,11 +39,16 @@ export default function VirtualPetScreen() {
     dailyCheckin,
     fetchVirtualPet,
     hasVirtualPet,
+    feedPet,
+    playWithPet,
+    cleanPet,
+    miniGameReward,
   } = useVirtualPet();
 
   const [showLevelUpModal, setShowLevelUpModal] = useState(false);
   const [showPetSelection, setShowPetSelection] = useState(false);
   const [showCheckinCalendar, setShowCheckinCalendar] = useState(false);
+  const [showMiniGame, setShowMiniGame] = useState(false);
   const [previousLevel, setPreviousLevel] = useState(1);
 
   // Track level changes
@@ -270,6 +277,59 @@ export default function VirtualPetScreen() {
           </View>
         </View>
 
+        {/* Pet Interactions */}
+        <View style={styles.interactionsContainer}>
+          <PetInteractions
+            onFeed={async () => {
+              const result = await feedPet();
+              return { 
+                success: result.success, 
+                exp_gain: result.exp_gain || 0, 
+                mood_gain: result.mood_gain || 0,
+                error: result.error 
+              };
+            }}
+            onPlay={async () => {
+              const result = await playWithPet();
+              if (result.success && result.pet) {
+                // Pet will be updated via hook, which will trigger re-render
+              }
+              return { 
+                success: result.success, 
+                exp_gain: result.exp_gain || 0, 
+                mood_gain: result.mood_gain || 0,
+                error: result.error 
+              };
+            }}
+            onClean={async () => {
+              const result = await cleanPet();
+              return { 
+                success: result.success, 
+                mood_gain: result.mood_gain || 0,
+                error: result.error 
+              };
+            }}
+            lastFeedDate={virtualPet.last_feed_date}
+            lastCleanDate={virtualPet.last_clean_date}
+            lastPlayTime={virtualPet.last_play_time}
+          />
+        </View>
+
+        {/* Mini Game Button */}
+        <TouchableOpacity
+          style={styles.miniGameButton}
+          onPress={() => setShowMiniGame(true)}
+        >
+          <LinearGradient
+            colors={['#8B5CF6', '#6366F1']}
+            style={styles.miniGameButtonGradient}
+          >
+            <Gamepad2 size={24} color="#FFF" />
+            <Text style={styles.miniGameButtonText}>Mini Game 🎮</Text>
+            <Text style={styles.miniGameButtonSubtext}>Kiếm EXP thêm!</Text>
+          </LinearGradient>
+        </TouchableOpacity>
+
         {/* Daily Check-in Button */}
         <TouchableOpacity
           style={[
@@ -344,6 +404,37 @@ export default function VirtualPetScreen() {
           streakDays={virtualPet.streak_days}
           hasCheckedInToday={hasCheckedInToday}
           petType={virtualPet.pet_type}
+        />
+      )}
+
+      {/* Mini Game Modal */}
+      {virtualPet && (
+        <MiniGame
+          visible={showMiniGame}
+          onClose={() => setShowMiniGame(false)}
+          onComplete={async (expGain) => {
+            try {
+              const result = await miniGameReward(expGain);
+              if (!result.success && result.error) {
+                Alert.alert('Thông báo', result.error);
+                setShowMiniGame(false);
+              } else if (result.success) {
+                // Pet will be updated via hook, which will trigger re-render
+              }
+            } catch (error) {
+              console.error('Error rewarding mini game:', error);
+            }
+          }}
+          canPlayToday={(() => {
+            if (!virtualPet.last_minigame_date) return true;
+            const today = new Date().toISOString().split('T')[0];
+            const lastMinigame = new Date(virtualPet.last_minigame_date).toISOString().split('T')[0];
+            return today !== lastMinigame;
+          })()}
+          onPlayToday={() => {
+            // This will be handled by the service when reward is given
+            // The date will be set when miniGameReward is called
+          }}
         />
       )}
       </View>
@@ -632,6 +723,39 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: '700',
     color: '#FFF',
+  },
+  interactionsContainer: {
+    paddingHorizontal: 20,
+    marginBottom: 20,
+  },
+  miniGameButton: {
+    marginHorizontal: 20,
+    marginBottom: 16,
+    borderRadius: 16,
+    overflow: 'hidden',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.2,
+    shadowRadius: 8,
+    elevation: 5,
+  },
+  miniGameButtonGradient: {
+    paddingVertical: 16,
+    paddingHorizontal: 24,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 12,
+  },
+  miniGameButtonText: {
+    fontSize: 18,
+    fontWeight: '700',
+    color: '#FFF',
+  },
+  miniGameButtonSubtext: {
+    fontSize: 12,
+    color: 'rgba(255, 255, 255, 0.8)',
+    marginLeft: 4,
   },
 });
 

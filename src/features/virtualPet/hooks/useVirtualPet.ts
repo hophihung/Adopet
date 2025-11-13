@@ -200,6 +200,102 @@ export function useVirtualPet() {
     }
   }, [user]);
 
+  /**
+   * Feed pet
+   */
+  const feedPet = async () => {
+    if (!virtualPet || !user) {
+      throw new Error('No virtual pet found');
+    }
+
+    try {
+      setLoading(true);
+      const result = await VirtualPetService.feedPet(virtualPet.id);
+      if (result.success && result.pet) {
+        setVirtualPet(result.pet);
+      }
+      return result;
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Failed to feed pet';
+      setError(message);
+      throw err;
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  /**
+   * Play with pet
+   */
+  const playWithPet = async () => {
+    if (!virtualPet || !user) {
+      throw new Error('No virtual pet found');
+    }
+
+    try {
+      setLoading(true);
+      const result = await VirtualPetService.playWithPet(virtualPet.id);
+      if (result.success && result.pet) {
+        setVirtualPet(result.pet);
+      }
+      return result;
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Failed to play with pet';
+      setError(message);
+      throw err;
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  /**
+   * Clean pet
+   */
+  const cleanPet = async () => {
+    if (!virtualPet || !user) {
+      throw new Error('No virtual pet found');
+    }
+
+    try {
+      setLoading(true);
+      const result = await VirtualPetService.cleanPet(virtualPet.id);
+      if (result.success && result.pet) {
+        setVirtualPet(result.pet);
+      }
+      return result;
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Failed to clean pet';
+      setError(message);
+      throw err;
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  /**
+   * Mini game reward
+   */
+  const miniGameReward = async (expGain: number) => {
+    if (!virtualPet || !user) {
+      throw new Error('No virtual pet found');
+    }
+
+    try {
+      setLoading(true);
+      const result = await VirtualPetService.miniGameReward(virtualPet.id, expGain);
+      if (result.success && result.pet) {
+        setVirtualPet(result.pet);
+      }
+      return result;
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Failed to reward';
+      setError(message);
+      throw err;
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return {
     // Data
     virtualPet,
@@ -219,6 +315,10 @@ export function useVirtualPet() {
     dailyCheckin,
     deleteVirtualPet,
     fetchVirtualPet,
+    feedPet,
+    playWithPet,
+    cleanPet,
+    miniGameReward,
 
     // Utilities
     hasVirtualPet: !!virtualPet,

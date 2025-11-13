@@ -22,6 +22,7 @@ import {
   Send,
   Users,
 } from 'lucide-react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter, usePathname } from 'expo-router';
 import { supabase } from '@/lib/supabase';
 import { PostCommentService } from '@/src/features/posts/services/PostComment.Service';
@@ -77,7 +78,13 @@ interface Comment {
 const CommunityScreen: React.FC = () => {
   const router = useRouter();
   const pathname = usePathname();
+  const insets = useSafeAreaInsets();
   const [activeTab, setActiveTab] = useState<'community' | 'chat'>('community');
+  
+  // Tab bar height (70) + marginBottom (20) + safe area bottom
+  const tabBarHeight = 70;
+  const tabBarMarginBottom = 20;
+  const bottomPadding = tabBarHeight + tabBarMarginBottom + insets.bottom;
   
   // Navigate between community and chat
   const handleTabChange = (tab: 'community' | 'chat') => {
@@ -499,6 +506,7 @@ const CommunityScreen: React.FC = () => {
           updateCellsBatchingPeriod={50}
           initialNumToRender={5}
           renderItem={renderItem}
+          contentContainerStyle={{ paddingBottom: bottomPadding }}
         />
       )}
 

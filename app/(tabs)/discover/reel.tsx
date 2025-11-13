@@ -284,8 +284,10 @@ export default function ReelScreen() {
       if (prevVideo) {
         try {
           await prevVideo.pauseAsync();
+          // Reset previous video position to reduce memory usage
+          await prevVideo.setPositionAsync(0);
         } catch (error) {
-          console.error('Error pausing previous video:', error);
+          // Silently handle errors
         }
       }
     }
@@ -294,6 +296,8 @@ export default function ReelScreen() {
     const video = videoRefs.current.get(reelId);
     if (video) {
       try {
+        // Reset to start before playing for smooth loop
+        await video.setPositionAsync(0);
         await video.playAsync();
         setCurrentVideoId(reelId);
       } catch (error) {
@@ -431,9 +435,10 @@ export default function ReelScreen() {
                 }
                 resizeMode={isWide || isSquare || isLandscape ? "contain" : "cover"}
                 shouldPlay={isCurrentVideo}
-                isLooping
+                isLooping={false}
                 isMuted={false}
                 useNativeControls={false}
+                progressUpdateIntervalMillis={250}
                 onLoadStart={() => {
                   // Video started loading
                 }}
@@ -468,6 +473,21 @@ export default function ReelScreen() {
                   // Video loaded, auto-play if it's the current video
                   if (isCurrentVideo) {
                     handlePlayVideo(item.id);
+                  }
+                }}
+                onPlaybackStatusUpdate={(status) => {
+                  // Optimized loop handling - seek to start instead of using isLooping
+                  // This reduces lag compared to native isLooping
+                  if (status.isLoaded && status.didJustFinish && isCurrentVideo) {
+                    const video = videoRefs.current.get(item.id);
+                    if (video) {
+                      // Use requestAnimationFrame for smoother seek
+                      requestAnimationFrame(() => {
+                        video.setPositionAsync(0).catch(() => {
+                          // Silently handle errors to prevent console spam
+                        });
+                      });
+                    }
                   }
                 }}
                 onError={(error) => {
@@ -717,10 +737,10 @@ export default function ReelScreen() {
           index,
         })}
         removeClippedSubviews={true}
-        windowSize={5}
-        maxToRenderPerBatch={3}
-        updateCellsBatchingPeriod={50}
-        initialNumToRender={2}
+        windowSize={3}
+        maxToRenderPerBatch={2}
+        updateCellsBatchingPeriod={100}
+        initialNumToRender={1}
         maintainVisibleContentPosition={null}
       />
 
