@@ -27,6 +27,7 @@ import { useAuth } from '../../../contexts/AuthContext';
 import { useSubscription } from '../../../contexts/SubscriptionContext';
 import { SubscriptionManager } from '../../../src/components/SubscriptionManager';
 import { useRouter, usePathname } from 'expo-router';
+import { colors } from '@/src/theme/colors';
 
 export default function ProfileScreen() {
   const router = useRouter();
@@ -36,31 +37,11 @@ export default function ProfileScreen() {
   const { signOut } = useAuth();
   const { subscription, refreshSubscription } = useSubscription();
   const [showSubscriptionModal, setShowSubscriptionModal] = useState(false);
-  const [activeTab, setActiveTab] = useState<'reminders' | 'profile'>('profile');
   
-  // Tab bar height (70) + marginBottom (20) + safe area bottom
-  const tabBarHeight = 70;
-  const tabBarMarginBottom = 20;
-  const bottomPadding = tabBarHeight + tabBarMarginBottom + insets.bottom;
-  
-  // Navigate between reminders and profile
-  const handleTabChange = (tab: 'reminders' | 'profile') => {
-    setActiveTab(tab);
-    if (tab === 'reminders') {
-      router.replace('/(tabs)/me/reminders');
-    } else {
-      router.replace('/(tabs)/me/profile');
-    }
-  };
-
-  // Update active tab based on current pathname
-  useEffect(() => {
-    if (pathname?.includes('/reminders')) {
-      setActiveTab('reminders');
-    } else {
-      setActiveTab('profile');
-    }
-  }, [pathname]);
+  // Tab bar height + marginBottom + safe area bottom + extra padding
+  const tabBarHeight = Platform.OS === 'ios' ? 85 : 70;
+  const tabBarMarginBottom = Platform.OS === 'ios' ? 25 : 16;
+  const bottomPadding = tabBarHeight + tabBarMarginBottom + insets.bottom + 10;
 
   // Refresh subscription when profile screen is focused
   useEffect(() => {
@@ -87,45 +68,18 @@ export default function ProfileScreen() {
         }
       >
         {/* Header with Gradient */}
-        <LinearGradient
-          colors={['#FF6B6B', '#FF8E53']}
-          style={styles.headerGradient}
-          start={{ x: 0, y: 0 }}
-          end={{ x: 1, y: 0 }}
-        >
+        <View style={styles.headerGradient}>
           <View style={styles.headerRow}>
-            <View style={styles.headerTabsContainer}>
-              <TouchableOpacity
-                style={styles.headerTab}
-                onPress={() => handleTabChange('reminders')}
-                activeOpacity={0.7}
-              >
-                <Text style={[styles.headerTabText, activeTab === 'reminders' && styles.headerTabTextActive]}>
-                  Nhắc nhở
-                </Text>
-                {activeTab === 'reminders' && <View style={styles.headerTabIndicator} />}
-              </TouchableOpacity>
-              <View style={styles.headerTabDivider} />
-              <TouchableOpacity
-                style={styles.headerTab}
-                onPress={() => handleTabChange('profile')}
-                activeOpacity={0.7}
-              >
-                <Text style={[styles.headerTabText, activeTab === 'profile' && styles.headerTabTextActive]}>
-                  Cá nhân
-                </Text>
-                {activeTab === 'profile' && <View style={styles.headerTabIndicator} />}
-              </TouchableOpacity>
-            </View>
+            <Text style={styles.headerTitle}>Cá nhân</Text>
             <TouchableOpacity 
               style={styles.settingsButton} 
               activeOpacity={0.8}
               onPress={() => router.push('/(tabs)/me/settings')}
             >
-              <Settings size={24} color="#FF6B6B" strokeWidth={2.5} />
+              <Settings size={20} color="#FFFFFF" strokeWidth={2.5} />
             </TouchableOpacity>
           </View>
-        </LinearGradient>
+        </View>
 
         {/* Profile Info */}
         <View style={styles.profileSection}>
@@ -215,9 +169,17 @@ export default function ProfileScreen() {
             <Text style={styles.menuText}>Edit Profile</Text>
           </TouchableOpacity>
           {profile?.role === 'seller' && (
-            <TouchableOpacity style={styles.menuItem}>
-              <Text style={styles.menuText}>My Pets</Text>
-            </TouchableOpacity>
+            <>
+              <TouchableOpacity
+                style={styles.menuItem}
+                onPress={() => router.push('/products/manage' as any)}
+              >
+                <Text style={styles.menuText}>Quản lý sản phẩm</Text>
+              </TouchableOpacity>
+              <TouchableOpacity style={styles.menuItem}>
+                <Text style={styles.menuText}>My Pets</Text>
+              </TouchableOpacity>
+            </>
           )}
           <TouchableOpacity
             style={styles.menuItem}
@@ -283,61 +245,18 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   headerGradient: {
-    paddingTop: Platform.OS === 'ios' ? 50 : 30,
+    paddingTop: Platform.OS === 'ios' ? 60 : 40,
     paddingBottom: 16,
     paddingHorizontal: 20,
     zIndex: 10,
+    backgroundColor: '#FFFFFF',
+    borderBottomWidth: 0.5,
+    borderBottomColor: 'rgba(0, 0, 0, 0.08)',
   },
   headerRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-  },
-  headerTabsContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 20,
-    flex: 1,
-  },
-  headerTab: {
-    alignItems: 'center',
-    paddingVertical: 6,
-    paddingHorizontal: 4,
-    position: 'relative',
-  },
-  headerTabDivider: {
-    width: 1,
-    height: 16,
-    backgroundColor: 'rgba(255, 255, 255, 0.3)',
-  },
-  headerTabText: {
-    fontSize: 17,
-    fontWeight: '600',
-    color: 'rgba(255, 255, 255, 0.7)',
-    textShadowColor: 'rgba(0, 0, 0, 0.3)',
-    textShadowOffset: { width: 0, height: 1 },
-    textShadowRadius: 2,
-  },
-  headerTabTextActive: {
-    color: '#fff',
-    fontWeight: '700',
-    textShadowColor: 'rgba(0, 0, 0, 0.5)',
-    textShadowOffset: { width: 0, height: 2 },
-    textShadowRadius: 3,
-  },
-  headerTabIndicator: {
-    position: 'absolute',
-    bottom: 2,
-    left: '50%',
-    transform: [{ translateX: -20 }],
-    width: 40,
-    height: 3,
-    backgroundColor: '#fff',
-    borderRadius: 2,
-    shadowColor: '#fff',
-    shadowOffset: { width: 0, height: 0 },
-    shadowOpacity: 0.5,
-    shadowRadius: 3,
   },
   headerLeft: {
     flexDirection: 'row',
@@ -350,18 +269,18 @@ const styles = StyleSheet.create({
     color: '#fff',
   },
   settingsButton: {
-    backgroundColor: 'rgba(255, 255, 255, 0.95)',
-    width: 48,
-    height: 48,
-    borderRadius: 24,
+    backgroundColor: '#000000',
+    width: 40,
+    height: 40,
+    borderRadius: 20,
     alignItems: 'center',
     justifyContent: 'center',
     borderWidth: 0,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.2,
+    shadowOpacity: 0.15,
     shadowRadius: 4,
-    elevation: 5,
+    elevation: 3,
   },
   profileSection: {
     alignItems: 'center',

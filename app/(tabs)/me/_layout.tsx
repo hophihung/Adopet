@@ -1,5 +1,5 @@
 import { Tabs } from 'expo-router';
-import { Bell, User } from 'lucide-react-native';
+import { User } from 'lucide-react-native';
 import { colors } from '@/src/theme/colors';
 
 export default function MeTabLayout() {
@@ -18,13 +18,6 @@ export default function MeTabLayout() {
         },
       }}
     >
-      <Tabs.Screen
-        name="reminders"
-        options={{
-          title: 'Nhắc nhở',
-          tabBarIcon: ({ color, size }) => <Bell size={22} color={color} />,
-        }}
-      />
       <Tabs.Screen
         name="profile"
         options={{

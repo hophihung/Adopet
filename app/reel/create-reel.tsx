@@ -16,11 +16,13 @@ import * as ImagePicker from 'expo-image-picker';
 import * as FileSystem from 'expo-file-system/legacy';
 import { supabase } from '@/lib/supabase';
 import { LinearGradient } from 'expo-linear-gradient';
-import { Video, X, Send, AlertCircle, Music, Image as ImageIcon } from 'lucide-react-native';
+import { Video, X, Send, AlertCircle, Music, Image as ImageIcon, ShoppingBag } from 'lucide-react-native';
 import { ReelService } from '@/src/features/reels/services/reel.service';
 import { ContentModerationService } from '@/src/features/reels/services/contentModeration.service';
 import { MusicPickerModal } from '@/src/features/reels/components/MusicPickerModal';
 import { MusicTrack } from '@/src/features/reels/services/music.service';
+import { ProductPicker } from '@/src/features/products/components/ProductPicker';
+import { ProductService, Product } from '@/src/features/products/services/product.service';
 
 export default function CreateReelScreen() {
   const [mediaType, setMediaType] = useState<'image' | 'video'>('video');
@@ -40,8 +42,13 @@ export default function CreateReelScreen() {
   const [musicVolume, setMusicVolume] = useState(0.7);
   const [showMusicPicker, setShowMusicPicker] = useState(false);
 
-  const { user } = useAuth();
+  // Product states (seller only)
+  const [selectedProducts, setSelectedProducts] = useState<any[]>([]);
+  const [showProductPicker, setShowProductPicker] = useState(false);
+
+  const { user, profile } = useAuth();
   const router = useRouter();
+  const isSeller = profile?.role === 'seller';
 
   // Pick video from library
   const pickVideo = async () => {
@@ -226,10 +233,18 @@ export default function CreateReelScreen() {
     try {
       if (showProgress) {
         setUploading(true);
-        setUploadStatus('Đang upload ảnh...');
+        setUploadStatus('Đang tối ưu và upload ảnh...');
       }
 
-      const base64 = await FileSystem.readAsStringAsync(uri, {
+      // Optimize image before upload (resize to max 1920x1920, compress to 85%)
+      const { optimizeImageForUpload } = await import('@/src/utils/storageOptimization');
+      const optimizedUri = await optimizeImageForUpload(uri, {
+        maxWidth: 1920,
+        maxHeight: 1920,
+        quality: 0.85,
+      });
+
+      const base64 = await FileSystem.readAsStringAsync(optimizedUri, {
         encoding: 'base64',
       });
 
@@ -270,10 +285,18 @@ export default function CreateReelScreen() {
     }
   };
 
-  // Upload thumbnail
+  // Upload thumbnail (optimized - resize to 400x400, compress to 75%)
   const uploadThumbnail = async (uri: string): Promise<string | null> => {
     try {
-      const base64 = await FileSystem.readAsStringAsync(uri, {
+      // Generate thumbnail (400x400, 75% quality)
+      const { generateImageThumbnail } = await import('@/src/utils/storageOptimization');
+      const thumbnailUri = await generateImageThumbnail(uri, {
+        width: 400,
+        height: 400,
+        quality: 0.75,
+      });
+
+      const base64 = await FileSystem.readAsStringAsync(thumbnailUri, {
         encoding: 'base64',
       });
 
@@ -429,6 +452,22 @@ export default function CreateReelScreen() {
         music_volume: selectedTrack ? musicVolume : undefined,
       });
 
+      // Attach products to reel (seller only)
+      if (isSeller && selectedProducts.length > 0 && user?.id) {
+        try {
+          for (let i = 0; i < selectedProducts.length; i++) {
+            await ProductService.attachToReel(reel.id, selectedProducts[i].id, {
+              display_order: i,
+              position_x: 50, // Default center
+              position_y: 50, // Default center
+            });
+          }
+        } catch (error: any) {
+          console.error('Error attaching products:', error);
+          // Don't fail the whole post if product attachment fails
+        }
+      }
+
       // Show success message immediately (user can continue using app)
       Alert.alert(
         'Thành công! 🎉', 
@@ -442,6 +481,7 @@ export default function CreateReelScreen() {
           setSelectedTrack(null);
           setMusicStartTime(0);
           setMusicVolume(0.7);
+          setSelectedProducts([]);
           router.back();
         }}]
       );
@@ -633,6 +673,57 @@ export default function CreateReelScreen() {
           )}
         </View>
 
+        {/* Products Section (Seller only) */}
+        {isSeller && (
+          <View style={styles.card}>
+            <View style={styles.musicHeader}>
+              <Text style={styles.sectionLabel}>Sản phẩm (Tùy chọn)</Text>
+              <TouchableOpacity
+                style={styles.musicButton}
+                onPress={() => setShowProductPicker(true)}
+                disabled={loading}
+              >
+                <ShoppingBag size={18} color="#FF6B6B" />
+                <Text style={styles.musicButtonText}>
+                  {selectedProducts.length > 0 ? `Đã chọn ${selectedProducts.length}` : 'Chọn sản phẩm'}
+                </Text>
+              </TouchableOpacity>
+            </View>
+
+            {selectedProducts.length > 0 && (
+              <View style={styles.selectedProductsContainer}>
+                {selectedProducts.map((product, index) => (
+                  <View key={product.id} style={styles.selectedProductItem}>
+                    {product.image_url ? (
+                      <Image source={{ uri: product.image_url }} style={styles.selectedProductImage} />
+                    ) : (
+                      <View style={[styles.selectedProductImage, styles.productImagePlaceholder]}>
+                        <ShoppingBag size={16} color="#999" />
+                      </View>
+                    )}
+                    <View style={styles.selectedProductInfo}>
+                      <Text style={styles.selectedProductName} numberOfLines={1}>
+                        {product.name}
+                      </Text>
+                      <Text style={styles.selectedProductPrice}>
+                        {new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(product.price)}
+                      </Text>
+                    </View>
+                    <TouchableOpacity
+                      style={styles.removeProductButton}
+                      onPress={() => {
+                        setSelectedProducts(prev => prev.filter(p => p.id !== product.id));
+                      }}
+                    >
+                      <X size={16} color="#999" />
+                    </TouchableOpacity>
+                  </View>
+                ))}
+              </View>
+            )}
+          </View>
+        )}
+
         {/* Music Section */}
         <View style={styles.card}>
           <View style={styles.musicHeader}>
@@ -755,6 +846,21 @@ export default function CreateReelScreen() {
         onSelect={(track) => setSelectedTrack(track)}
         selectedTrackId={selectedTrack?.id}
       />
+
+      {/* Product Picker Modal (Seller only) */}
+      {isSeller && user?.id && (
+        <ProductPicker
+          visible={showProductPicker}
+          onClose={() => setShowProductPicker(false)}
+          onSelect={(product) => {
+            if (!selectedProducts.find(p => p.id === product.id)) {
+              setSelectedProducts(prev => [...prev, product]);
+            }
+          }}
+          sellerId={user.id}
+          selectedProducts={selectedProducts}
+        />
+      )}
     </View>
   );
 }
@@ -953,6 +1059,47 @@ const styles = StyleSheet.create({
   },
   toggleTextActive: {
     color: '#fff',
+  },
+  selectedProductsContainer: {
+    marginTop: 12,
+    gap: 8,
+  },
+  selectedProductItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: 12,
+    backgroundColor: '#F9FAFB',
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: '#E4E7EB',
+  },
+  selectedProductImage: {
+    width: 50,
+    height: 50,
+    borderRadius: 8,
+    backgroundColor: '#f0f0f0',
+  },
+  productImagePlaceholder: {
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  selectedProductInfo: {
+    flex: 1,
+    marginLeft: 12,
+  },
+  selectedProductName: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#333',
+    marginBottom: 4,
+  },
+  selectedProductPrice: {
+    fontSize: 13,
+    fontWeight: '700',
+    color: '#FF6B6B',
+  },
+  removeProductButton: {
+    padding: 4,
   },
   musicHeader: {
     flexDirection: 'row',

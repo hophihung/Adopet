@@ -1,14 +1,14 @@
 /**
- * Theme Colors - Light Theme với màu cam chủ đạo
- * Background trắng, màu cam cho buttons và accents
+ * Theme Colors - Minimalist Light Theme
+ * Clean, professional colors inspired by modern apps
  */
 
 export const colors = {
-  // Primary colors - Màu chủ đạo (Pet Orange)
-  primary: '#FF8C42',      // Warm Orange - Màu chính
-  primaryDark: '#FF6B35',  // Orange đậm
-  primaryLight: '#FFB366', // Orange nhạt
-  primarySoft: '#FFF4EB',  // Orange rất nhạt (background)
+  // Primary colors - Subtle and professional
+  primary: '#FF6B6B',      // Coral Red - Màu chính (softer than before)
+  primaryDark: '#FF5252',  // Darker coral
+  primaryLight: '#FF8A8A', // Lighter coral
+  primarySoft: '#FFF5F5',  // Very light coral (background)
   
   // Neutral colors - Light theme
   background: '#FFFFFF',    // Nền trắng

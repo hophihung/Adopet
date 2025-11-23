@@ -1,6 +1,7 @@
 import { Tabs } from 'expo-router';
-import { Compass, Users, PawPrint, User, Bell } from 'lucide-react-native';
+import { Compass, Users, PawPrint, User } from 'lucide-react-native';
 import { colors } from '@/src/theme/colors';
+import { Platform } from 'react-native';
 
 export default function TabLayout() {
   return (
@@ -11,27 +12,28 @@ export default function TabLayout() {
         tabBarInactiveTintColor: colors.textTertiary,
         tabBarStyle: {
           backgroundColor: colors.tabBarBackground,
-          height: 70,
-          paddingBottom: 10,
+          height: Platform.OS === 'ios' ? 85 : 70,
+          paddingBottom: Platform.OS === 'ios' ? 25 : 10,
           paddingTop: 10,
           paddingHorizontal: 16,
-          marginHorizontal: 20,
-          marginBottom: 20,
-          borderRadius: 28, // More rounded
+          marginHorizontal: 16,
+          marginBottom: Platform.OS === 'ios' ? 25 : 16,
+          borderRadius: 28,
           borderTopWidth: 0,
           position: 'absolute',
-          elevation: 12,
-          shadowColor: '#000',
-          shadowOffset: { width: 0, height: -4 },
-          shadowOpacity: 0.15,
-          shadowRadius: 12,
+          elevation: 16,
+          shadowColor: colors.primary,
+          shadowOffset: { width: 0, height: -6 },
+          shadowOpacity: 0.12,
+          shadowRadius: 16,
           borderWidth: 1,
-          borderColor: colors.border,
+          borderColor: colors.borderLight,
         },
         tabBarLabelStyle: {
           fontSize: 11,
           fontWeight: '700',
           letterSpacing: 0.3,
+          marginTop: 2,
         },
         tabBarIconStyle: {
           marginTop: 4,

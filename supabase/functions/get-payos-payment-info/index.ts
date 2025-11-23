@@ -5,6 +5,13 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
+// Cache headers - không cache payment API responses
+const noCacheHeaders = {
+  'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate',
+  'Pragma': 'no-cache',
+  'Expires': '0',
+};
+
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response('ok', { headers: corsHeaders });
@@ -18,7 +25,7 @@ serve(async (req) => {
         JSON.stringify({ error: 'Missing payment_link_id' }),
         {
           status: 400,
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          headers: { ...corsHeaders, ...noCacheHeaders, 'Content-Type': 'application/json' },
         }
       );
     }
@@ -31,7 +38,7 @@ serve(async (req) => {
         JSON.stringify({ error: 'PayOS credentials not configured' }),
         {
           status: 500,
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          headers: { ...corsHeaders, ...noCacheHeaders, 'Content-Type': 'application/json' },
         }
       );
     }
@@ -57,19 +64,19 @@ serve(async (req) => {
 
     return new Response(JSON.stringify(payosData.data), {
       status: 200,
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      headers: { ...corsHeaders, ...noCacheHeaders, 'Content-Type': 'application/json' },
     });
   } catch (error: any) {
     console.error('Error getting payment info:', error);
-    return new Response(
-      JSON.stringify({
-        error: error.message || 'Failed to get payment info',
-      }),
-      {
-        status: 500,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      }
-    );
+      return new Response(
+        JSON.stringify({
+          error: error.message || 'Failed to get payment info',
+        }),
+        {
+          status: 500,
+          headers: { ...corsHeaders, ...noCacheHeaders, 'Content-Type': 'application/json' },
+        }
+      );
   }
 });
 

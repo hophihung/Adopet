@@ -242,11 +242,12 @@ export default function CreatePetScreen() {
     try {
       setUploadingImages(true);
       
-      // Upload all images to Supabase Storage
+      // Upload all images to Supabase Storage (with optimization)
       const uploadResults = await imageUploadService.uploadMultipleImages(
         selectedImages,
         'pet-images',
-        'pets'
+        'pets',
+        { optimize: true, maxWidth: 1920, maxHeight: 1920, quality: 0.85 }
       );
 
       if (uploadResults.length === 0) {
@@ -254,13 +255,14 @@ export default function CreatePetScreen() {
         return;
       }
 
-      // Upload vaccination images if needed
+      // Upload vaccination images if needed (with optimization)
       let vaccinationImageUrls: string[] = [];
       if (vaccinationImages.length > 0) {
         const vaccinationUploadResults = await imageUploadService.uploadMultipleImages(
           vaccinationImages,
           'pet-images',
-          'vaccination'
+          'vaccination',
+          { optimize: true, maxWidth: 1920, maxHeight: 1920, quality: 0.85 }
         );
         vaccinationImageUrls = vaccinationUploadResults.map(result => result.url);
       }

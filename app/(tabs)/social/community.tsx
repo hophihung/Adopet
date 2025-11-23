@@ -27,6 +27,7 @@ import { useRouter, usePathname } from 'expo-router';
 import { supabase } from '@/lib/supabase';
 import { PostCommentService } from '@/src/features/posts/services/PostComment.Service';
 import { LinearGradient } from 'expo-linear-gradient';
+import { colors } from '@/src/theme/colors';
 
 /* ============================================================
    🧩 1. Kiểu dữ liệu
@@ -81,10 +82,10 @@ const CommunityScreen: React.FC = () => {
   const insets = useSafeAreaInsets();
   const [activeTab, setActiveTab] = useState<'community' | 'chat'>('community');
   
-  // Tab bar height (70) + marginBottom (20) + safe area bottom
-  const tabBarHeight = 70;
-  const tabBarMarginBottom = 20;
-  const bottomPadding = tabBarHeight + tabBarMarginBottom + insets.bottom;
+  // Tab bar height + marginBottom + safe area bottom + extra padding
+  const tabBarHeight = Platform.OS === 'ios' ? 85 : 70;
+  const tabBarMarginBottom = Platform.OS === 'ios' ? 25 : 16;
+  const bottomPadding = tabBarHeight + tabBarMarginBottom + insets.bottom + 10;
   
   // Navigate between community and chat
   const handleTabChange = (tab: 'community' | 'chat') => {
@@ -444,12 +445,7 @@ const CommunityScreen: React.FC = () => {
 
   return (
     <View style={styles.container}>
-      <LinearGradient
-        colors={['#FF6B6B', '#FF8E53']}
-        style={styles.headerGradient}
-        start={{ x: 0, y: 0 }}
-        end={{ x: 1, y: 0 }}
-      >
+      <View style={styles.headerGradient}>
         <View style={styles.headerRow}>
           <View style={styles.headerTabsContainer}>
             <TouchableOpacity
@@ -479,10 +475,10 @@ const CommunityScreen: React.FC = () => {
             onPress={() => router.push('/post/create-post')}
             activeOpacity={0.8}
           >
-            <Plus color="#FF6B6B" size={24} strokeWidth={2.5} />
+            <Plus color="#FFFFFF" size={20} strokeWidth={2.5} />
           </TouchableOpacity>
         </View>
-      </LinearGradient>
+      </View>
 
       {loading ? (
         <View style={styles.skeletonContainer}>
@@ -605,10 +601,13 @@ const styles = StyleSheet.create({
     backgroundColor: '#F5F7FA',
   },
   headerGradient: {
-    paddingTop: Platform.OS === 'ios' ? 50 : 30,
+    paddingTop: Platform.OS === 'ios' ? 60 : 40,
     paddingBottom: 16,
     paddingHorizontal: 20,
     zIndex: 10,
+    backgroundColor: '#FFFFFF',
+    borderBottomWidth: 0.5,
+    borderBottomColor: 'rgba(0, 0, 0, 0.08)',
   },
   headerRow: {
     flexDirection: 'row',
@@ -638,33 +637,26 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(255, 255, 255, 0.3)',
   },
   headerTabText: {
-    fontSize: 17,
+    fontSize: 15,
     fontWeight: '600',
-    color: 'rgba(255, 255, 255, 0.7)',
-    textShadowColor: 'rgba(0, 0, 0, 0.3)',
-    textShadowOffset: { width: 0, height: 1 },
-    textShadowRadius: 2,
+    color: 'rgba(0, 0, 0, 0.5)',
+    letterSpacing: 0.2,
   },
   headerTabTextActive: {
-    color: '#fff',
+    color: '#000000',
     fontWeight: '700',
-    textShadowColor: 'rgba(0, 0, 0, 0.5)',
-    textShadowOffset: { width: 0, height: 2 },
-    textShadowRadius: 3,
+    fontSize: 15,
+    letterSpacing: 0.2,
   },
   headerTabIndicator: {
     position: 'absolute',
-    bottom: 2,
+    bottom: 0,
     left: '50%',
     transform: [{ translateX: -15 }],
     width: 30,
-    height: 3,
-    backgroundColor: '#fff',
-    borderRadius: 2,
-    shadowColor: '#fff',
-    shadowOffset: { width: 0, height: 0 },
-    shadowOpacity: 0.5,
-    shadowRadius: 3,
+    height: 2,
+    backgroundColor: '#000000',
+    borderRadius: 1,
   },
   header: {
     fontSize: 24,
@@ -745,18 +737,18 @@ const styles = StyleSheet.create({
     color: '#333',
   },
   fab: {
-    backgroundColor: 'rgba(255, 255, 255, 0.95)',
-    width: 48,
-    height: 48,
-    borderRadius: 24,
+    backgroundColor: '#000000',
+    width: 40,
+    height: 40,
+    borderRadius: 20,
     alignItems: 'center',
     justifyContent: 'center',
     borderWidth: 0,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.2,
+    shadowOpacity: 0.15,
     shadowRadius: 4,
-    elevation: 5,
+    elevation: 3,
   },
   modalContainer: {
     flex: 1,

@@ -5,6 +5,13 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
+// Cache headers - không cache payment API responses (sensitive, dynamic data)
+const noCacheHeaders = {
+  'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate',
+  'Pragma': 'no-cache',
+  'Expires': '0',
+};
+
 /**
  * Create HMAC SHA256 signature for PayOS API request
  * Reference: https://payos.vn/docs/api/
@@ -70,7 +77,7 @@ serve(async (req) => {
         }),
         {
           status: 400,
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          headers: { ...corsHeaders, ...noCacheHeaders, 'Content-Type': 'application/json' },
         }
       );
     }
@@ -86,7 +93,7 @@ serve(async (req) => {
         }),
         {
           status: 400,
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          headers: { ...corsHeaders, ...noCacheHeaders, 'Content-Type': 'application/json' },
         }
       );
     }
@@ -100,7 +107,7 @@ serve(async (req) => {
         }),
         {
           status: 400,
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          headers: { ...corsHeaders, ...noCacheHeaders, 'Content-Type': 'application/json' },
         }
       );
     }
@@ -115,7 +122,7 @@ serve(async (req) => {
         JSON.stringify({ error: 'PayOS credentials not configured' }),
         {
           status: 500,
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          headers: { ...corsHeaders, ...noCacheHeaders, 'Content-Type': 'application/json' },
         }
       );
     }
@@ -380,7 +387,11 @@ serve(async (req) => {
             }),
             {
               status: 200,
-              headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+              headers: { 
+                ...corsHeaders, 
+                ...noCacheHeaders,
+                'Content-Type': 'application/json' 
+              },
             }
           );
         } catch (fetchError: any) {
@@ -437,7 +448,7 @@ serve(async (req) => {
             }),
             {
               status: 503,
-              headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+              headers: { ...corsHeaders, ...noCacheHeaders, 'Content-Type': 'application/json' },
             }
           );
         }

@@ -67,7 +67,6 @@ export const ReelService = {
   // Get all approved reels
   async getAll(limit: number = 20, offset: number = 0): Promise<Reel[]> {
     try {
-      console.log('ReelService.getAll: Fetching reels with status = approved');
       const { data, error } = await supabase
         .from('reels')
         .select(`
@@ -87,14 +86,10 @@ export const ReelService = {
         .range(offset, offset + limit - 1);
 
       if (error) {
-        console.error('ReelService.getAll error:', error);
         throw error;
       }
       
-      console.log('ReelService.getAll: Raw data from DB:', data?.length || 0, 'reels');
-      
       if (!data || data.length === 0) {
-        console.warn('ReelService.getAll: No reels found with status = approved');
         return [];
       }
       
@@ -106,13 +101,11 @@ export const ReelService = {
         
         // Video reels phải có video_url
         if (reel.media_type === 'video' && !hasVideoUrl) {
-          console.warn(`Reel ${reel.id}: video_url is missing for video reel, filtering out`);
           return false;
         }
         
         // Image reels phải có image_url hoặc thumbnail_url
         if (reel.media_type === 'image' && !hasImageUrl && !hasThumbnailUrl) {
-          console.warn(`Reel ${reel.id}: image_url and thumbnail_url are missing for image reel, filtering out`);
           return false;
         }
         
@@ -120,34 +113,41 @@ export const ReelService = {
         return hasVideoUrl || hasImageUrl || hasThumbnailUrl;
       });
       
-      console.log('ReelService.getAll: Valid reels (with URLs):', validReels.length, 'out of', data.length);
-      
       if (validReels.length === 0) {
-        console.warn('ReelService.getAll: No reels with valid video_url or image_url');
         return [];
       }
       
       // Batch fetch all profiles at once
       const userIds = [...new Set(validReels.map(reel => reel.user_id))];
+      if (userIds.length === 0) {
+        return validReels.map(reel => ({
+          ...reel,
+          profiles: null,
+          music_tracks: reel.music_tracks?.[0] || undefined,
+        }));
+      }
+      
       const { data: profiles, error: profilesError } = await supabase
         .from('profiles')
         .select('id, full_name, avatar_url')
         .in('id', userIds);
       
       if (profilesError) {
-        console.error('ReelService.getAll: Error fetching profiles:', profilesError);
+        throw profilesError;
       }
       
       const profileMap = new Map((profiles || []).map(p => [p.id, p]));
       
       // Map profiles to reels
-      const mappedReels = validReels.map(reel => ({
-        ...reel,
-        profiles: profileMap.get(reel.user_id),
-        music_tracks: reel.music_tracks?.[0] || undefined,
-      }));
+      const mappedReels = validReels.map(reel => {
+        const profile = profileMap.get(reel.user_id);
+        return {
+          ...reel,
+          profiles: profile || null, // Explicitly set to null if not found
+          music_tracks: reel.music_tracks?.[0] || undefined,
+        };
+      });
       
-      console.log('ReelService.getAll: Mapped reels:', mappedReels.length);
       return mappedReels;
     } catch (error) {
       console.error('ReelService.getAll: Unexpected error:', error);
@@ -384,25 +384,91 @@ export const ReelService = {
   },
 
   // Subscribe to reel updates (realtime)
-  subscribeToReels(onUpdate: (reel: Reel) => void) {
-    return supabase
-      .channel('reels')
+  subscribeToReels(
+    onInsert?: (reel: Reel) => void,
+    onUpdate?: (reel: Reel) => void,
+    onDelete?: (reelId: string) => void
+  ) {
+    const channel = supabase
+      .channel('reels-realtime')
       .on(
         'postgres_changes',
         {
-          event: '*',
+          event: 'INSERT',
           schema: 'public',
           table: 'reels',
           filter: 'status=eq.approved',
         },
         (payload) => {
-          onUpdate(payload.new as Reel);
+          onInsert?.(payload.new as Reel);
+        }
+      )
+      .on(
+        'postgres_changes',
+        {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'reels',
+          filter: 'status=eq.approved',
+        },
+        (payload) => {
+          onUpdate?.(payload.new as Reel);
+        }
+      )
+      .on(
+        'postgres_changes',
+        {
+          event: 'DELETE',
+          schema: 'public',
+          table: 'reels',
+        },
+        (payload) => {
+          onDelete?.(payload.old.id as string);
         }
       )
       .subscribe();
+    
+    return channel;
   },
 
   // Subscribe to reel likes (realtime)
+  // Get liked reels by user
+  async getLikedReels(userId: string): Promise<Reel[]> {
+    const { data: likes, error: likesError } = await supabase
+      .from('reel_likes')
+      .select('reel_id')
+      .eq('user_id', userId)
+      .order('created_at', { ascending: false });
+
+    if (likesError) throw likesError;
+    if (!likes || likes.length === 0) return [];
+
+    const reelIds = likes.map(like => like.reel_id);
+
+    const { data: reelsData, error: reelsError } = await supabase
+      .from('reels')
+      .select('*')
+      .in('id', reelIds)
+      .eq('status', 'approved')
+      .order('created_at', { ascending: false });
+
+    if (reelsError) throw reelsError;
+
+    // Fetch profiles for all reels
+    const userIds = [...new Set((reelsData || []).map(reel => reel.user_id))];
+    const { data: profilesData } = await supabase
+      .from('profiles')
+      .select('id, full_name, avatar_url')
+      .in('id', userIds);
+
+    const profileMap = new Map(profilesData?.map(p => [p.id, p]) || []);
+
+    return (reelsData || []).map(reel => ({
+      ...reel,
+      profiles: profileMap.get(reel.user_id),
+    }));
+  },
+
   subscribeToReelLikes(reelId: string, onUpdate: (likeCount: number) => void) {
     return supabase
       .channel(`reel_likes:${reelId}`)

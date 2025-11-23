@@ -7,6 +7,7 @@ import {
   Text,
   TouchableOpacity,
   View,
+  Platform,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter, usePathname } from 'expo-router';
@@ -54,10 +55,10 @@ export default function ExploreScreen() {
     'explore'
   );
   
-  // Tab bar height (70) + marginBottom (20) + safe area bottom
-  const tabBarHeight = 70;
-  const tabBarMarginBottom = 20;
-  const bottomPadding = tabBarHeight + tabBarMarginBottom + insets.bottom;
+  // Tab bar height + marginBottom + safe area bottom + extra padding
+  const tabBarHeight = Platform.OS === 'ios' ? 85 : 70;
+  const tabBarMarginBottom = Platform.OS === 'ios' ? 25 : 16;
+  const bottomPadding = tabBarHeight + tabBarMarginBottom + insets.bottom + 10;
 
   useEffect(() => {
     loadPets();
@@ -288,21 +289,29 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingHorizontal: 20,
-    paddingTop: 50,
-    paddingBottom: 12,
+    paddingTop: Platform.OS === 'ios' ? 60 : 50,
+    paddingBottom: 16,
+    backgroundColor: '#FFFFFF',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 4,
+    elevation: 3,
   },
   brand: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 10,
   },
-  brandText: { fontSize: 26, fontWeight: '700', color: '#FF3B5C' },
+  brandText: { fontSize: 26, fontWeight: '700', color: '#6366F1' },
   topNav: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#F7F9FC',
+    backgroundColor: '#F8F9FA',
     borderRadius: 24,
     padding: 4,
+    borderWidth: 1,
+    borderColor: '#E5E7EB',
   },
   topNavButton: {
     paddingVertical: 6,
@@ -310,23 +319,25 @@ const styles = StyleSheet.create({
     borderRadius: 20,
   },
   topNavButtonActive: {
-    backgroundColor: '#FFE4EC',
+    backgroundColor: '#FFF4EB',
   },
   topNavText: {
     fontSize: 14,
     fontWeight: '600',
-    color: '#7A7F85',
+    color: '#9CA3AF',
   },
   topNavTextActive: {
-    color: '#FF3B5C',
+    color: '#FF8C42',
   },
   headerActionButton: {
     width: 44,
     height: 44,
     borderRadius: 22,
-    backgroundColor: '#FFE8F0',
+    backgroundColor: '#F8F9FA',
     alignItems: 'center',
     justifyContent: 'center',
+    borderWidth: 1,
+    borderColor: '#E5E7EB',
   },
   scrollContent: {
     paddingHorizontal: 20,

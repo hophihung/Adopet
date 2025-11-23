@@ -3,41 +3,39 @@ import {
   TouchableOpacity,
   Text,
   StyleSheet,
-  ActivityIndicator,
   ViewStyle,
   TextStyle,
   Animated,
+  Platform,
 } from 'react-native';
 import { colors } from '@/src/theme/colors';
 
 interface ButtonProps {
-  title: string;
   onPress: () => void;
+  title: string;
   variant?: 'primary' | 'secondary' | 'outline' | 'ghost';
   size?: 'small' | 'medium' | 'large';
   disabled?: boolean;
-  loading?: boolean;
-  fullWidth?: boolean;
   style?: ViewStyle;
   textStyle?: TextStyle;
+  icon?: React.ReactNode;
 }
 
-export function Button({
-  title,
+export const Button: React.FC<ButtonProps> = ({
   onPress,
+  title,
   variant = 'primary',
   size = 'medium',
   disabled = false,
-  loading = false,
-  fullWidth = false,
   style,
   textStyle,
-}: ButtonProps) {
+  icon,
+}) => {
   const scaleAnim = useRef(new Animated.Value(1)).current;
 
   const handlePressIn = () => {
     Animated.spring(scaleAnim, {
-      toValue: 0.96,
+      toValue: 0.95,
       useNativeDriver: true,
       tension: 300,
       friction: 10,
@@ -53,120 +51,109 @@ export function Button({
     }).start();
   };
 
-  const buttonStyle = [
-    styles.button,
-    styles[variant],
-    styles[size],
-    fullWidth && styles.fullWidth,
-    (disabled || loading) && styles.disabled,
-    style,
-  ];
-
-  const buttonTextStyle = [
-    styles.text,
-    styles[`${variant}Text`],
-    styles[`${size}Text`],
-    textStyle,
-  ];
-
   return (
-    <Animated.View style={{ transform: [{ scale: scaleAnim }] }}>
-      <TouchableOpacity
-        style={buttonStyle}
-        onPress={onPress}
-        onPressIn={handlePressIn}
-        onPressOut={handlePressOut}
-        disabled={disabled || loading}
-        activeOpacity={0.9}
+    <TouchableOpacity
+      onPress={onPress}
+      onPressIn={handlePressIn}
+      onPressOut={handlePressOut}
+      disabled={disabled}
+      activeOpacity={0.9}
+    >
+      <Animated.View
+        style={[
+          styles.button,
+          styles[variant],
+          styles[size],
+          disabled && styles.disabled,
+          { transform: [{ scale: scaleAnim }] },
+          style,
+        ]}
       >
-        {loading ? (
-          <ActivityIndicator
-            size="small"
-            color={variant === 'primary' ? colors.textInverse : colors.primary}
-          />
-        ) : (
-          <Text style={buttonTextStyle}>{title}</Text>
-        )}
-      </TouchableOpacity>
-    </Animated.View>
+        {icon && <View style={styles.icon}>{icon}</View>}
+        <Text
+          style={[
+            styles.text,
+            styles[`${variant}Text`],
+            styles[`${size}Text`],
+            disabled && styles.disabledText,
+            textStyle,
+          ]}
+        >
+          {title}
+        </Text>
+      </Animated.View>
+    </TouchableOpacity>
   );
-}
+};
 
 const styles = StyleSheet.create({
   button: {
-    borderRadius: 28, // More rounded, modern look
+    flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    flexDirection: 'row',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
-    elevation: 6,
+    borderRadius: 12,
+    ...Platform.select({
+      ios: {
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.1,
+        shadowRadius: 4,
+      },
+      android: {
+        elevation: 2,
+      },
+    }),
   },
-  // Variants - Modern styles
+  icon: {
+    marginRight: 8,
+  },
+  // Variants
   primary: {
     backgroundColor: colors.primary,
-    shadowColor: colors.primary,
-    shadowOpacity: 0.4,
   },
   secondary: {
     backgroundColor: colors.surfaceElevated,
-    borderWidth: 1,
-    borderColor: colors.border,
   },
   outline: {
     backgroundColor: 'transparent',
-    borderWidth: 2,
-    borderColor: colors.primary,
-    shadowOpacity: 0.2,
+    borderWidth: 1.5,
+    borderColor: colors.border,
   },
   ghost: {
     backgroundColor: 'transparent',
   },
-  // Sizes - Modern proportions
+  // Sizes
   small: {
-    paddingVertical: 10,
-    paddingHorizontal: 20,
-    minHeight: 40,
-    borderRadius: 20,
+    paddingHorizontal: 16,
+    paddingVertical: 8,
   },
   medium: {
-    paddingVertical: 14,
-    paddingHorizontal: 28,
-    minHeight: 48,
-    borderRadius: 24,
+    paddingHorizontal: 20,
+    paddingVertical: 12,
   },
   large: {
-    paddingVertical: 18,
-    paddingHorizontal: 36,
-    minHeight: 56,
-    borderRadius: 28,
+    paddingHorizontal: 24,
+    paddingVertical: 16,
   },
-  fullWidth: {
-    width: '100%',
-  },
+  // States
   disabled: {
     opacity: 0.5,
   },
-  // Text - Modern typography
+  // Text styles
   text: {
-    fontWeight: '700',
-    letterSpacing: 0.5,
+    fontWeight: '600',
   },
   primaryText: {
-    color: colors.textInverse,
+    color: '#FFFFFF',
   },
   secondaryText: {
     color: colors.text,
   },
   outlineText: {
-    color: colors.primary,
-    fontWeight: '700',
+    color: colors.text,
   },
   ghostText: {
-    color: colors.primary,
-    fontWeight: '600',
+    color: colors.text,
   },
   smallText: {
     fontSize: 14,
@@ -177,5 +164,7 @@ const styles = StyleSheet.create({
   largeText: {
     fontSize: 18,
   },
+  disabledText: {
+    opacity: 0.5,
+  },
 });
-

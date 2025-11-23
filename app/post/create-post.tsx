@@ -55,13 +55,21 @@ export default function CreatePostScreen() {
     }
   };
 
-  // ☁️ Upload ảnh lên Supabase Storage
+  // ☁️ Upload ảnh lên Supabase Storage (optimized)
   const uploadImage = async (uri: string): Promise<string | null> => {
     try {
       setLoading(true);
 
+      // Optimize image before upload (resize to max 1920x1920, compress to 85%)
+      const { optimizeImageForUpload } = await import('@/src/utils/storageOptimization');
+      const optimizedUri = await optimizeImageForUpload(uri, {
+        maxWidth: 1920,
+        maxHeight: 1920,
+        quality: 0.85,
+      });
+
       // 📸 Đọc file dưới dạng base64
-      const base64 = await FileSystem.readAsStringAsync(uri, {
+      const base64 = await FileSystem.readAsStringAsync(optimizedUri, {
         encoding: 'base64',
       });
       // Chuyển base64 thành ArrayBuffer

@@ -26,10 +26,10 @@ export default function MyPetsScreen() {
   const insets = useSafeAreaInsets();
   const [activeTab, setActiveTab] = useState<'my-pets' | 'virtual-pet'>('my-pets');
   
-  // Tab bar height (70) + marginBottom (20) + safe area bottom
-  const tabBarHeight = 70;
-  const tabBarMarginBottom = 20;
-  const bottomPadding = tabBarHeight + tabBarMarginBottom + insets.bottom;
+  // Tab bar height + marginBottom + safe area bottom + extra padding
+  const tabBarHeight = Platform.OS === 'ios' ? 85 : 70;
+  const tabBarMarginBottom = Platform.OS === 'ios' ? 25 : 16;
+  const bottomPadding = tabBarHeight + tabBarMarginBottom + insets.bottom + 10;
   
   // Navigate between my-pets and virtual-pet
   const handleTabChange = (tab: 'my-pets' | 'virtual-pet') => {
@@ -167,7 +167,7 @@ export default function MyPetsScreen() {
             disabled={!petLimitInfo?.canCreate}
             activeOpacity={0.8}
           >
-            <Plus size={24} color="#FF6B6B" strokeWidth={2.5} />
+            <Plus size={20} color="#FFFFFF" strokeWidth={2.5} />
           </TouchableOpacity>
         </View>
       </LinearGradient>
@@ -285,7 +285,7 @@ export default function MyPetsScreen() {
                   style={styles.editButton}
                   onPress={() => handleEditPet(pet.id)}
                 >
-                  <Edit2 size={16} color="#fff" />
+                  <Edit2 size={16} color="#FFFFFF" strokeWidth={2} />
                   <Text style={styles.editButtonText}>Chỉnh sửa</Text>
                 </TouchableOpacity>
 
@@ -293,7 +293,7 @@ export default function MyPetsScreen() {
                   style={styles.deleteButton}
                   onPress={() => handleDeletePet(pet.id, pet.name)}
                 >
-                  <Trash2 size={16} color="#fff" />
+                  <Trash2 size={16} color="#FF3B30" strokeWidth={2} />
                   <Text style={styles.deleteButtonText}>Xóa</Text>
                 </TouchableOpacity>
               </View>
@@ -311,10 +311,13 @@ const styles = StyleSheet.create({
     backgroundColor: colors.background,
   },
   headerGradient: {
-    paddingTop: 50,
-    paddingBottom: 12,
+    paddingTop: Platform.OS === 'ios' ? 60 : 40,
+    paddingBottom: 16,
     paddingHorizontal: 20,
     zIndex: 10,
+    backgroundColor: '#FFFFFF',
+    borderBottomWidth: 0.5,
+    borderBottomColor: 'rgba(0, 0, 0, 0.08)',
   },
   headerRow: {
     flexDirection: 'row',
@@ -339,33 +342,26 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(255, 255, 255, 0.3)',
   },
   headerTabText: {
-    fontSize: 17,
+    fontSize: 15,
     fontWeight: '600',
-    color: 'rgba(255, 255, 255, 0.7)',
-    textShadowColor: 'rgba(0, 0, 0, 0.3)',
-    textShadowOffset: { width: 0, height: 1 },
-    textShadowRadius: 2,
+    color: 'rgba(0, 0, 0, 0.5)',
+    letterSpacing: 0.2,
   },
   headerTabTextActive: {
-    color: '#fff',
+    color: '#000000',
     fontWeight: '700',
-    textShadowColor: 'rgba(0, 0, 0, 0.5)',
-    textShadowOffset: { width: 0, height: 2 },
-    textShadowRadius: 3,
+    fontSize: 15,
+    letterSpacing: 0.2,
   },
   headerTabIndicator: {
     position: 'absolute',
-    bottom: 2,
+    bottom: 0,
     left: '50%',
     transform: [{ translateX: -20 }],
     width: 40,
-    height: 3,
-    backgroundColor: '#fff',
-    borderRadius: 2,
-    shadowColor: '#fff',
-    shadowOffset: { width: 0, height: 0 },
-    shadowOpacity: 0.5,
-    shadowRadius: 3,
+    height: 2,
+    backgroundColor: '#000000',
+    borderRadius: 1,
   },
   header: {
     flexDirection: 'row',
@@ -385,18 +381,18 @@ const styles = StyleSheet.create({
     color: '#fff',
   },
   createButton: {
-    backgroundColor: 'rgba(255, 255, 255, 0.95)',
-    width: 48,
-    height: 48,
-    borderRadius: 24,
+    backgroundColor: '#000000',
+    width: 40,
+    height: 40,
+    borderRadius: 20,
     alignItems: 'center',
     justifyContent: 'center',
     borderWidth: 0,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.2,
+    shadowOpacity: 0.15,
     shadowRadius: 4,
-    elevation: 5,
+    elevation: 3,
   },
   createButtonDisabled: {
     backgroundColor: 'rgba(255, 255, 255, 0.3)',
@@ -411,30 +407,30 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     marginHorizontal: 16,
     marginTop: 16,
-    marginBottom: 12,
-    gap: 12,
+    marginBottom: 16,
+    gap: 8,
   },
   statItem: {
     flex: 1,
     alignItems: 'center',
-    paddingVertical: 20,
-    borderRadius: 16,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.15,
-    shadowRadius: 8,
-    elevation: 6,
+    paddingVertical: 16,
+    borderRadius: 12,
+    backgroundColor: '#FAFAFA',
+    borderWidth: 0,
   },
   statNumber: {
-    fontSize: 28,
+    fontSize: 22,
     fontWeight: '700',
-    color: '#fff',
-    marginBottom: 6,
+    color: '#000000',
+    marginBottom: 2,
+    letterSpacing: -0.5,
   },
   statLabel: {
-    fontSize: 13,
-    color: 'rgba(255, 255, 255, 0.9)',
-    fontWeight: '500',
+    fontSize: 11,
+    color: 'rgba(0, 0, 0, 0.5)',
+    fontWeight: '600',
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
   },
   petList: {
     flex: 1,
@@ -449,12 +445,12 @@ const styles = StyleSheet.create({
     height: 400,
     borderRadius: 20,
     overflow: 'hidden',
-    backgroundColor: '#F0F2F5',
+    backgroundColor: '#F5F5F5',
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.15,
-    shadowRadius: 12,
-    elevation: 6,
+    shadowOpacity: 0.06,
+    shadowRadius: 16,
+    elevation: 2,
   },
   petCardImage: {
     width: '100%',
@@ -520,49 +516,45 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     paddingHorizontal: 16,
-    paddingVertical: 12,
-    gap: 12,
-    backgroundColor: '#F8F9FA',
+    paddingVertical: 16,
+    gap: 10,
+    backgroundColor: '#FFFFFF',
+    borderTopWidth: 0.5,
+    borderTopColor: 'rgba(0, 0, 0, 0.08)',
   },
   editButton: {
     flex: 1,
-    backgroundColor: '#34C759',
-    paddingVertical: 12,
-    borderRadius: 10,
+    backgroundColor: '#000000',
+    paddingVertical: 14,
+    borderRadius: 12,
     alignItems: 'center',
     flexDirection: 'row',
     justifyContent: 'center',
-    gap: 8,
-    shadowColor: '#34C759',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.3,
-    shadowRadius: 4,
-    elevation: 3,
+    gap: 6,
   },
   editButtonText: {
-    color: '#fff',
+    color: '#FFFFFF',
     fontSize: 14,
     fontWeight: '600',
+    letterSpacing: 0.3,
   },
   deleteButton: {
     flex: 1,
-    backgroundColor: '#FF3B30',
-    paddingVertical: 12,
-    borderRadius: 10,
+    backgroundColor: '#FAFAFA',
+    paddingVertical: 14,
+    borderRadius: 12,
     alignItems: 'center',
     flexDirection: 'row',
     justifyContent: 'center',
-    gap: 8,
-    shadowColor: '#FF3B30',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.3,
-    shadowRadius: 4,
-    elevation: 3,
+    gap: 6,
+    borderWidth: 1,
+    borderColor: 'rgba(0, 0, 0, 0.1)',
   },
   deleteButtonText: {
-    color: '#fff',
+    color: '#FF3B30',
     fontSize: 14,
     fontWeight: '600',
+    letterSpacing: 0.3,
   },
   emptyContainer: {
     flex: 1,

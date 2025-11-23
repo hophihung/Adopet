@@ -2,11 +2,14 @@ import * as ImagePicker from 'expo-image-picker';
 import * as FileSystem from 'expo-file-system/legacy';
 import { supabase } from '../../lib/supabaseClient';
 import { Alert } from 'react-native';
+import { optimizeImageForUpload, generateImageThumbnail } from '../utils/storageOptimization';
 
 export interface ImageUploadResult {
   url: string;
   path: string;
   size: number;
+  thumbnailUrl?: string; // URL của thumbnail nếu có
+  thumbnailPath?: string; // Path của thumbnail nếu có
 }
 
 export interface ImageUploadOptions {
@@ -15,6 +18,8 @@ export interface ImageUploadOptions {
   maxHeight?: number;
   allowsEditing?: boolean;
   aspect?: [number, number];
+  optimize?: boolean; // Tự động optimize image trước khi upload
+  generateThumbnail?: boolean; // Tạo thumbnail riêng
 }
 
 class ImageUploadService {
@@ -113,36 +118,52 @@ class ImageUploadService {
     return mimeTypes[fileExtension.toLowerCase()] || 'image/jpeg';
   }
 
-  // Upload image to Supabase Storage
+  // Upload image to Supabase Storage with optimization
   async uploadImage(
     imageUri: string,
     bucket: string = 'pet-images',
-    folder: string = 'pets'
+    folder: string = 'pets',
+    options: ImageUploadOptions = {}
   ): Promise<ImageUploadResult | null> {
     try {
+      let finalImageUri = imageUri;
+      let thumbnailUri: string | null = null;
+
+      // Optimize image if requested (default: true)
+      if (options.optimize !== false) {
+        finalImageUri = await optimizeImageForUpload(imageUri, {
+          maxWidth: options.maxWidth || 1920,
+          maxHeight: options.maxHeight || 1920,
+          quality: options.quality || 0.85,
+        });
+      }
+
+      // Generate thumbnail if requested
+      if (options.generateThumbnail) {
+        thumbnailUri = await generateImageThumbnail(finalImageUri, {
+          width: 400,
+          height: 400,
+          quality: 0.75,
+        });
+      }
+
       // Generate unique filename
       const timestamp = Date.now();
       const randomString = Math.random().toString(36).substring(2, 15);
-      const fileExtension = imageUri.split('.').pop() || 'jpg';
+      const fileExtension = 'jpg'; // Always use jpg after optimization
       const fileName = `${timestamp}_${randomString}.${fileExtension}`;
       const filePath = `${folder}/${fileName}`;
 
-      // Read file as base64
-      const base64 = await FileSystem.readAsStringAsync(imageUri, {
+      // Upload main image
+      const base64 = await FileSystem.readAsStringAsync(finalImageUri, {
         encoding: 'base64',
       });
-
-      // Convert base64 to ArrayBuffer for Supabase
       const arrayBuffer = Uint8Array.from(atob(base64), c => c.charCodeAt(0));
 
-      // Get correct MIME type
-      const contentType = this.getMimeType(fileExtension);
-
-      // Upload to Supabase Storage
       const { data, error } = await supabase.storage
         .from(bucket)
         .upload(filePath, arrayBuffer, {
-          contentType,
+          contentType: 'image/jpeg',
           upsert: false,
         });
 
@@ -152,20 +173,47 @@ class ImageUploadService {
         return null;
       }
 
-      // Get public URL
       const { data: urlData } = supabase.storage
         .from(bucket)
         .getPublicUrl(filePath);
 
-      // Get file size
-      const fileInfo = await FileSystem.getInfoAsync(imageUri);
+      const fileInfo = await FileSystem.getInfoAsync(finalImageUri);
       const fileSize = fileInfo.exists && 'size' in fileInfo ? fileInfo.size : 0;
 
-      return {
+      const result: ImageUploadResult = {
         url: urlData.publicUrl,
         path: filePath,
         size: fileSize,
       };
+
+      // Upload thumbnail if generated
+      if (thumbnailUri) {
+        const thumbnailFileName = `${timestamp}_${randomString}_thumb.jpg`;
+        const thumbnailPath = `${folder}/${thumbnailFileName}`;
+        
+        const thumbnailBase64 = await FileSystem.readAsStringAsync(thumbnailUri, {
+          encoding: 'base64',
+        });
+        const thumbnailArrayBuffer = Uint8Array.from(atob(thumbnailBase64), c => c.charCodeAt(0));
+
+        const { error: thumbnailError } = await supabase.storage
+          .from(bucket)
+          .upload(thumbnailPath, thumbnailArrayBuffer, {
+            contentType: 'image/jpeg',
+            upsert: false,
+          });
+
+        if (!thumbnailError) {
+          const { data: thumbnailUrlData } = supabase.storage
+            .from(bucket)
+            .getPublicUrl(thumbnailPath);
+          
+          result.thumbnailUrl = thumbnailUrlData.publicUrl;
+          result.thumbnailPath = thumbnailPath;
+        }
+      }
+
+      return result;
     } catch (error) {
       console.error('Error uploading image:', error);
       Alert.alert('Error', 'Failed to upload image');
@@ -177,12 +225,13 @@ class ImageUploadService {
   async uploadMultipleImages(
     imageUris: string[],
     bucket: string = 'pet-images',
-    folder: string = 'pets'
+    folder: string = 'pets',
+    options: ImageUploadOptions = {}
   ): Promise<ImageUploadResult[]> {
     const results: ImageUploadResult[] = [];
     
     for (const uri of imageUris) {
-      const result = await this.uploadImage(uri, bucket, folder);
+      const result = await this.uploadImage(uri, bucket, folder, options);
       if (result) {
         results.push(result);
       }

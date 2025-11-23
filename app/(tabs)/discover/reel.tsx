@@ -13,14 +13,20 @@ import {
   KeyboardAvoidingView,
   Platform,
   Alert,
+  Animated,
+  Easing,
 } from 'react-native';
-import { Heart, MessageCircle, Share2, Plus, Send, X, Music, Video, Image as ImageIcon } from 'lucide-react-native';
+import { Heart, MessageCircle, Share2, Plus, Send, X, Music, Video, Image as ImageIcon, User } from 'lucide-react-native';
 import { Video as ExpoVideo, AVPlaybackStatus } from 'expo-av';
 import { useRouter, usePathname } from 'expo-router';
 import { useAuth } from '@/contexts/AuthContext';
 import { ReelService, Reel, ReelComment } from '@/src/features/reels/services/reel.service';
 import { colors } from '@/src/theme/colors';
 import { Audio } from 'expo-av';
+import { LinearGradient } from 'expo-linear-gradient';
+import { ProductService, ReelProduct } from '@/src/features/products/services/product.service';
+import { ProductTag } from '@/src/features/products/components/ProductTag';
+import { supabase } from '@/lib/supabase';
 
 const { height: SCREEN_HEIGHT, width: SCREEN_WIDTH } = Dimensions.get('window');
 
@@ -48,6 +54,19 @@ export default function ReelScreen() {
   const [videoOrientations, setVideoOrientations] = useState<Map<string, 'landscape' | 'portrait' | 'square' | 'wide'>>(new Map());
   const [activeTab, setActiveTab] = useState<'match' | 'explore'>('explore');
   const [expandedCaptions, setExpandedCaptions] = useState<Set<string>>(new Set()); // Track expanded captions
+  const [reelProducts, setReelProducts] = useState<Map<string, ReelProduct[]>>(new Map()); // Map reel_id -> products
+  const [videoCurrentTime, setVideoCurrentTime] = useState<Map<string, number>>(new Map()); // Track video time
+  const [isVideoPaused, setIsVideoPaused] = useState<Map<string, boolean>>(new Map()); // Track paused state
+  
+  // Animation for music disc rotation
+  const musicDiscRotation = useRef(new Animated.Value(0)).current;
+  
+  // Animation for like button
+  const likeScale = useRef(new Animated.Value(1)).current;
+  
+  // Animation for action buttons entrance
+  const actionButtonsOpacity = useRef(new Animated.Value(0)).current;
+  const actionButtonsTranslateY = useRef(new Animated.Value(50)).current;
   
   // Navigate between match and explore screens
   const handleTabChange = (tab: 'match' | 'explore') => {
@@ -59,10 +78,98 @@ export default function ReelScreen() {
     }
   };
 
+  // Start music disc rotation animation
+  useEffect(() => {
+    const rotateAnimation = Animated.loop(
+      Animated.timing(musicDiscRotation, {
+        toValue: 1,
+        duration: 3000,
+        useNativeDriver: true,
+        easing: Easing.linear,
+      })
+    );
+    
+    if (currentPlayingReelId) {
+      rotateAnimation.start();
+    } else {
+      rotateAnimation.stop();
+      musicDiscRotation.setValue(0);
+    }
+    
+    return () => {
+      rotateAnimation.stop();
+    };
+  }, [currentPlayingReelId]);
+
+  // Animate action buttons entrance
+  useEffect(() => {
+    Animated.parallel([
+      Animated.timing(actionButtonsOpacity, {
+        toValue: 1,
+        duration: 600,
+        delay: 300,
+        useNativeDriver: true,
+        easing: Easing.out(Easing.cubic),
+      }),
+      Animated.spring(actionButtonsTranslateY, {
+        toValue: 0,
+        delay: 300,
+        useNativeDriver: true,
+        tension: 50,
+        friction: 7,
+      }),
+    ]).start();
+  }, []);
+
+  const spin = musicDiscRotation.interpolate({
+    inputRange: [0, 1],
+    outputRange: ['0deg', '360deg'],
+  });
+
+  // Animate like button
+  const animateLike = useCallback(() => {
+    Animated.sequence([
+      Animated.spring(likeScale, {
+        toValue: 1.3,
+        useNativeDriver: true,
+        tension: 100,
+        friction: 3,
+      }),
+      Animated.spring(likeScale, {
+        toValue: 1,
+        useNativeDriver: true,
+        tension: 100,
+        friction: 3,
+      }),
+    ]).start();
+  }, []);
+
   useEffect(() => {
     loadReels();
     loadLikedReels();
   }, []);
+
+  // Load products for reels
+  useEffect(() => {
+    const loadProducts = async () => {
+      const productsMap = new Map<string, ReelProduct[]>();
+      for (const reel of reels) {
+        try {
+          const products = await ProductService.getByReel(reel.id);
+          if (products.length > 0) {
+            productsMap.set(reel.id, products);
+          }
+        } catch (error) {
+          console.error('Error loading products for reel:', reel.id, error);
+        }
+      }
+      setReelProducts(productsMap);
+    };
+
+    if (reels.length > 0) {
+      loadProducts();
+    }
+  }, [reels]);
 
   // Update active tab based on current pathname
   useEffect(() => {
@@ -74,17 +181,126 @@ export default function ReelScreen() {
   }, [pathname]);
 
   useEffect(() => {
-    // Subscribe to realtime updates
-    const reelSubscription = ReelService.subscribeToReels((updatedReel) => {
-      setReels((prev) =>
-        prev.map((r) => (r.id === updatedReel.id ? updatedReel : r))
-      );
-    });
+    // Subscribe to realtime updates for reels
+    const reelSubscription = ReelService.subscribeToReels(
+      // INSERT - new reel added
+      (newReel) => {
+        setReels((prev) => [newReel, ...prev]);
+      },
+      // UPDATE - reel updated
+      (updatedReel) => {
+        setReels((prev) =>
+          prev.map((r) => (r.id === updatedReel.id ? { ...r, ...updatedReel } : r))
+        );
+      },
+      // DELETE - reel deleted
+      (deletedReelId) => {
+        setReels((prev) => prev.filter((r) => r.id !== deletedReelId));
+      }
+    );
+
+    // Subscribe to realtime updates for profiles (avatar/name changes)
+    const profilesChannel = supabase
+      .channel('profiles-realtime')
+      .on(
+        'postgres_changes',
+        {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'profiles',
+        },
+        (payload) => {
+          const updatedProfile = payload.new as { id: string; full_name: string | null; avatar_url: string | null };
+          // Update profiles in reels
+          setReels((prev) =>
+            prev.map((reel) => {
+              if (reel.user_id === updatedProfile.id) {
+                return {
+                  ...reel,
+                  profiles: {
+                    id: updatedProfile.id,
+                    full_name: updatedProfile.full_name || '',
+                    avatar_url: updatedProfile.avatar_url || undefined,
+                  },
+                };
+              }
+              return reel;
+            })
+          );
+        }
+      )
+      .subscribe();
+
+    // Subscribe to realtime updates for reel likes
+    const likesInsertChannel = supabase
+      .channel('reel-likes-insert')
+      .on(
+        'postgres_changes',
+        {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'reel_likes',
+        },
+        (payload) => {
+          const reelId = payload.new?.reel_id;
+          if (reelId) {
+            setReels((prev) =>
+              prev.map((reel) => {
+                if (reel.id === reelId) {
+                  return { ...reel, like_count: (reel.like_count || 0) + 1 };
+                }
+                return reel;
+              })
+            );
+            // Update liked reels set
+            if (user?.id && payload.new?.user_id === user.id) {
+              setLikedReels((prev) => new Set([...prev, reelId]));
+            }
+          }
+        }
+      )
+      .subscribe();
+
+    const likesDeleteChannel = supabase
+      .channel('reel-likes-delete')
+      .on(
+        'postgres_changes',
+        {
+          event: 'DELETE',
+          schema: 'public',
+          table: 'reel_likes',
+        },
+        (payload) => {
+          const reelId = payload.old?.reel_id;
+          if (reelId) {
+            setReels((prev) =>
+              prev.map((reel) => {
+                if (reel.id === reelId) {
+                  return { ...reel, like_count: Math.max(0, (reel.like_count || 0) - 1) };
+                }
+                return reel;
+              })
+            );
+            // Update liked reels set
+            if (user?.id && payload.old?.user_id === user.id) {
+              setLikedReels((prev) => {
+                const newSet = new Set(prev);
+                newSet.delete(reelId);
+                return newSet;
+              });
+            }
+          }
+        }
+      )
+      .subscribe();
 
     return () => {
       reelSubscription.unsubscribe();
+      profilesChannel.unsubscribe();
+      likesInsertChannel.unsubscribe();
+      likesDeleteChannel.unsubscribe();
     };
-  }, []);
+  }, [user?.id]);
 
   // Cleanup video refs and audio on unmount
   useEffect(() => {
@@ -105,27 +321,10 @@ export default function ReelScreen() {
   const loadReels = async () => {
     try {
       setLoading(true);
-      console.log('Loading reels...');
       const data = await ReelService.getAll(50);
-      console.log('Reels loaded:', data.length, 'reels');
-      console.log('Reels data:', data.map(r => ({ id: r.id, status: r.status, video_url: r.video_url, media_type: r.media_type })));
       setReels(data);
-      
-      if (data.length === 0) {
-        console.warn('No reels found. This could mean:');
-        console.warn('1. No reels with status = "approved"');
-        console.warn('2. RLS policy blocking access');
-        console.warn('3. Database is empty');
-      }
     } catch (error: any) {
-      console.error('Error loading reels:', error);
-      console.error('Error details:', {
-        message: error.message,
-        code: error.code,
-        details: error.details,
-        hint: error.hint,
-      });
-      Alert.alert('Lỗi', `Không thể tải reels: ${error.message || 'Unknown error'}`);
+      // Silently handle error - user will see empty state
     } finally {
       setLoading(false);
     }
@@ -154,6 +353,9 @@ export default function ReelScreen() {
       return;
     }
 
+    // Animate like button
+    animateLike();
+
     try {
       const result = await ReelService.toggleLike(reelId, user.id);
       setLikedReels((prev) => {
@@ -176,7 +378,7 @@ export default function ReelScreen() {
       console.error('Error toggling like:', error);
       Alert.alert('Lỗi', 'Không thể thích reel');
     }
-  }, [user?.id, likedReels]);
+  }, [user?.id, likedReels, animateLike]);
 
   const handleComment = useCallback((reelId: string) => {
     if (!user?.id) {
@@ -255,29 +457,29 @@ export default function ReelScreen() {
       // Increment view count and play video
       const reel = reels[currentIndex];
       if (reel) {
-        ReelService.incrementView(reel.id);
+        ReelService.incrementView(reel.id).catch(console.error);
         
         // Play video if it's a video reel
         if (reel.media_type === 'video' && reel.video_url) {
-          handlePlayVideo(reel.id);
+          handlePlayVideoInternal(reel.id);
         }
         
         // Play music if reel has music track
-        handlePlayMusic(reel);
+        handlePlayMusicInternal(reel);
       } else {
         // Stop video and music when no reel is visible
-        handlePauseVideo();
-        handleStopMusic();
+        handlePauseVideoInternal();
+        handleStopMusicInternal();
       }
     } else {
       // No items visible, pause everything
-      handlePauseVideo();
-      handleStopMusic();
+      handlePauseVideoInternal();
+      handleStopMusicInternal();
     }
-  }, [reels, handlePlayVideo, handlePauseVideo, handlePlayMusic, handleStopMusic]);
+  }, [reels]);
 
   // Play video for current reel
-  const handlePlayVideo = useCallback(async (reelId: string) => {
+  const handlePlayVideoInternal = async (reelId: string) => {
     // Pause previous video
     if (currentVideoId && currentVideoId !== reelId) {
       const prevVideo = videoRefs.current.get(currentVideoId);
@@ -300,29 +502,72 @@ export default function ReelScreen() {
         await video.setPositionAsync(0);
         await video.playAsync();
         setCurrentVideoId(reelId);
+        setIsVideoPaused(prev => {
+          const newMap = new Map(prev);
+          newMap.set(reelId, false);
+          return newMap;
+        });
       } catch (error) {
         console.error('Error playing video:', error);
       }
     }
-  }, [currentVideoId]);
+  };
+
+  const handlePlayVideo = handlePlayVideoInternal;
 
   // Pause current video
-  const handlePauseVideo = useCallback(async () => {
+  const handlePauseVideoInternal = async () => {
     if (currentVideoId) {
       const video = videoRefs.current.get(currentVideoId);
       if (video) {
         try {
           await video.pauseAsync();
+          setIsVideoPaused(prev => {
+            const newMap = new Map(prev);
+            newMap.set(currentVideoId, true);
+            return newMap;
+          });
         } catch (error) {
           console.error('Error pausing video:', error);
         }
       }
       setCurrentVideoId(null);
     }
-  }, [currentVideoId]);
+  };
+
+  // Toggle play/pause for current video
+  const handleToggleVideoPlayPause = useCallback(async () => {
+    if (!currentVideoId) return;
+    
+    const video = videoRefs.current.get(currentVideoId);
+    if (!video) return;
+
+    try {
+      const isPaused = isVideoPaused.get(currentVideoId) || false;
+      if (isPaused) {
+        await video.playAsync();
+        setIsVideoPaused(prev => {
+          const newMap = new Map(prev);
+          newMap.set(currentVideoId, false);
+          return newMap;
+        });
+      } else {
+        await video.pauseAsync();
+        setIsVideoPaused(prev => {
+          const newMap = new Map(prev);
+          newMap.set(currentVideoId, true);
+          return newMap;
+        });
+      }
+    } catch (error) {
+      console.error('Error toggling video play/pause:', error);
+    }
+  }, [currentVideoId, isVideoPaused]);
+
+  const handlePauseVideo = handlePauseVideoInternal;
 
   // Stop music
-  const handleStopMusic = useCallback(async () => {
+  const handleStopMusicInternal = async () => {
     if (audioSound) {
       try {
         await audioSound.unloadAsync();
@@ -332,10 +577,12 @@ export default function ReelScreen() {
       }
     }
     setCurrentPlayingReelId(null);
-  }, [audioSound]);
+  };
+
+  const handleStopMusic = handleStopMusicInternal;
 
   // Play music for current reel
-  const handlePlayMusic = useCallback(async (reel: Reel) => {
+  const handlePlayMusicInternal = async (reel: Reel) => {
     // Stop previous music
     if (currentPlayingReelId && currentPlayingReelId !== reel.id) {
       handleStopMusic();
@@ -372,11 +619,13 @@ export default function ReelScreen() {
       //   console.error('Error playing music:', error);
       // }
       
-      console.log('Music should play:', reel.music_tracks.title);
+      // Music should play (currently disabled)
     } else {
       handleStopMusic();
     }
-  }, [currentPlayingReelId, handleStopMusic]);
+  };
+
+  const handlePlayMusic = handlePlayMusicInternal;
 
   // Cleanup audio on unmount
   useEffect(() => {
@@ -395,18 +644,24 @@ export default function ReelScreen() {
     const isCurrentVideo = currentVideoId === item.id;
     const videoOrientation = videoOrientations.get(item.id) || 'portrait';
     const isLandscape = videoOrientation === 'landscape';
-    const isWide = videoOrientation === 'wide'; // 16:9 aspect ratio
-    const isSquare = videoOrientation === 'square'; // 1:1 aspect ratio
+    const isWide = videoOrientation === 'wide';
+    const isSquare = videoOrientation === 'square';
+    
+    // Only render video if it's the current or adjacent item (performance optimization)
+    const shouldRenderVideo = Math.abs(index - currentIndex) <= 1;
 
     return (
-      <View style={styles.reelContainer}>
+      <TouchableOpacity 
+        style={styles.reelContainer}
+        activeOpacity={1}
+        onPress={handleToggleVideoPlayPause}
+      >
         {/* Media - Image or Video */}
         {item.media_type === 'image' ? (
           <Image
             source={{ uri: mediaUrl || '' }}
             style={styles.reelImage}
             resizeMode="cover"
-            cache="force-cache"
           />
         ) : (
           item.video_url ? (
@@ -417,6 +672,28 @@ export default function ReelScreen() {
                 ? styles.landscapeVideoContainer 
                 : styles.portraitVideoContainer
             }>
+              {/* Thumbnail placeholder while video loads */}
+              {item.thumbnail_url && (
+                <Image
+                  source={{ uri: item.thumbnail_url }}
+                  style={[
+                    StyleSheet.absoluteFill,
+                    { opacity: isCurrentVideo ? 0 : 1 },
+                    isWide || isSquare
+                      ? styles.containVideo
+                      : isLandscape
+                      ? styles.landscapeVideo
+                      : styles.portraitVideo
+                  ]}
+                  resizeMode={(isWide || isSquare || isLandscape ? 'contain' : 'cover') as any}
+                />
+              )}
+              {/* Loading indicator */}
+              {!isCurrentVideo && (
+                <View style={[StyleSheet.absoluteFill, styles.videoLoadingContainer]}>
+                  <ActivityIndicator size="large" color="rgba(255, 255, 255, 0.5)" />
+                </View>
+              )}
               <ExpoVideo
                 ref={(ref) => {
                   if (ref) {
@@ -433,7 +710,7 @@ export default function ReelScreen() {
                     ? styles.landscapeVideo
                     : styles.portraitVideo
                 }
-                resizeMode={isWide || isSquare || isLandscape ? "contain" : "cover"}
+                resizeMode={(isWide || isSquare || isLandscape ? 'contain' : 'cover') as any}
                 shouldPlay={isCurrentVideo}
                 isLooping={false}
                 isMuted={false}
@@ -444,8 +721,10 @@ export default function ReelScreen() {
                 }}
                 onLoad={(status) => {
                   // Detect video aspect ratio from dimensions
-                  if (status.isLoaded && status.naturalSize) {
-                    const { width, height } = status.naturalSize;
+                  if (status.isLoaded) {
+                    // Try to get dimensions from status (may not be available on all platforms)
+                    const width = (status as any).naturalSize?.width || 1080;
+                    const height = (status as any).naturalSize?.height || 1920;
                     const aspectRatio = width / height;
                     
                     let orientation: 'landscape' | 'portrait' | 'square' | 'wide';
@@ -475,7 +754,19 @@ export default function ReelScreen() {
                     handlePlayVideo(item.id);
                   }
                 }}
+                onReadyForDisplay={() => {
+                  // Video is ready, hide thumbnail
+                }}
                 onPlaybackStatusUpdate={(status) => {
+                  // Track current time for product tags
+                  if (status.isLoaded && status.positionMillis !== undefined) {
+                    setVideoCurrentTime(prev => {
+                      const newMap = new Map(prev);
+                      newMap.set(item.id, status.positionMillis! / 1000); // Convert to seconds
+                      return newMap;
+                    });
+                  }
+
                   // Optimized loop handling - seek to start instead of using isLooping
                   // This reduces lag compared to native isLooping
                   if (status.isLoaded && status.didJustFinish && isCurrentVideo) {
@@ -491,14 +782,7 @@ export default function ReelScreen() {
                   }
                 }}
                 onError={(error) => {
-                  console.error('Video error for reel:', item.id, error);
-                  console.error('Video URL:', item.video_url);
-                  // Show error message to user
-                  Alert.alert(
-                    'Lỗi phát video',
-                    'Không thể phát video. Vui lòng thử lại sau.',
-                    [{ text: 'OK' }]
-                  );
+                  // Silently handle video errors to prevent UI blocking
                 }}
               />
             </View>
@@ -516,19 +800,55 @@ export default function ReelScreen() {
         <View style={styles.overlay}>
           {/* Left side - User Info & Caption */}
           <View style={styles.infoContainer}>
+            {/* Product Tags - Above user name */}
+            {reelProducts.get(item.id)?.map((reelProduct) => (
+              <ProductTag
+                key={reelProduct.id}
+                reelProduct={reelProduct}
+                onPress={(rp) => {
+                  // Navigate to product detail
+                  if (rp.product?.id) {
+                    router.push({
+                      pathname: '/products/[id]',
+                      params: { id: rp.product.id },
+                    } as any);
+                  }
+                }}
+                videoDuration={item.duration || 60}
+                currentTime={videoCurrentTime.get(item.id) || 0}
+              />
+            ))}
+            
             {/* User Avatar and Name */}
-            <View style={styles.userInfo}>
-              {profile?.avatar_url && (
+            <TouchableOpacity 
+              style={styles.userInfo}
+              onPress={() => {
+                if (item.user_id) {
+                  router.push({
+                    pathname: '/profile/[id]',
+                    params: { id: item.user_id },
+                  } as any);
+                }
+              }}
+              activeOpacity={0.8}
+            >
+              {profile?.avatar_url && profile.avatar_url.trim() !== '' ? (
                 <Image
                   source={{ uri: profile.avatar_url }}
                   style={styles.userAvatar}
-                  cache="force-cache"
+                  onError={(e) => {
+                    console.error('Error loading avatar:', profile.avatar_url, e.nativeEvent.error);
+                  }}
                 />
+              ) : (
+                <View style={[styles.userAvatar, styles.userAvatarPlaceholder]}>
+                  <User size={16} color="#fff" />
+                </View>
               )}
               <Text style={styles.username}>
                 @{profile?.full_name?.toLowerCase().replace(/\s+/g, '_') || 'user'}
               </Text>
-            </View>
+            </TouchableOpacity>
             
             {/* Caption - positioned to be visible above tab bar */}
             {item.caption && (() => {
@@ -568,14 +888,14 @@ export default function ReelScreen() {
               );
             })()}
             
-            {/* Music Info - TikTok style with icon and animated text */}
+            {/* Music Info - TikTok style with rotating disc */}
             {item.music_tracks && (
               <TouchableOpacity 
                 style={styles.musicContainer}
                 activeOpacity={0.8}
               >
                 <View style={styles.musicIconContainer}>
-                  <Music size={16} color="#fff" />
+                  <Music size={14} color="#fff" />
                 </View>
                 <View style={styles.musicTextContainer}>
                   <Text style={styles.musicText} numberOfLines={1}>
@@ -588,14 +908,45 @@ export default function ReelScreen() {
 
           {/* Right side - Actions */}
           <View style={styles.actionsContainer}>
-            {/* Avatar Button */}
-            {profile?.avatar_url && (
-              <TouchableOpacity style={styles.avatarButton}>
+            {/* Avatar Button - Click to view profile */}
+            {profile?.avatar_url && profile.avatar_url.trim() !== '' ? (
+              <TouchableOpacity 
+                style={styles.avatarButton}
+                onPress={() => {
+                  // Navigate to user profile
+                  if (item.user_id) {
+                    router.push({
+                      pathname: '/profile/[id]',
+                      params: { id: item.user_id },
+                    } as any);
+                  }
+                }}
+                activeOpacity={0.8}
+              >
                 <Image
                   source={{ uri: profile.avatar_url }}
                   style={styles.actionAvatar}
-                  cache="force-cache"
                 />
+                <View style={styles.followButton}>
+                  <Plus size={14} color="#fff" />
+                </View>
+              </TouchableOpacity>
+            ) : (
+              <TouchableOpacity 
+                style={styles.avatarButton}
+                onPress={() => {
+                  if (item.user_id) {
+                    router.push({
+                      pathname: '/profile/[id]',
+                      params: { id: item.user_id },
+                    } as any);
+                  }
+                }}
+                activeOpacity={0.8}
+              >
+                <View style={styles.actionAvatarPlaceholder}>
+                  <User size={24} color="#fff" />
+                </View>
                 <View style={styles.followButton}>
                   <Plus size={14} color="#fff" />
                 </View>
@@ -629,49 +980,187 @@ export default function ReelScreen() {
               <Text style={styles.actionText}>{item.comment_count}</Text>
             </TouchableOpacity>
 
-            <TouchableOpacity style={styles.actionButton} activeOpacity={0.7}>
+            <TouchableOpacity 
+              style={styles.actionButton} 
+              activeOpacity={0.7}
+              onPress={() => {
+                Alert.alert('Chia sẻ', 'Tính năng chia sẻ đang được phát triển');
+              }}
+            >
               <View style={styles.actionIconContainer}>
                 <Share2 size={28} color="#fff" strokeWidth={2.5} />
               </View>
             </TouchableOpacity>
+
+            {/* Music Disc - Rotating animation like TikTok */}
+            {item.music_tracks && (
+              <TouchableOpacity 
+                style={styles.musicDiscButton}
+                activeOpacity={0.8}
+              >
+                <Animated.View 
+                  style={[
+                    styles.musicDiscContainer,
+                    { transform: [{ rotate: isPlayingMusic ? spin : '0deg' }] }
+                  ]}
+                >
+                  <LinearGradient
+                    colors={['#FF8C42', '#FFB366', '#FF8C42']}
+                    style={styles.musicDisc}
+                    start={{ x: 0, y: 0 }}
+                    end={{ x: 1, y: 1 }}
+                  >
+                    <View style={styles.musicDiscInner}>
+                      <Music size={16} color="#fff" />
+                    </View>
+                  </LinearGradient>
+                </Animated.View>
+              </TouchableOpacity>
+            )}
           </View>
         </View>
-      </View>
+      </TouchableOpacity>
     );
-  }, [likedReels, currentPlayingReelId, currentVideoId, videoOrientations, expandedCaptions, handleLike, handleComment, handlePlayVideo]);
+  }, [likedReels, currentPlayingReelId, currentVideoId, videoOrientations, expandedCaptions, handleLike, handleComment, handlePlayVideo, reelProducts, videoCurrentTime, handleToggleVideoPlayPause, router]);
+
+  // Skeleton loader component
+  const renderSkeletonReel = useCallback(() => (
+    <View style={styles.reelContainer}>
+      <View style={styles.skeletonMedia}>
+        <ActivityIndicator size="large" color="rgba(255, 255, 255, 0.3)" />
+      </View>
+      <View style={styles.overlay}>
+        <View style={styles.infoContainer}>
+          <View style={styles.skeletonUserInfo}>
+            <View style={styles.skeletonAvatar} />
+            <View style={styles.skeletonUsername} />
+          </View>
+          <View style={styles.skeletonCaption} />
+          <View style={[styles.skeletonCaption, { width: '60%', marginTop: 8 }]} />
+        </View>
+        <View style={styles.actionsContainer}>
+          <View style={styles.skeletonActionButton} />
+          <View style={styles.skeletonActionButton} />
+          <View style={styles.skeletonActionButton} />
+        </View>
+      </View>
+    </View>
+  ), []);
 
   if (loading) {
     return (
-      <View style={styles.loadingContainer}>
-        <ActivityIndicator size="large" color={colors.primary} />
-        <Text style={{ marginTop: 16, color: '#fff', fontSize: 14 }}>
-          Đang tải reels...
-        </Text>
+      <View style={styles.container}>
+        <View style={styles.header}>
+          <View style={styles.tabsContainer}>
+            <TouchableOpacity
+              style={styles.tab}
+              onPress={() => handleTabChange('match')}
+              activeOpacity={0.7}
+            >
+              <Text style={[styles.tabText, activeTab === 'match' && styles.tabTextActive]}>
+                Match
+              </Text>
+              {activeTab === 'match' && <View style={styles.tabIndicator} />}
+            </TouchableOpacity>
+            <View style={styles.tabDivider} />
+            <TouchableOpacity
+              style={styles.tab}
+              onPress={() => handleTabChange('explore')}
+              activeOpacity={0.7}
+            >
+              <Text style={[styles.tabText, activeTab === 'explore' && styles.tabTextActive]}>
+                Khám phá
+              </Text>
+              {activeTab === 'explore' && <View style={styles.tabIndicator} />}
+            </TouchableOpacity>
+          </View>
+          <View style={styles.headerRight}>
+            <TouchableOpacity
+              style={styles.addButton}
+              onPress={() => router.push('/reel/create-reel')}
+            >
+              <Plus size={24} color="#fff" />
+            </TouchableOpacity>
+          </View>
+        </View>
+        <FlatList
+          data={[1, 2, 3]} // Show 3 skeleton items
+          renderItem={renderSkeletonReel}
+          keyExtractor={(_, index) => `skeleton-${index}`}
+          pagingEnabled
+          showsVerticalScrollIndicator={false}
+          snapToInterval={SCREEN_HEIGHT}
+          decelerationRate="fast"
+          onViewableItemsChanged={() => {}} // Empty handler to prevent nullability error
+          viewabilityConfig={{
+            itemVisiblePercentThreshold: 50,
+            minimumViewTime: 100,
+          }}
+          getItemLayout={(data, index) => ({
+            length: SCREEN_HEIGHT,
+            offset: SCREEN_HEIGHT * index,
+            index,
+          })}
+        />
       </View>
     );
   }
 
   if (reels.length === 0) {
     return (
-      <View style={styles.loadingContainer}>
-        <Text style={{ color: '#fff', fontSize: 18, fontWeight: '600', marginBottom: 8 }}>
-          Chưa có reels
-        </Text>
-        <Text style={{ color: '#999', fontSize: 14, textAlign: 'center', paddingHorizontal: 40 }}>
-          Chưa có reels nào được duyệt. Hãy tạo reel đầu tiên của bạn!
-        </Text>
-        <TouchableOpacity
-          style={{
-            marginTop: 20,
-            paddingHorizontal: 24,
-            paddingVertical: 12,
-            backgroundColor: colors.primary,
-            borderRadius: 8,
-          }}
-          onPress={() => router.push('/reel/create-reel')}
-        >
-          <Text style={{ color: '#fff', fontWeight: '600' }}>Tạo Reel</Text>
-        </TouchableOpacity>
+      <View style={styles.container}>
+        <View style={styles.header}>
+          <View style={styles.tabsContainer}>
+            <TouchableOpacity
+              style={styles.tab}
+              onPress={() => handleTabChange('match')}
+              activeOpacity={0.7}
+            >
+              <Text style={[styles.tabText, activeTab === 'match' && styles.tabTextActive]}>
+                Match
+              </Text>
+              {activeTab === 'match' && <View style={styles.tabIndicator} />}
+            </TouchableOpacity>
+            <View style={styles.tabDivider} />
+            <TouchableOpacity
+              style={styles.tab}
+              onPress={() => handleTabChange('explore')}
+              activeOpacity={0.7}
+            >
+              <Text style={[styles.tabText, activeTab === 'explore' && styles.tabTextActive]}>
+                Khám phá
+              </Text>
+              {activeTab === 'explore' && <View style={styles.tabIndicator} />}
+            </TouchableOpacity>
+          </View>
+          <View style={styles.headerRight}>
+            <TouchableOpacity
+              style={styles.addButton}
+              onPress={() => router.push('/reel/create-reel')}
+            >
+              <Plus size={24} color="#fff" />
+            </TouchableOpacity>
+          </View>
+        </View>
+        <View style={styles.emptyContainer}>
+          <View style={styles.emptyIconContainer}>
+            <Video size={64} color="rgba(255, 255, 255, 0.3)" />
+          </View>
+          <Text style={styles.emptyTitle}>Chưa có reels</Text>
+          <Text style={styles.emptySubtitle}>
+            Chưa có reels nào được duyệt.{'\n'}Hãy tạo reel đầu tiên của bạn!
+          </Text>
+          <TouchableOpacity
+            style={styles.emptyButton}
+            onPress={() => router.push('/reel/create-reel')}
+            activeOpacity={0.8}
+          >
+            <View style={{ marginRight: 8 }}>
+              <Plus size={20} color="#fff" />
+            </View>
+            <Text style={styles.emptyButtonText}>Tạo Reel</Text>
+          </TouchableOpacity>
+        </View>
       </View>
     );
   }
@@ -736,12 +1225,19 @@ export default function ReelScreen() {
           offset: SCREEN_HEIGHT * index,
           index,
         })}
-        removeClippedSubviews={true}
-        windowSize={3}
-        maxToRenderPerBatch={2}
-        updateCellsBatchingPeriod={100}
+        removeClippedSubviews={Platform.OS === 'android'}
+        windowSize={2}
+        maxToRenderPerBatch={1}
+        updateCellsBatchingPeriod={50}
         initialNumToRender={1}
         maintainVisibleContentPosition={null}
+        onEndReachedThreshold={0.5}
+        onEndReached={() => {
+          // Could preload more reels here if needed
+        }}
+        // Performance optimizations
+        disableIntervalMomentum={true}
+        scrollEventThrottle={16}
       />
 
       {/* Comment Modal */}
@@ -845,9 +1341,9 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     zIndex: 10,
-    paddingTop: Platform.OS === 'ios' ? 50 : 30,
-    paddingBottom: 12,
-    paddingHorizontal: 16,
+    paddingTop: Platform.OS === 'ios' ? 60 : 40,
+    paddingBottom: 16,
+    paddingHorizontal: 20,
     backgroundColor: 'transparent',
     flexDirection: 'row',
     justifyContent: 'center',
@@ -876,20 +1372,21 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(255, 255, 255, 0.3)',
   },
   tabText: {
-    fontSize: 17,
+    fontSize: 16,
     fontWeight: '600',
-    color: 'rgba(255, 255, 255, 0.7)',
-    textShadowColor: 'rgba(0, 0, 0, 0.8)',
+    color: 'rgba(255, 255, 255, 0.75)',
+    textShadowColor: 'rgba(0, 0, 0, 0.5)',
     textShadowOffset: { width: 0, height: 1 },
-    textShadowRadius: 4,
-    letterSpacing: 0.2,
+    textShadowRadius: 3,
+    letterSpacing: 0.3,
   },
   tabTextActive: {
-    color: '#fff',
+    color: '#FFFFFF',
     fontWeight: '700',
-    textShadowColor: 'rgba(0, 0, 0, 0.9)',
-    textShadowOffset: { width: 0, height: 2 },
-    textShadowRadius: 5,
+    fontSize: 17,
+    textShadowColor: 'rgba(0, 0, 0, 0.7)',
+    textShadowOffset: { width: 0, height: 1 },
+    textShadowRadius: 4,
   },
   tabIndicator: {
     position: 'absolute',
@@ -906,14 +1403,18 @@ const styles = StyleSheet.create({
     shadowRadius: 3,
   },
   addButton: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
+    width: 40,
+    height: 40,
+    borderRadius: 20,
     backgroundColor: 'rgba(255, 255, 255, 0.2)',
     justifyContent: 'center',
     alignItems: 'center',
-    borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.3)',
+    borderWidth: 0,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.5,
+    shadowRadius: 8,
+    elevation: 5,
   },
   reelContainer: {
     height: SCREEN_HEIGHT,
@@ -975,86 +1476,138 @@ const styles = StyleSheet.create({
   infoContainer: {
     flex: 1,
     justifyContent: 'flex-end',
-    paddingBottom: 100, // Đẩy lên cao để không bị che bởi bottom tab bar (65px height + 16px marginBottom + 20px safe area)
+    paddingBottom: Platform.OS === 'ios' ? 130 : 110, // Đẩy lên cao để không bị che bởi bottom tab bar
     maxWidth: SCREEN_WIDTH - 100, // Leave space for action buttons
   },
   userInfo: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 10,
-    gap: 8,
+    marginBottom: 12,
+    gap: 10,
   },
   userAvatar: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    borderWidth: 1.5,
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    borderWidth: 2,
     borderColor: '#fff',
+    backgroundColor: 'rgba(255, 255, 255, 0.2)',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.3,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  userAvatarPlaceholder: {
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: 'rgba(255, 255, 255, 0.3)',
   },
   username: {
-    fontSize: 15,
-    fontWeight: '600',
+    fontSize: 16,
+    fontWeight: '700',
     color: '#fff',
-    textShadowColor: 'rgba(0, 0, 0, 0.8)',
+    textShadowColor: 'rgba(0, 0, 0, 0.9)',
     textShadowOffset: { width: 0, height: 1 },
     textShadowRadius: 4,
+    letterSpacing: 0.3,
   },
   caption: {
-    fontSize: 14,
+    fontSize: 15,
     color: '#fff',
-    lineHeight: 20,
-    marginBottom: 4,
-    textShadowColor: 'rgba(0, 0, 0, 0.8)',
+    lineHeight: 22,
+    marginBottom: 6,
+    textShadowColor: 'rgba(0, 0, 0, 0.9)',
     textShadowOffset: { width: 0, height: 1 },
     textShadowRadius: 4,
     paddingRight: 8,
+    fontWeight: '500',
   },
   readMoreText: {
     fontSize: 14,
     color: '#fff',
-    fontWeight: '600',
+    fontWeight: '700',
     marginTop: 4,
-    marginBottom: 10,
-    textShadowColor: 'rgba(0, 0, 0, 0.8)',
+    marginBottom: 8,
+    textShadowColor: 'rgba(0, 0, 0, 0.9)',
     textShadowOffset: { width: 0, height: 1 },
     textShadowRadius: 4,
+    opacity: 0.9,
   },
   musicContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: 'rgba(0, 0, 0, 0.6)',
-    borderRadius: 20,
-    paddingHorizontal: 10,
-    paddingVertical: 6,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    borderRadius: 18,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
     alignSelf: 'flex-start',
     borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.2)',
-    maxWidth: '90%',
-    marginTop: 4,
+    borderColor: 'rgba(255, 255, 255, 0.15)',
+    maxWidth: '85%',
+    marginTop: 8,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.3,
+    shadowRadius: 4,
+    elevation: 3,
   },
   musicIconContainer: {
-    marginRight: 6,
+    marginRight: 8,
     justifyContent: 'center',
     alignItems: 'center',
+    width: 20,
+    height: 20,
   },
   musicTextContainer: {
     flex: 1,
     overflow: 'hidden',
   },
   musicText: {
-    fontSize: 12,
+    fontSize: 13,
     color: '#fff',
     fontWeight: '600',
     textShadowColor: 'rgba(0, 0, 0, 0.8)',
     textShadowOffset: { width: 0, height: 1 },
     textShadowRadius: 3,
-    letterSpacing: 0.3,
+    letterSpacing: 0.2,
+  },
+  musicDiscButton: {
+    marginTop: 8,
+  },
+  musicDiscContainer: {
+    width: 48,
+    height: 48,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  musicDisc: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 2,
+    borderColor: '#fff',
+    shadowColor: colors.primary,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.5,
+    shadowRadius: 6,
+    elevation: 5,
+  },
+  musicDiscInner: {
+    width: 16,
+    height: 16,
+    borderRadius: 8,
+    backgroundColor: '#000',
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   actionsContainer: {
     alignItems: 'center',
     justifyContent: 'flex-end',
     gap: 20,
-    paddingBottom: 100, // Đẩy lên cao để không bị che bởi bottom tab bar (65px height + 16px marginBottom + 20px safe area)
+    paddingBottom: Platform.OS === 'ios' ? 130 : 110, // Đẩy lên cao để không bị che bởi bottom tab bar
   },
   avatarButton: {
     marginBottom: 4,
@@ -1066,11 +1619,23 @@ const styles = StyleSheet.create({
     borderRadius: 24,
     borderWidth: 2,
     borderColor: '#fff',
+    backgroundColor: '#000',
+  },
+  actionAvatarPlaceholder: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    borderWidth: 2,
+    borderColor: '#fff',
+    backgroundColor: 'rgba(255, 255, 255, 0.2)',
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   followButton: {
     position: 'absolute',
-    bottom: -4,
-    right: -4,
+    bottom: -6,
+    left: '50%',
+    marginLeft: -10,
     width: 20,
     height: 20,
     borderRadius: 10,
@@ -1079,6 +1644,11 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     borderWidth: 2,
     borderColor: '#000',
+    shadowColor: colors.primary,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.5,
+    shadowRadius: 4,
+    elevation: 5,
   },
   actionButton: {
     alignItems: 'center',
@@ -1189,5 +1759,99 @@ const styles = StyleSheet.create({
   },
   sendButtonDisabled: {
     backgroundColor: '#D4D6DC',
+  },
+  skeletonMedia: {
+    width: SCREEN_WIDTH,
+    height: SCREEN_HEIGHT,
+    backgroundColor: '#1a1a1a',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  skeletonUserInfo: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 12,
+    gap: 10,
+  },
+  skeletonAvatar: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+  },
+  skeletonUsername: {
+    width: 120,
+    height: 16,
+    borderRadius: 8,
+    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+  },
+  skeletonCaption: {
+    width: '80%',
+    height: 16,
+    borderRadius: 8,
+    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+    marginBottom: 8,
+  },
+  skeletonActionButton: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+    marginBottom: 20,
+  },
+  videoLoadingContainer: {
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: '#000',
+  },
+  emptyContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: 40,
+    paddingTop: Platform.OS === 'ios' ? 100 : 80,
+  },
+  emptyIconContainer: {
+    width: 120,
+    height: 120,
+    borderRadius: 60,
+    backgroundColor: 'rgba(255, 255, 255, 0.05)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 24,
+    borderWidth: 2,
+    borderColor: 'rgba(255, 255, 255, 0.1)',
+  },
+  emptyTitle: {
+    color: '#fff',
+    fontSize: 22,
+    fontWeight: '700',
+    marginBottom: 12,
+    textAlign: 'center',
+  },
+  emptySubtitle: {
+    color: 'rgba(255, 255, 255, 0.6)',
+    fontSize: 15,
+    textAlign: 'center',
+    lineHeight: 22,
+    marginBottom: 32,
+  },
+  emptyButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 28,
+    paddingVertical: 14,
+    backgroundColor: colors.primary,
+    borderRadius: 24,
+    shadowColor: colors.primary,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.4,
+    shadowRadius: 8,
+    elevation: 5,
+  },
+  emptyButtonText: {
+    color: '#fff',
+    fontWeight: '700',
+    fontSize: 16,
   },
 });

@@ -145,12 +145,7 @@ export default function VirtualPetScreen() {
     <GamerBackground intensity="medium">
       <View style={styles.container}>
         {/* Header */}
-        <LinearGradient
-          colors={['#FF6B6B', '#FF8E53']}
-          style={styles.headerGradient}
-          start={{ x: 0, y: 0 }}
-          end={{ x: 1, y: 0 }}
-        >
+        <View style={styles.headerGradient}>
           <View style={styles.header}>
             <TouchableOpacity
               style={styles.backButton}
@@ -176,7 +171,7 @@ export default function VirtualPetScreen() {
               </View>
             </TouchableOpacity>
           </View>
-        </LinearGradient>
+        </View>
 
       <ScrollView 
         style={styles.content} 
@@ -459,10 +454,13 @@ const styles = StyleSheet.create({
     color: '#666',
   },
   headerGradient: {
-    paddingTop: Platform.OS === 'ios' ? 50 : 30,
+    paddingTop: Platform.OS === 'ios' ? 60 : 40,
     paddingBottom: 16,
     paddingHorizontal: 20,
     zIndex: 10,
+    backgroundColor: '#FFFFFF',
+    borderBottomWidth: 0.5,
+    borderBottomColor: 'rgba(0, 0, 0, 0.08)',
   },
   header: {
     flexDirection: 'row',
@@ -471,34 +469,34 @@ const styles = StyleSheet.create({
     gap: 12,
   },
   backButton: {
-    backgroundColor: 'rgba(255, 255, 255, 0.95)',
+    backgroundColor: '#FFFFFF',
     width: 40,
     height: 40,
     borderRadius: 20,
     alignItems: 'center',
     justifyContent: 'center',
     borderWidth: 0,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.2,
-    shadowRadius: 4,
-    elevation: 5,
+    shadowColor: colors.primary,
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.25,
+    shadowRadius: 6,
+    elevation: 6,
   },
   headerContent: {
     flex: 1,
     marginLeft: 8,
   },
   calendarButton: {
-    backgroundColor: 'rgba(255, 255, 255, 0.95)',
+    backgroundColor: '#FFFFFF',
     borderRadius: 20,
     padding: 8,
     paddingHorizontal: 12,
     borderWidth: 0,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.2,
-    shadowRadius: 4,
-    elevation: 5,
+    shadowColor: colors.primary,
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.25,
+    shadowRadius: 6,
+    elevation: 6,
   },
   calendarButtonBadge: {
     flexDirection: 'row',
@@ -528,7 +526,7 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   contentContainer: {
-    paddingBottom: 100, // Đẩy lên cao để không bị che bởi bottom tab bar (65px height + 16px marginBottom + 20px safe area)
+    paddingBottom: Platform.OS === 'ios' ? 130 : 110, // Đẩy lên cao để không bị che bởi bottom tab bar
   },
   petContainer: {
     alignItems: 'center',

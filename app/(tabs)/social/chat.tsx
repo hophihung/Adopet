@@ -5,14 +5,15 @@ import {
   StyleSheet,
   TouchableOpacity,
   ActivityIndicator,
+  Platform,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { MessageCircle, Bell } from 'lucide-react-native';
+import { MessageCircle } from 'lucide-react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useAuth } from '@/contexts/AuthContext';
 import { useRouter, usePathname } from 'expo-router';
 import { ChatScreen, ChatList } from '@/src/components';
-import { Conversation, ChatService, type Notification as ChatNotification } from '@/src/features/chat';
+import { Conversation, ChatService } from '@/src/features/chat';
 import { colors } from '@/src/theme/colors';
 
 
@@ -22,8 +23,6 @@ export default function ChatTabScreen() {
   const pathname = usePathname();
   const [selectedConversation, setSelectedConversation] =
     useState<Conversation | null>(null);
-  const [notifications, setNotifications] = useState<ChatNotification[]>([]);
-  const [unreadCount, setUnreadCount] = useState(0);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<'community' | 'chat'>('chat');
   
@@ -46,89 +45,12 @@ export default function ChatTabScreen() {
     }
   }, [pathname]);
 
-  useEffect(() => {
-    if (user?.id) {
-      loadNotifications();
-      subscribeToNotifications();
-      loadUnreadCount();
-    }
-  }, [user?.id]);
-
-  const loadNotifications = async () => {
-    if (!user?.id) return;
-
-    try {
-      setLoading(true);
-      const data = await ChatService.getNotifications(user.id);
-      setNotifications(data);
-    } catch (error) {
-      console.error('Error loading notifications:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const subscribeToNotifications = () => {
-    if (!user?.id) return;
-
-    const subscription = ChatService.subscribeToNotifications(
-      user.id,
-      (notification) => {
-        setNotifications((prev) => [notification, ...prev]);
-        loadUnreadCount(); // Refresh unread count
-      }
-    );
-
-    return () => {
-      subscription.unsubscribe();
-    };
-  };
-
-  const loadUnreadCount = async () => {
-    if (!user?.id) return;
-
-    try {
-      const count = await ChatService.getTotalUnreadCount(user.id);
-      setUnreadCount(count);
-    } catch (error) {
-      console.error('Error loading unread count:', error);
-    }
-  };
-
   const handleConversationSelect = (conversation: Conversation) => {
     setSelectedConversation(conversation);
   };
 
   const handleBack = () => {
     setSelectedConversation(null);
-    loadUnreadCount(); // Refresh unread count when going back
-  };
-
-  const handleNotificationPress = async (notification: ChatNotification) => {
-    // Mark notification as read
-    try {
-      await ChatService.markNotificationAsRead(notification.id);
-      setNotifications((prev) =>
-        prev.map((n) =>
-          n.id === notification.id ? { ...n, is_read: true } : n
-        )
-      );
-    } catch (error) {
-      console.error('Error marking notification as read:', error);
-    }
-
-    // Navigate to conversation if it's a message notification
-    if (
-      notification.type === 'new_message' &&
-      notification.data?.conversation_id
-    ) {
-      // You would need to load the conversation here
-      // For now, just show a placeholder
-      console.log(
-        'Navigate to conversation:',
-        notification.data.conversation_id
-      );
-    }
   };
 
   if (selectedConversation) {
@@ -140,10 +62,7 @@ export default function ChatTabScreen() {
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
       {/* Header with Gradient */}
-      <LinearGradient
-        colors={[colors.primary, colors.primaryDark]}
-        style={styles.headerGradient}
-      >
+      <View style={styles.headerGradient}>
         <View style={styles.headerRow}>
           <View style={styles.headerTabsContainer}>
             <TouchableOpacity
@@ -162,36 +81,14 @@ export default function ChatTabScreen() {
               onPress={() => handleTabChange('chat')}
               activeOpacity={0.7}
             >
-              <View style={styles.headerTabContent}>
-                <Text style={[styles.headerTabText, activeTab === 'chat' && styles.headerTabTextActive]}>
-                  Tin nhắn
-                </Text>
-                {unreadCount > 0 && (
-                  <View style={styles.unreadBadge}>
-                    <Text style={styles.unreadText}>
-                      {unreadCount > 99 ? '99+' : String(unreadCount)}
-                    </Text>
-                  </View>
-                )}
-              </View>
+              <Text style={[styles.headerTabText, activeTab === 'chat' && styles.headerTabTextActive]}>
+                Tin nhắn
+              </Text>
               {activeTab === 'chat' && <View style={styles.headerTabIndicator} />}
             </TouchableOpacity>
           </View>
-
-          <TouchableOpacity
-            style={styles.notificationButton}
-            onPress={() => {
-              // Show notifications modal or navigate to notifications screen
-              console.log('Show notifications');
-            }}
-          >
-            <Bell size={22} color="#fff" />
-            {notifications.some((n) => !n.is_read) && (
-              <View style={styles.notificationDot} />
-            )}
-          </TouchableOpacity>
         </View>
-      </LinearGradient>
+      </View>
 
       {/* Chat List */}
       <ChatList onConversationSelect={handleConversationSelect} />
@@ -205,9 +102,12 @@ const styles = StyleSheet.create({
     backgroundColor: colors.background,
   },
   headerGradient: {
-    paddingTop: 50,
-    paddingBottom: 12,
+    paddingTop: Platform.OS === 'ios' ? 60 : 40,
+    paddingBottom: 16,
     paddingHorizontal: 20,
+    backgroundColor: '#FFFFFF',
+    borderBottomWidth: 0.5,
+    borderBottomColor: 'rgba(0, 0, 0, 0.08)',
   },
   headerRow: {
     flexDirection: 'row',
@@ -231,29 +131,25 @@ const styles = StyleSheet.create({
     paddingHorizontal: 4,
     position: 'relative',
   },
-  headerTabContent: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-  },
   headerTabDivider: {
     width: 1,
     height: 16,
     backgroundColor: 'rgba(255, 255, 255, 0.3)',
   },
   headerTabText: {
-    fontSize: 17,
+    fontSize: 16,
     fontWeight: '600',
-    color: 'rgba(255, 255, 255, 0.7)',
-    textShadowColor: 'rgba(0, 0, 0, 0.3)',
+    color: 'rgba(255, 255, 255, 0.75)',
+    textShadowColor: 'rgba(0, 0, 0, 0.2)',
     textShadowOffset: { width: 0, height: 1 },
     textShadowRadius: 2,
   },
   headerTabTextActive: {
-    color: '#fff',
+    color: '#FFFFFF',
     fontWeight: '700',
-    textShadowColor: 'rgba(0, 0, 0, 0.5)',
-    textShadowOffset: { width: 0, height: 2 },
+    fontSize: 17,
+    textShadowColor: 'rgba(0, 0, 0, 0.3)',
+    textShadowOffset: { width: 0, height: 1 },
     textShadowRadius: 3,
   },
   headerTabIndicator: {
@@ -274,39 +170,5 @@ const styles = StyleSheet.create({
     fontSize: 24,
     fontWeight: '700',
     color: '#fff',
-  },
-  unreadBadge: {
-    backgroundColor: 'rgba(255, 255, 255, 0.9)',
-    borderRadius: 10,
-    minWidth: 20,
-    height: 20,
-    justifyContent: 'center',
-    alignItems: 'center',
-    paddingHorizontal: 4,
-  },
-  unreadText: {
-    color: colors.primary,
-    fontSize: 12,
-    fontWeight: '700',
-  },
-  notificationButton: {
-    backgroundColor: 'rgba(255, 255, 255, 0.25)',
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderWidth: 2,
-    borderColor: 'rgba(255, 255, 255, 0.4)',
-    position: 'relative',
-  },
-  notificationDot: {
-    position: 'absolute',
-    top: 8,
-    right: 8,
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-    backgroundColor: '#fff',
   },
 });

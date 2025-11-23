@@ -9,6 +9,7 @@ import {
   Alert,
   Animated,
   ActivityIndicator,
+  Platform,
 } from 'react-native';
 import { useAuth } from '@/contexts/AuthContext';
 import { Heart, X, RotateCcw, Star, Send, PawPrint, Video, Home, MapPin } from 'lucide-react-native';
@@ -695,21 +696,23 @@ const styles = StyleSheet.create({
     gap: 16,
     paddingVertical: 20,
     paddingHorizontal: 20,
-    paddingBottom: 100, // Thêm padding để tránh bị tab bar che
+    paddingBottom: Platform.OS === 'ios' ? 130 : 110, // Thêm padding để tránh bị tab bar che
     zIndex: 10, // Đảm bảo hiển thị trên tab bar
   },
   actionButton: {
     width: 60,
     height: 60,
     borderRadius: 30,
-    backgroundColor: '#fff',
+    backgroundColor: '#FFFFFF',
     justifyContent: 'center',
     alignItems: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 8,
-    elevation: 3,
+    shadowColor: colors.primary,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.15,
+    shadowRadius: 10,
+    elevation: 5,
+    borderWidth: 1,
+    borderColor: colors.borderLight,
   },
   starButton: { width: 50, height: 50, borderRadius: 25 },
 });
