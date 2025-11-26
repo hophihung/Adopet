@@ -16,6 +16,7 @@ import { Heart, X, RotateCcw, Star, Send, PawPrint, Video, Home, MapPin } from '
 import { useRouter, usePathname } from 'expo-router';
 import Swiper from 'react-native-deck-swiper';
 import { PetService } from '@/src/features/pets/services/pet.service';
+import { formatPetLocation } from '@/src/features/pets/utils/location';
 import { colors } from '@/src/theme/colors';
 import { PetCardNew } from '@/src/features/pets/components';
 
@@ -399,7 +400,7 @@ export default function MatchScreen() {
                   {pet.location && (
                     <View style={styles.infoRow}>
                       <Home size={14} color="#fff" style={styles.icon} />
-                      <Text style={styles.infoText}>Sống tại {pet.location}</Text>
+                      <Text style={styles.infoText}>Sống tại {formatPetLocation(pet.location)}</Text>
                     </View>
                   )}
 

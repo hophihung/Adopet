@@ -29,6 +29,8 @@ export interface PetCreateData {
   contact_email?: string;
   latitude?: number;
   longitude?: number;
+  contact_visibility?: 'chat_only' | 'public';
+  location_privacy?: 'approximate' | 'precise';
 }
 
 export interface PetUpdateData extends Partial<PetCreateData> {

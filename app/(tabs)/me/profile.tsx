@@ -20,6 +20,7 @@ import {
   Star,
   Crown,
   User,
+  Bell,
 } from 'lucide-react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useProfile } from '../../../src/features/profile/context/ProfileContext';
@@ -28,6 +29,7 @@ import { useSubscription } from '../../../contexts/SubscriptionContext';
 import { SubscriptionManager } from '../../../src/components/SubscriptionManager';
 import { useRouter, usePathname } from 'expo-router';
 import { colors } from '@/src/theme/colors';
+import { useNotifications } from '@/src/features/notifications/hooks/useNotifications';
 
 export default function ProfileScreen() {
   const router = useRouter();
@@ -36,7 +38,11 @@ export default function ProfileScreen() {
   const { profile, stats, loading, refreshing, refreshProfile } = useProfile();
   const { signOut } = useAuth();
   const { subscription, refreshSubscription } = useSubscription();
+  const { stats: notificationStats } = useNotifications();
   const [showSubscriptionModal, setShowSubscriptionModal] = useState(false);
+  const isSeller = profile?.role === 'seller';
+  const emailLower = profile?.email?.toLowerCase();
+  const isAdmin = Boolean(profile?.role === 'admin' || (emailLower && emailLower.includes('admin')));
   
   // Tab bar height + marginBottom + safe area bottom + extra padding
   const tabBarHeight = Platform.OS === 'ios' ? 85 : 70;
@@ -71,13 +77,31 @@ export default function ProfileScreen() {
         <View style={styles.headerGradient}>
           <View style={styles.headerRow}>
             <Text style={styles.headerTitle}>Cá nhân</Text>
-            <TouchableOpacity 
-              style={styles.settingsButton} 
-              activeOpacity={0.8}
-              onPress={() => router.push('/(tabs)/me/settings')}
-            >
-              <Settings size={20} color="#FFFFFF" strokeWidth={2.5} />
-            </TouchableOpacity>
+            <View style={styles.headerActions}>
+              <TouchableOpacity
+                style={styles.iconButton}
+                activeOpacity={0.8}
+                onPress={() => router.push('/(tabs)/me/notifications' as any)}
+              >
+                <Bell size={20} color="#FFFFFF" strokeWidth={2.5} />
+                {notificationStats.unread > 0 && (
+                  <View style={styles.iconBadge}>
+                    <Text style={styles.iconBadgeText}>
+                      {notificationStats.unread > 9
+                        ? '9+'
+                        : notificationStats.unread}
+                    </Text>
+                  </View>
+                )}
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={styles.iconButton}
+                activeOpacity={0.8}
+                onPress={() => router.push('/(tabs)/me/settings')}
+              >
+                <Settings size={20} color="#FFFFFF" strokeWidth={2.5} />
+              </TouchableOpacity>
+            </View>
           </View>
         </View>
 
@@ -168,13 +192,25 @@ export default function ProfileScreen() {
           <TouchableOpacity style={styles.menuItem}>
             <Text style={styles.menuText}>Edit Profile</Text>
           </TouchableOpacity>
-          {profile?.role === 'seller' && (
+          {isSeller && (
             <>
               <TouchableOpacity
                 style={styles.menuItem}
                 onPress={() => router.push('/products/manage' as any)}
               >
                 <Text style={styles.menuText}>Quản lý sản phẩm</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={styles.menuItem}
+                onPress={() => router.push('/orders/manage' as any)}
+              >
+                <Text style={styles.menuText}>Quản lý đơn hàng</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={styles.menuItem}
+                onPress={() => router.push('/(tabs)/me/bank-accounts' as any)}
+              >
+                <Text style={styles.menuText}>Tài khoản ngân hàng</Text>
               </TouchableOpacity>
               <TouchableOpacity style={styles.menuItem}>
                 <Text style={styles.menuText}>My Pets</Text>
@@ -187,9 +223,55 @@ export default function ProfileScreen() {
           >
             <Text style={styles.menuText}>Subscription</Text>
           </TouchableOpacity>
+          <TouchableOpacity
+            style={styles.menuItem}
+            onPress={() => router.push('/(tabs)/me/notifications' as any)}
+          >
+            <View style={styles.menuRow}>
+              <Text style={styles.menuText}>Thông báo</Text>
+              {notificationStats.unread > 0 && (
+                <View style={styles.menuBadge}>
+                  <Text style={styles.menuBadgeText}>
+                    {notificationStats.unread > 9
+                      ? '9+'
+                      : notificationStats.unread}
+                  </Text>
+                </View>
+              )}
+            </View>
+          </TouchableOpacity>
           <TouchableOpacity style={styles.menuItem}>
             <Text style={styles.menuText}>Favorites</Text>
           </TouchableOpacity>
+          <TouchableOpacity
+            style={styles.menuItem}
+            onPress={() => router.push('/(tabs)/me/rewards' as any)}
+          >
+            <Text style={styles.menuText}>Điểm thưởng</Text>
+          </TouchableOpacity>
+          {isAdmin && (
+            <>
+              <Text style={styles.menuSectionLabel}>Admin</Text>
+              <TouchableOpacity
+                style={styles.menuItem}
+                onPress={() => router.push('/admin/reels' as any)}
+              >
+                <Text style={styles.menuText}>Duyệt reels</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={styles.menuItem}
+                onPress={() => router.push('/admin/payouts' as any)}
+              >
+                <Text style={styles.menuText}>Quản lý payout</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={styles.menuItem}
+                onPress={() => router.push('/admin/disputes' as any)}
+              >
+                <Text style={styles.menuText}>Quản lý dispute</Text>
+              </TouchableOpacity>
+            </>
+          )}
           <TouchableOpacity style={styles.menuItem}>
             <Text style={styles.menuText}>Settings</Text>
           </TouchableOpacity>
@@ -258,6 +340,11 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
   },
+  headerActions: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+  },
   headerLeft: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -268,19 +355,31 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     color: '#fff',
   },
-  settingsButton: {
-    backgroundColor: '#000000',
+  iconButton: {
     width: 40,
     height: 40,
     borderRadius: 20,
     alignItems: 'center',
     justifyContent: 'center',
-    borderWidth: 0,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.15,
-    shadowRadius: 4,
-    elevation: 3,
+    backgroundColor: 'rgba(0, 0, 0, 0.35)',
+    position: 'relative',
+  },
+  iconBadge: {
+    position: 'absolute',
+    top: 2,
+    right: 2,
+    minWidth: 18,
+    height: 18,
+    borderRadius: 9,
+    backgroundColor: '#FF3B30',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 4,
+  },
+  iconBadgeText: {
+    color: '#fff',
+    fontSize: 10,
+    fontWeight: '700',
   },
   profileSection: {
     alignItems: 'center',
@@ -390,6 +489,30 @@ const styles = StyleSheet.create({
   menuText: {
     fontSize: 16,
     color: '#333',
+  },
+  menuSectionLabel: {
+    fontSize: 14,
+    fontWeight: '700',
+    color: '#666',
+    marginTop: 24,
+    marginBottom: 8,
+    textTransform: 'uppercase',
+  },
+  menuRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  menuBadge: {
+    backgroundColor: '#FF3B30',
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+    borderRadius: 12,
+  },
+  menuBadgeText: {
+    color: '#fff',
+    fontSize: 12,
+    fontWeight: '700',
   },
   signOutButton: {
     marginTop: 10,

@@ -12,6 +12,7 @@ import {
 } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { PetService } from '../../src/features/pets/services/pet.service';
+import { formatPetLocation } from '../../src/features/pets/utils/location';
 import { useAuth } from '../../contexts/AuthContext';
 import { ArrowLeft, Edit2, Heart, MapPin, Calendar, DollarSign, MessageCircle, Scale, Palette, Activity, Shield, Syringe, Users, Baby, Zap, AlertCircle, Phone, Mail } from 'lucide-react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -362,7 +363,7 @@ export default function PetDetailScreen() {
               <View style={styles.detailItem}>
                 <MapPin size={18} color="#666" />
                 <Text style={styles.detailLabel}>Địa điểm</Text>
-                <Text style={styles.detailValue}>{pet.location}</Text>
+                <Text style={styles.detailValue}>{formatPetLocation(pet.location)}</Text>
               </View>
             )}
           </View>
@@ -442,7 +443,7 @@ export default function PetDetailScreen() {
           )}
 
           {/* Contact Info */}
-          {(pet.contact_phone || pet.contact_email) && (
+          {pet.contact_visibility === 'public' && (pet.contact_phone || pet.contact_email) && (
             <View style={styles.section}>
               <Text style={styles.sectionTitle}>Thông tin liên hệ</Text>
               <View style={styles.contactContainer}>
@@ -458,6 +459,18 @@ export default function PetDetailScreen() {
                     <Text style={styles.contactText}>{pet.contact_email}</Text>
                   </View>
                 )}
+              </View>
+            </View>
+          )}
+
+          {pet.contact_visibility !== 'public' && (
+            <View style={styles.section}>
+              <Text style={styles.sectionTitle}>Liên hệ an toàn</Text>
+              <View style={styles.chatOnlyBanner}>
+                <MessageCircle size={18} color="#FF5A75" />
+                <Text style={styles.chatOnlyText}>
+                  Người bán ẩn thông tin liên hệ để bảo vệ quyền riêng tư. Hãy nhắn tin trực tiếp qua Adopet để trao đổi.
+                </Text>
               </View>
             </View>
           )}
@@ -826,5 +839,19 @@ const styles = StyleSheet.create({
     fontSize: 15,
     color: '#333',
     fontWeight: '500',
+  },
+  chatOnlyBanner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    backgroundColor: '#FFF5F7',
+    padding: 14,
+    borderRadius: 12,
+  },
+  chatOnlyText: {
+    flex: 1,
+    color: '#FF5A75',
+    fontSize: 14,
+    lineHeight: 20,
   },
 });

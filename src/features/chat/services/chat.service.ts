@@ -1,4 +1,5 @@
 import { supabase } from "@/lib/supabase";
+import { RateLimitService } from "@/src/features/security/services/rateLimit.service";
 
 export interface Conversation {
   id: string;
@@ -137,6 +138,7 @@ export const ChatService = {
     messageType: 'text' | 'image' | 'system' | 'transaction' = 'text',
     transactionId?: string
   ): Promise<Message> {
+    await RateLimitService.enforce('send_message');
     const { data, error } = await supabase
       .from('messages')
       .insert({

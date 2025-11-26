@@ -23,6 +23,7 @@ import { MusicPickerModal } from '@/src/features/reels/components/MusicPickerMod
 import { MusicTrack } from '@/src/features/reels/services/music.service';
 import { ProductPicker } from '@/src/features/products/components/ProductPicker';
 import { ProductService, Product } from '@/src/features/products/services/product.service';
+import { RateLimitService, RateLimitError } from '@/src/features/security/services/rateLimit.service';
 
 export default function CreateReelScreen() {
   const [mediaType, setMediaType] = useState<'image' | 'video'>('video');
@@ -390,6 +391,7 @@ export default function CreateReelScreen() {
     setUploadStatus('Đang xử lý...');
 
     try {
+      await RateLimitService.enforce('create_reel');
       let videoUrl: string | null = null;
       let imageUrl: string | null = null;
       let thumbnailUrl: string | null = null;
@@ -499,7 +501,11 @@ export default function CreateReelScreen() {
         });
     } catch (err: any) {
       console.error('Post error:', err);
-      Alert.alert('Lỗi', err.message || 'Không thể đăng reel');
+      if (err instanceof RateLimitError) {
+        Alert.alert('Giới hạn', err.message);
+      } else {
+        Alert.alert('Lỗi', err.message || 'Không thể đăng reel');
+      }
     } finally {
       setLoading(false);
       setUploading(false);

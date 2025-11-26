@@ -30,6 +30,14 @@ export interface Order {
   buyer_note?: string;
   seller_note?: string;
   cancellation_reason?: string;
+  tracking_number?: string;
+  escrow_account_id?: string;
+  escrow_status?: 'none' | 'escrowed' | 'released' | 'refunded' | 'disputed';
+  commission_id?: string;
+  platform_fee?: number;
+  seller_payout?: number;
+  payos_payment_link_id?: string;
+  payos_order_code?: string;
   product?: {
     id: string;
     name: string;
@@ -159,6 +167,31 @@ export class OrderService {
     return data;
   }
 
+  // Update tracking number (seller only)
+  static async updateTracking(
+    orderId: string,
+    trackingNumber: string,
+    sellerId: string
+  ): Promise<Order> {
+    const { data, error } = await supabase
+      .from('orders')
+      .update({
+        tracking_number: trackingNumber,
+        seller_note: `Mã vận đơn: ${trackingNumber}`,
+        updated_at: new Date().toISOString(),
+      })
+      .eq('id', orderId)
+      .eq('seller_id', sellerId)
+      .select(`
+        *,
+        product:products(id, name, image_url, price)
+      `)
+      .single();
+
+    if (error) throw error;
+    return data;
+  }
+
   // Update order status (seller only)
   static async updateStatus(
     orderId: string,
@@ -169,6 +202,17 @@ export class OrderService {
     const updateData: any = { status };
     if (sellerNote) {
       updateData.seller_note = sellerNote;
+    }
+    
+    // Update timestamp based on status
+    if (status === 'confirmed') {
+      updateData.confirmed_at = new Date().toISOString();
+    } else if (status === 'shipped') {
+      updateData.shipped_at = new Date().toISOString();
+    } else if (status === 'delivered') {
+      updateData.delivered_at = new Date().toISOString();
+    } else if (status === 'cancelled') {
+      updateData.cancelled_at = new Date().toISOString();
     }
 
     const { data, error } = await supabase
@@ -183,6 +227,26 @@ export class OrderService {
       .single();
 
     if (error) throw error;
+
+    // If order is delivered and has escrow, release escrow and create payout
+    if (status === 'delivered' && data.escrow_account_id) {
+      try {
+        // Release escrow
+        await supabase.rpc('release_escrow_to_seller', {
+          escrow_account_id_param: data.escrow_account_id,
+        });
+
+        // Create payout record
+        await supabase.rpc('create_payout_record', {
+          escrow_account_id_param: data.escrow_account_id,
+          payout_method_param: 'bank_transfer',
+        });
+      } catch (payoutError) {
+        console.error('Error creating payout:', payoutError);
+        // Don't throw error, just log - payout can be created manually later
+      }
+    }
+
     return data;
   }
 

@@ -10,6 +10,7 @@ import {
   Image,
   ActivityIndicator,
   Modal,
+  Switch,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import * as Location from 'expo-location';
@@ -112,11 +113,15 @@ export default function CreatePetScreen() {
 
       if (addresses && addresses.length > 0) {
         const address = addresses[0];
-        // Chỉ lấy tên thành phố (city) hoặc region (tỉnh/thành phố)
-        // Ưu tiên: city -> region -> subregion
-        const cityName = address.city || address.region || address.subregion;
-        
-        const formattedAddress = cityName || `${latitude.toFixed(6)}, ${longitude.toFixed(6)}`;
+        const district = (address as any).district || address.subregion;
+        const city = address.city || address.region;
+        let formattedAddress = 'Khu vực lân cận';
+
+        if (district && city) {
+          formattedAddress = `${district}, ${city}`;
+        } else if (city || district) {
+          formattedAddress = city || district || 'Khu vực lân cận';
+        }
         
         setFormData((prev) => {
           // Only update if location is empty or updateOnlyIfEmpty is false
@@ -135,7 +140,7 @@ export default function CreatePetScreen() {
           if (!updateOnlyIfEmpty || !prev.location) {
             return {
               ...prev,
-              location: `${latitude.toFixed(6)}, ${longitude.toFixed(6)}`,
+              location: 'Khu vực lân cận',
             };
           }
           return prev;
@@ -149,7 +154,7 @@ export default function CreatePetScreen() {
         if (!updateOnlyIfEmpty || !prev.location) {
           return {
             ...prev,
-            location: `${latitude.toFixed(6)}, ${longitude.toFixed(6)}`,
+            location: 'Khu vực lân cận',
           };
         }
         return prev;
@@ -184,6 +189,7 @@ export default function CreatePetScreen() {
     adoption_fee: undefined,
     contact_phone: '',
     contact_email: '',
+    contact_visibility: 'chat_only',
   });
 
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -274,6 +280,8 @@ export default function CreatePetScreen() {
         vaccination_images: vaccinationImageUrls.length > 0 ? vaccinationImageUrls : undefined,
         latitude: currentCoordinates?.latitude || location?.latitude,
         longitude: currentCoordinates?.longitude || location?.longitude,
+        contact_visibility: formData.contact_visibility,
+        location_privacy: 'approximate',
       };
 
       await createPet(petDataWithImages);
@@ -874,6 +882,25 @@ export default function CreatePetScreen() {
               keyboardType="email-address"
               autoCapitalize="none"
             />
+          <View style={styles.privacyToggleRow}>
+            <View style={{ flex: 1 }}>
+              <Text style={styles.toggleLabel}>Hiển thị công khai thông tin liên hệ</Text>
+              <Text style={styles.toggleHint}>
+                {formData.contact_visibility === 'public'
+                  ? 'Người mua sẽ thấy số điện thoại/email của bạn.'
+                  : 'Thông tin liên hệ bị ẩn. Người mua chỉ có thể nhắn tin qua Adopet.'}
+              </Text>
+            </View>
+            <Switch
+              value={formData.contact_visibility === 'public'}
+              onValueChange={(value) =>
+                setFormData((prev) => ({
+                  ...prev,
+                  contact_visibility: value ? 'public' : 'chat_only',
+                }))
+              }
+            />
+          </View>
           </View>
 
           {/* Description */}
@@ -1201,6 +1228,22 @@ const styles = StyleSheet.create({
     color: '#FF9500',
     marginTop: 8,
     fontStyle: 'italic',
+  },
+  privacyToggleRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    marginTop: 16,
+  },
+  toggleLabel: {
+    fontSize: 15,
+    fontWeight: '600',
+    color: '#333',
+  },
+  toggleHint: {
+    fontSize: 13,
+    color: '#666',
+    marginTop: 4,
   },
   locationHeader: {
     flexDirection: 'row',

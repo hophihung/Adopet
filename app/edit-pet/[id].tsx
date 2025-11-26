@@ -9,6 +9,7 @@ import {
   Alert,
   Image,
   ActivityIndicator,
+  Switch,
 } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import * as Location from 'expo-location';
@@ -75,6 +76,7 @@ export default function EditPetScreen() {
     special_needs: '',
     contact_phone: '',
     contact_email: '',
+    contact_visibility: 'chat_only',
   });
 
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -132,8 +134,15 @@ export default function EditPetScreen() {
 
       if (addresses && addresses.length > 0) {
         const address = addresses[0];
-        const cityName = address.city || address.region || address.subregion;
-        const formattedAddress = cityName || `${latitude.toFixed(6)}, ${longitude.toFixed(6)}`;
+        const district = (address as any).district || address.subregion;
+        const city = address.city || address.region;
+        let formattedAddress = 'Khu vực lân cận';
+
+        if (district && city) {
+          formattedAddress = `${district}, ${city}`;
+        } else if (city || district) {
+          formattedAddress = city || district || 'Khu vực lân cận';
+        }
         
         setFormData((prev) => {
           if (!updateOnlyIfEmpty || !prev.location) {
@@ -149,7 +158,7 @@ export default function EditPetScreen() {
           if (!updateOnlyIfEmpty || !prev.location) {
             return {
               ...prev,
-              location: `${latitude.toFixed(6)}, ${longitude.toFixed(6)}`,
+              location: 'Khu vực lân cận',
             };
           }
           return prev;
@@ -161,7 +170,7 @@ export default function EditPetScreen() {
         if (!updateOnlyIfEmpty || !prev.location) {
           return {
             ...prev,
-            location: `${latitude.toFixed(6)}, ${longitude.toFixed(6)}`,
+            location: 'Khu vực lân cận',
           };
         }
         return prev;
@@ -242,6 +251,7 @@ export default function EditPetScreen() {
         special_needs: petData.special_needs || '',
         contact_phone: petData.contact_phone || '',
         contact_email: petData.contact_email || '',
+        contact_visibility: petData.contact_visibility || 'chat_only',
       });
     } catch (error) {
       console.error('Error loading pet:', error);
@@ -328,6 +338,8 @@ export default function EditPetScreen() {
         vaccination_images: finalVaccinationUrls.length > 0 ? finalVaccinationUrls : undefined,
         latitude: currentCoordinates?.latitude || location?.latitude,
         longitude: currentCoordinates?.longitude || location?.longitude,
+        contact_visibility: formData.contact_visibility,
+        location_privacy: 'approximate',
       };
 
       await updatePet(id!, updateData);
@@ -883,6 +895,25 @@ export default function EditPetScreen() {
             keyboardType="email-address"
             autoCapitalize="none"
           />
+          <View style={styles.privacyToggleRow}>
+            <View style={{ flex: 1 }}>
+              <Text style={styles.toggleLabel}>Hiển thị công khai thông tin liên hệ</Text>
+              <Text style={styles.toggleHint}>
+                {formData.contact_visibility === 'public'
+                  ? 'Người mua sẽ thấy số điện thoại/email của bạn.'
+                  : 'Thông tin liên hệ bị ẩn. Người mua chỉ có thể nhắn tin qua Adopet.'}
+              </Text>
+            </View>
+            <Switch
+              value={formData.contact_visibility === 'public'}
+              onValueChange={(value) =>
+                setFormData(prev => ({
+                  ...prev,
+                  contact_visibility: value ? 'public' : 'chat_only',
+                }))
+              }
+            />
+          </View>
         </View>
 
         {/* Description */}
@@ -1204,6 +1235,22 @@ const styles = StyleSheet.create({
     color: '#FF9500',
     marginTop: 8,
     fontStyle: 'italic',
+  },
+  privacyToggleRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    marginTop: 16,
+  },
+  toggleLabel: {
+    fontSize: 15,
+    fontWeight: '600',
+    color: '#333',
+  },
+  toggleHint: {
+    fontSize: 13,
+    color: '#666',
+    marginTop: 4,
   },
   locationHeader: {
     flexDirection: 'row',

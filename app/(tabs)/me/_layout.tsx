@@ -25,6 +25,12 @@ export default function MeTabLayout() {
           tabBarIcon: ({ color, size }) => <User size={22} color={color} />,
         }}
       />
+      <Tabs.Screen
+        name="notifications"
+        options={{
+          href: null,
+        }}
+      />
     </Tabs>
   );
 }

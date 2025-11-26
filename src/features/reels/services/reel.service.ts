@@ -21,6 +21,10 @@ export interface Reel {
   music_volume?: number;
   created_at: string;
   updated_at: string;
+  approved_by?: string | null;
+  approved_at?: string | null;
+  rejected_by?: string | null;
+  rejected_at?: string | null;
   profiles?: {
     id: string;
     full_name: string;

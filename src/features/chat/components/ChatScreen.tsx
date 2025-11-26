@@ -262,9 +262,9 @@ export function ChatScreen({ conversation, onBack }: ChatScreenProps) {
       setTimeout(() => {
         flatListRef.current?.scrollToEnd({ animated: true });
       }, 100);
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error sending message:', error);
-      Alert.alert('Lỗi', 'Không thể gửi tin nhắn');
+      Alert.alert('Lỗi', error?.message || 'Không thể gửi tin nhắn');
     } finally {
       setSending(false);
     }

@@ -21,6 +21,7 @@ import {
 import { useAuth } from '@/contexts/AuthContext';
 import { PetService } from '@/src/features/pets/services/pet.service';
 import { PetCard } from '@/src/features/pets/components';
+import { formatPetLocation } from '@/src/features/pets/utils/location';
 
 interface Pet {
   id: string;
@@ -254,7 +255,7 @@ export default function ExploreScreen() {
                   <View style={styles.petMetaRow}>
                     <MapPin size={14} color="#FF3B5C" />
                     <Text style={styles.petMetaText}>
-                      {pet.location || 'Chưa cập nhật'}
+                      {formatPetLocation(pet.location)}
                     </Text>
                   </View>
                   {pet.energy_level && (

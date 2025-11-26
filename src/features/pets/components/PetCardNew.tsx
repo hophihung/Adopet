@@ -19,6 +19,7 @@ import { Pet } from '@/lib/supabaseClient';
 import { colors } from '@/src/theme/colors';
 import { PetService } from '@/src/features/pets/services/pet.service';
 import { supabase } from '@/lib/supabase';
+import { formatPetLocation } from '@/src/features/pets/utils/location';
 
 interface PetCardNewProps {
   pet: Pet & {
@@ -480,7 +481,7 @@ const PetCardNewComponent = ({
         onPressOut={handlePressOut}
         activeOpacity={1}
         accessible={true}
-        accessibilityLabel={`Pet card for ${pet.name}, ${pet.age_months} months old${pet.location ? `, located in ${pet.location}` : ''}`}
+        accessibilityLabel={`Pet card for ${pet.name}, ${pet.age_months} months old${pet.location ? `, located in ${formatPetLocation(pet.location)}` : ''}`}
         accessibilityRole="button"
         accessibilityHint="Double tap to view pet details"
       >
@@ -551,7 +552,7 @@ const PetCardNewComponent = ({
                       <View 
                         style={styles.locationRow}
                         accessible={true}
-                        accessibilityLabel={`Lives in ${pet.location}`}
+                        accessibilityLabel={`Lives in ${formatPetLocation(pet.location)}`}
                         accessibilityRole="text"
                       >
                         <MaterialIcons
@@ -562,7 +563,7 @@ const PetCardNewComponent = ({
                           accessible={false}
                         />
                         <Text style={[styles.locationText, { fontSize: responsiveFontSizes.locationText }]} numberOfLines={1}>
-                          Sống tại {pet.location}
+                          Sống tại {formatPetLocation(pet.location)}
                         </Text>
                       </View>
                       <View 

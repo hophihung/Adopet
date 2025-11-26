@@ -2,6 +2,7 @@ import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Image } from 'react-native';
 import { Pet } from '@/lib/supabaseClient';
 import { colors } from '@/src/theme/colors';
+import { formatPetLocation } from '@/src/features/pets/utils/location';
 
 interface PetCardProps {
   pet: Pet & {
@@ -64,7 +65,7 @@ export function PetCard({
         {pet.profiles && (
           <View style={styles.locationRow}>
             <Text style={styles.locationIcon}>🏠</Text>
-            <Text style={styles.locationText}>{`Sống tại ${pet.location || 'Hà Nội'}`}</Text>
+            <Text style={styles.locationText}>{`Sống tại ${formatPetLocation(pet.location)}`}</Text>
           </View>
         )}
         

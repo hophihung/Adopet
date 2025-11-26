@@ -64,6 +64,8 @@ export type Pet = {
   adoption_fee?: number | null;
   contact_phone?: string | null;
   contact_email?: string | null;
+  contact_visibility?: 'chat_only' | 'public';
+  location_privacy?: 'approximate' | 'precise';
   view_count?: number;
   like_count?: number;
   is_featured?: boolean;

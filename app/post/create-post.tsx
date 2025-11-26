@@ -17,6 +17,7 @@ import * as FileSystem from 'expo-file-system/legacy';
 import * as ImagePicker from 'expo-image-picker';
 import { LinearGradient } from 'expo-linear-gradient';
 import { ImagePlus, Send, X } from 'lucide-react-native';
+import { RateLimitService, RateLimitError } from '@/src/features/security/services/rateLimit.service';
 
 export default function CreatePostScreen() {
   const [content, setContent] = useState('');
@@ -122,6 +123,7 @@ export default function CreatePostScreen() {
     setLoading(true);
 
     try {
+      await RateLimitService.enforce('create_post');
       let imageUrl = null;
       if (image) {
         imageUrl = await uploadImage(image);
@@ -150,7 +152,11 @@ export default function CreatePostScreen() {
       router.back();
     } catch (err: any) {
       console.error('Post error:', err);
-      Alert.alert('Lỗi', err.message || 'Không thể đăng bài');
+      if (err instanceof RateLimitError) {
+        Alert.alert('Giới hạn', err.message);
+      } else {
+        Alert.alert('Lỗi', err.message || 'Không thể đăng bài');
+      }
     } finally {
       setLoading(false);
     }
