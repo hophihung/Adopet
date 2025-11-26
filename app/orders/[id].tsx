@@ -11,7 +11,7 @@ import {
 } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { ArrowLeft, Package, MapPin, Phone, Truck, CheckCircle, Clock, XCircle } from 'lucide-react-native';
+import { ArrowLeft, MapPin, Phone, Truck, CheckCircle, Clock, XCircle, AlertCircle, Star, FileText } from 'lucide-react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useAuth } from '@/contexts/AuthContext';
 import { OrderService, Order } from '@/src/features/products/services/order.service';
@@ -19,7 +19,6 @@ import { DisputeService, EscrowDispute } from '@/src/features/disputes/services/
 import { ReviewService, ProductReview } from '@/src/features/reviews/services/review.service';
 import { colors } from '@/src/theme/colors';
 import { supabase } from '@/lib/supabase';
-import { AlertCircle, Star, FileText } from 'lucide-react-native';
 
 export default function OrderDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -223,8 +222,8 @@ export default function OrderDetailScreen() {
                 </Text>
               )}
             </View>
-            <View style={[styles.timelineItem, ['confirmed', 'processing', 'shipped', 'delivered'].includes(order.status) && styles.timelineItemActive]}>
-              <View style={[styles.timelineDot, ['confirmed', 'processing', 'shipped', 'delivered'].includes(order.status) && styles.timelineDotActive]} />
+            <View style={[styles.timelineItem, (order.status === 'confirmed' || order.status === 'processing' || order.status === 'shipped' || order.status === 'delivered') && styles.timelineItemActive]}>
+              <View style={[styles.timelineDot, (order.status === 'confirmed' || order.status === 'processing' || order.status === 'shipped' || order.status === 'delivered') && styles.timelineDotActive]} />
               <Text style={styles.timelineText}>Xác nhận</Text>
               {order.confirmed_at && (
                 <Text style={styles.timelineDate}>
@@ -232,8 +231,8 @@ export default function OrderDetailScreen() {
                 </Text>
               )}
             </View>
-            <View style={[styles.timelineItem, ['shipped', 'delivered'].includes(order.status) && styles.timelineItemActive]}>
-              <View style={[styles.timelineDot, ['shipped', 'delivered'].includes(order.status) && styles.timelineDotActive]} />
+            <View style={[styles.timelineItem, (order.status === 'shipped' || order.status === 'delivered') && styles.timelineItemActive]}>
+              <View style={[styles.timelineDot, (order.status === 'shipped' || order.status === 'delivered') && styles.timelineDotActive]} />
               <Text style={styles.timelineText}>Giao hàng</Text>
               {order.shipped_at && (
                 <Text style={styles.timelineDate}>
@@ -400,57 +399,59 @@ export default function OrderDetailScreen() {
         )}
 
         {/* Action Buttons */}
-        <View style={styles.actionsCard}>
-          {/* Dispute Actions */}
-          {order.escrow_account_id && (
-            <>
-              {dispute ? (
-                <TouchableOpacity
-                  style={styles.actionButton}
-                  onPress={() => router.push(`/orders/${id}/dispute-detail` as any)}
-                  activeOpacity={0.8}
-                >
-                  <FileText size={20} color="#fff" />
-                  <Text style={styles.actionButtonText}>Xem chi tiết tranh chấp</Text>
-                </TouchableOpacity>
-              ) : (
-                <TouchableOpacity
-                  style={[styles.actionButton, styles.disputeButton]}
-                  onPress={() => router.push(`/orders/${id}/dispute` as any)}
-                  activeOpacity={0.8}
-                >
-                  <AlertCircle size={20} color="#fff" />
-                  <Text style={styles.actionButtonText}>Mở tranh chấp</Text>
-                </TouchableOpacity>
-              )}
-            </>
-          )}
+        {(order.escrow_account_id || (isBuyer && order.status === 'delivered')) && (
+          <View style={styles.actionsCard}>
+            {/* Dispute Actions */}
+            {order.escrow_account_id && (
+              <>
+                {dispute ? (
+                  <TouchableOpacity
+                    style={styles.actionButton}
+                    onPress={() => router.push(`/orders/${id}/dispute-detail` as any)}
+                    activeOpacity={0.8}
+                  >
+                    <FileText size={20} color="#fff" />
+                    <Text style={styles.actionButtonText}>Xem chi tiết tranh chấp</Text>
+                  </TouchableOpacity>
+                ) : (
+                  <TouchableOpacity
+                    style={[styles.actionButton, styles.disputeButton]}
+                    onPress={() => router.push(`/orders/${id}/dispute` as any)}
+                    activeOpacity={0.8}
+                  >
+                    <AlertCircle size={20} color="#fff" />
+                    <Text style={styles.actionButtonText}>Mở tranh chấp</Text>
+                  </TouchableOpacity>
+                )}
+              </>
+            )}
 
-          {/* Review Action */}
-          {isBuyer && order.status === 'delivered' && (
-            <>
-              {review ? (
-                <TouchableOpacity
-                  style={styles.actionButton}
-                  onPress={() => router.push(`/orders/${id}/review` as any)}
-                  activeOpacity={0.8}
-                >
-                  <Star size={20} color="#fff" />
-                  <Text style={styles.actionButtonText}>Xem đánh giá của bạn</Text>
-                </TouchableOpacity>
-              ) : (
-                <TouchableOpacity
-                  style={[styles.actionButton, styles.reviewButton]}
-                  onPress={() => router.push(`/orders/${id}/review` as any)}
-                  activeOpacity={0.8}
-                >
-                  <Star size={20} color="#fff" />
-                  <Text style={styles.actionButtonText}>Đánh giá sản phẩm</Text>
-                </TouchableOpacity>
-              )}
-            </>
-          )}
-        </View>
+            {/* Review Action */}
+            {isBuyer && order.status === 'delivered' && (
+              <>
+                {review ? (
+                  <TouchableOpacity
+                    style={styles.actionButton}
+                    onPress={() => router.push(`/orders/${id}/review` as any)}
+                    activeOpacity={0.8}
+                  >
+                    <Star size={20} color="#fff" />
+                    <Text style={styles.actionButtonText}>Xem đánh giá của bạn</Text>
+                  </TouchableOpacity>
+                ) : (
+                  <TouchableOpacity
+                    style={[styles.actionButton, styles.reviewButton]}
+                    onPress={() => router.push(`/orders/${id}/review` as any)}
+                    activeOpacity={0.8}
+                  >
+                    <Star size={20} color="#fff" />
+                    <Text style={styles.actionButtonText}>Đánh giá sản phẩm</Text>
+                  </TouchableOpacity>
+                )}
+              </>
+            )}
+          </View>
+        )}
       </ScrollView>
     </SafeAreaView>
   );

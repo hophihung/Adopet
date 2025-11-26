@@ -9,6 +9,7 @@ export interface ProductReview {
   rating: number;
   title?: string;
   comment?: string;
+  image_urls?: string[];
   status: 'active' | 'hidden' | 'deleted';
   seller_response?: string;
   seller_response_at?: string;
@@ -28,7 +29,29 @@ export interface CreateReviewInput {
   rating: number;
   title?: string;
   comment?: string;
+  image_urls?: string[];
 }
+
+export interface ReviewReport {
+  id: string;
+  review_id: string;
+  reported_by: string;
+  reason: 'spam' | 'inappropriate' | 'fake' | 'offensive' | 'other';
+  description?: string;
+  status: 'pending' | 'reviewed' | 'resolved' | 'dismissed';
+  reviewed_by?: string;
+  reviewed_at?: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface CreateReportInput {
+  review_id: string;
+  reason: ReviewReport['reason'];
+  description?: string;
+}
+
+export type ReviewFilter = 'all' | 'highest' | 'lowest' | 'most_helpful' | 'recent';
 
 export class ReviewService {
   // Create review
@@ -68,6 +91,7 @@ export class ReviewService {
         rating: input.rating,
         title: input.title,
         comment: input.comment,
+        image_urls: input.image_urls || [],
       })
       .select(`
         *,
@@ -79,25 +103,69 @@ export class ReviewService {
     return data;
   }
 
-  // Get reviews by product
+  // Get reviews by product with filtering
   static async getByProduct(
     productId: string,
-    limit: number = 20,
-    offset: number = 0
+    options?: {
+      limit?: number;
+      offset?: number;
+      filter?: ReviewFilter;
+    }
   ): Promise<ProductReview[]> {
-    const { data, error } = await supabase
+    const limit = options?.limit || 20;
+    const offset = options?.offset || 0;
+    const filter = options?.filter || 'recent';
+
+    let query = supabase
       .from('product_reviews')
       .select(`
         *,
         buyer:profiles!product_reviews_buyer_id_fkey(id, full_name, avatar_url)
       `)
       .eq('product_id', productId)
-      .eq('status', 'active')
-      .order('created_at', { ascending: false })
-      .range(offset, offset + limit - 1);
+      .eq('status', 'active');
 
+    // Apply filter
+    switch (filter) {
+      case 'highest':
+        query = query.order('rating', { ascending: false });
+        break;
+      case 'lowest':
+        query = query.order('rating', { ascending: true });
+        break;
+      case 'most_helpful':
+        query = query.order('helpful_count', { ascending: false });
+        break;
+      case 'recent':
+      case 'all':
+      default:
+        query = query.order('created_at', { ascending: false });
+        break;
+    }
+
+    query = query.range(offset, offset + limit - 1);
+
+    const { data, error } = await query;
     if (error) throw error;
     return data || [];
+  }
+
+  // Get review by ID
+  static async getById(reviewId: string): Promise<ProductReview | null> {
+    const { data, error } = await supabase
+      .from('product_reviews')
+      .select(`
+        *,
+        buyer:profiles!product_reviews_buyer_id_fkey(id, full_name, avatar_url)
+      `)
+      .eq('id', reviewId)
+      .single();
+
+    if (error) {
+      if (error.code === 'PGRST116') return null;
+      throw error;
+    }
+    return data;
   }
 
   // Get review by order
@@ -122,7 +190,7 @@ export class ReviewService {
   static async update(
     reviewId: string,
     buyerId: string,
-    updates: { rating?: number; title?: string; comment?: string }
+    updates: { rating?: number; title?: string; comment?: string; image_urls?: string[] }
   ): Promise<ProductReview> {
     const { data, error } = await supabase
       .from('product_reviews')
@@ -176,6 +244,36 @@ export class ReviewService {
       });
 
     if (error) throw error;
+  }
+
+  // Report review
+  static async reportReview(input: CreateReportInput, userId: string): Promise<ReviewReport> {
+    const { data, error } = await supabase
+      .from('review_reports')
+      .insert({
+        review_id: input.review_id,
+        reported_by: userId,
+        reason: input.reason,
+        description: input.description,
+      })
+      .select()
+      .single();
+
+    if (error) throw error;
+    return data;
+  }
+
+  // Check if user has reported this review
+  static async hasReported(reviewId: string, userId: string): Promise<boolean> {
+    const { data, error } = await supabase
+      .from('review_reports')
+      .select('id')
+      .eq('review_id', reviewId)
+      .eq('reported_by', userId)
+      .single();
+
+    if (error && error.code !== 'PGRST116') throw error;
+    return !!data;
   }
 }
 

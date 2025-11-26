@@ -20,6 +20,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { useAuth } from '@/contexts/AuthContext';
 import { ProductService, Product } from '@/src/features/products/services/product.service';
 import { OrderService, CreateOrderInput } from '@/src/features/products/services/order.service';
+import { ReviewsList } from '@/src/features/reviews/components/ReviewsList';
 import { colors } from '@/src/theme/colors';
 import { supabase } from '@/lib/supabase';
 
@@ -274,6 +275,9 @@ export default function ProductDetailScreen() {
             </View>
           </View>
         </View>
+
+        {/* Reviews Section */}
+        <ReviewsList productId={product.id} />
       </ScrollView>
 
       {/* Bottom Bar */}
