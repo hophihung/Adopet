@@ -8,15 +8,18 @@ import {
   TouchableOpacity,
   ActivityIndicator,
   Alert,
+  Image,
 } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { ArrowLeft, AlertCircle } from 'lucide-react-native';
+import { ArrowLeft, AlertCircle, Image as ImageIcon, X } from 'lucide-react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useAuth } from '@/contexts/AuthContext';
 import { OrderService, Order } from '@/src/features/products/services/order.service';
 import { DisputeService, CreateDisputeInput } from '@/src/features/disputes/services/dispute.service';
 import { colors } from '@/src/theme/colors';
+import * as ImagePicker from 'expo-image-picker';
+import { ImageUploadService } from '@/src/services/imageUpload.service';
 
 const DISPUTE_TYPES = [
   { value: 'product_not_received', label: 'Không nhận được sản phẩm' },
@@ -37,6 +40,8 @@ export default function OpenDisputeScreen() {
   const [disputeType, setDisputeType] = useState<CreateDisputeInput['dispute_type']>('other');
   const [reason, setReason] = useState('');
   const [description, setDescription] = useState('');
+  const [evidenceImages, setEvidenceImages] = useState<string[]>([]);
+  const [uploading, setUploading] = useState(false);
 
   useEffect(() => {
     if (id && user?.id) {
@@ -65,6 +70,53 @@ export default function OpenDisputeScreen() {
     }
   };
 
+  const handlePickEvidence = async () => {
+    try {
+      const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+      if (status !== 'granted') {
+        Alert.alert('Lỗi', 'Cần cấp quyền truy cập thư viện ảnh để tải lên bằng chứng');
+        return;
+      }
+
+      const result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ImagePicker.MediaTypeOptions.Images,
+        allowsMultipleSelection: true,
+        quality: 0.8,
+      });
+
+      if (!result.canceled && result.assets) {
+        const remainingSlots = Math.max(0, 5 - evidenceImages.length);
+        const assets = result.assets.slice(0, remainingSlots);
+        if (assets.length === 0) return;
+
+        const uploader = new ImageUploadService();
+        setUploading(true);
+
+        for (const asset of assets) {
+          if (!asset.uri) continue;
+          const uploaded = await uploader.uploadImage(
+            asset.uri,
+            'pet-images',
+            'disputes',
+            { optimize: true }
+          );
+          if (uploaded?.url) {
+            setEvidenceImages((prev) => [...prev, uploaded.url]);
+          }
+        }
+      }
+    } catch (err: any) {
+      console.error('Error picking evidence:', err);
+      Alert.alert('Lỗi', 'Không thể chọn hoặc upload ảnh bằng chứng');
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  const handleRemoveEvidence = (index: number) => {
+    setEvidenceImages((prev) => prev.filter((_, i) => i !== index));
+  };
+
   const handleSubmit = async () => {
     if (!order || !user?.id || !order.escrow_account_id) return;
 
@@ -81,6 +133,7 @@ export default function OpenDisputeScreen() {
         dispute_type: disputeType,
         reason: reason.trim(),
         description: description.trim(),
+        evidence_urls: evidenceImages,
       };
 
       await DisputeService.create(input, user.id);
@@ -193,11 +246,43 @@ export default function OpenDisputeScreen() {
           <Text style={styles.charCount}>{description.length}/2000</Text>
         </View>
 
+        {/* Evidence images */}
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Bằng chứng (tối đa 5 ảnh)</Text>
+          <View style={styles.evidenceRow}>
+            {evidenceImages.map((uri, index) => (
+              <View key={uri} style={styles.evidenceItem}>
+                <Image source={{ uri }} style={styles.evidenceImage} />
+                <TouchableOpacity
+                  style={styles.removeEvidenceButton}
+                  onPress={() => handleRemoveEvidence(index)}
+                >
+                  <X size={14} color="#fff" />
+                </TouchableOpacity>
+              </View>
+            ))}
+            {evidenceImages.length < 5 && (
+              <TouchableOpacity
+                style={styles.addEvidenceButton}
+                onPress={handlePickEvidence}
+                disabled={uploading}
+              >
+                {uploading ? (
+                  <ActivityIndicator color={colors.primary} />
+                ) : (
+                  <ImageIcon size={24} color={colors.primary} />
+                )}
+                <Text style={styles.addEvidenceText}>Thêm ảnh</Text>
+              </TouchableOpacity>
+            )}
+          </View>
+        </View>
+
         {/* Submit Button */}
         <TouchableOpacity
-          style={[styles.submitButton, submitting && styles.submitButtonDisabled]}
+          style={[styles.submitButton, (submitting || uploading) && styles.submitButtonDisabled]}
           onPress={handleSubmit}
-          disabled={submitting}
+          disabled={submitting || uploading}
         >
           {submitting ? (
             <ActivityIndicator color="#fff" />
@@ -313,6 +398,51 @@ const styles = StyleSheet.create({
     textAlign: 'right',
     marginTop: 4,
   },
+  evidenceRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 12,
+  },
+  evidenceItem: {
+    width: 80,
+    height: 80,
+    borderRadius: 8,
+    overflow: 'hidden',
+    position: 'relative',
+  },
+  evidenceImage: {
+    width: '100%',
+    height: '100%',
+    backgroundColor: '#f0f0f0',
+  },
+  removeEvidenceButton: {
+    position: 'absolute',
+    top: 4,
+    right: 4,
+    width: 20,
+    height: 20,
+    borderRadius: 10,
+    backgroundColor: 'rgba(0,0,0,0.6)',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  addEvidenceButton: {
+    width: 80,
+    height: 80,
+    borderRadius: 8,
+    borderWidth: 2,
+    borderStyle: 'dashed',
+    borderColor: '#E4E7EB',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#F9FAFB',
+  },
+  addEvidenceText: {
+    marginTop: 4,
+    fontSize: 11,
+    color: colors.primary,
+    fontWeight: '600',
+  },
   submitButton: {
     backgroundColor: colors.primary,
     borderRadius: 12,
@@ -330,4 +460,3 @@ const styles = StyleSheet.create({
     color: '#fff',
   },
 });
-

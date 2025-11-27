@@ -188,10 +188,10 @@ export default function ReviewOrderScreen() {
           { text: 'OK', onPress: () => router.back() },
         ]);
       } else {
-        await ReviewService.create(input, user.id);
-        Alert.alert('Thành công', 'Cảm ơn bạn đã đánh giá!', [
-          { text: 'OK', onPress: () => router.back() },
-        ]);
+      await ReviewService.create(input, user.id);
+      Alert.alert('Thành công', 'Cảm ơn bạn đã đánh giá!', [
+        { text: 'OK', onPress: () => router.back() },
+      ]);
       }
     } catch (error: any) {
       Alert.alert('Lỗi', error.message || 'Không thể gửi đánh giá');
@@ -243,7 +243,7 @@ export default function ReviewOrderScreen() {
               <Text style={styles.detailButtonText}>Chi tiết</Text>
             </TouchableOpacity>
           ) : (
-            <View style={{ width: 40 }} />
+          <View style={{ width: 40 }} />
           )}
         </View>
       </LinearGradient>
@@ -373,17 +373,17 @@ export default function ReviewOrderScreen() {
 
         {/* Submit Button */}
         {!existingReview && (
-          <TouchableOpacity
-            style={[styles.submitButton, submitting && styles.submitButtonDisabled]}
-            onPress={handleSubmit}
+        <TouchableOpacity
+          style={[styles.submitButton, submitting && styles.submitButtonDisabled]}
+          onPress={handleSubmit}
             disabled={submitting || uploading}
-          >
-            {submitting ? (
-              <ActivityIndicator color="#fff" />
-            ) : (
-              <Text style={styles.submitButtonText}>Gửi đánh giá</Text>
-            )}
-          </TouchableOpacity>
+        >
+          {submitting ? (
+            <ActivityIndicator color="#fff" />
+          ) : (
+            <Text style={styles.submitButtonText}>Gửi đánh giá</Text>
+          )}
+        </TouchableOpacity>
         )}
         {existingReview && (
           <TouchableOpacity

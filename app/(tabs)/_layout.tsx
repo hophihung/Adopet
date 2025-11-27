@@ -1,5 +1,5 @@
 import { Tabs } from 'expo-router';
-import { Compass, Users, PawPrint, User } from 'lucide-react-native';
+import { Home, MessageCircle, PawPrint, User } from 'lucide-react-native';
 import { colors } from '@/src/theme/colors';
 import { Platform } from 'react-native';
 
@@ -40,39 +40,40 @@ export default function TabLayout() {
         },
       }}
     >
-      {/* Discover Group - Match + Explore */}
+      {/* Trang chủ - hub dẫn tới các tính năng chính */}
       <Tabs.Screen
         name="discover"
         options={{
-          title: 'Khám phá',
-          tabBarIcon: ({ color, size }) => <Compass size={26} color={color} />,
+          title: 'Trang chủ',
+          tabBarIcon: ({ color }) => <Home size={26} color={color} />,
         }}
       />
 
-      {/* Social Group - Community + Chat */}
-      <Tabs.Screen
-        name="social"
-        options={{
-          title: 'Cộng đồng',
-          tabBarIcon: ({ color, size }) => <Users size={26} color={color} />,
-        }}
-      />
-
-      {/* Pets Group - My Pets + Virtual Pet */}
+      {/* Tìm thú cưng */}
       <Tabs.Screen
         name="pets"
         options={{
-          title: 'Pets',
-          tabBarIcon: ({ color, size }) => <PawPrint size={26} color={color} />,
+          title: 'Tìm thú cưng',
+          tabBarIcon: ({ color }) => <PawPrint size={26} color={color} />,
         }}
       />
 
-      {/* Me Group - Reminders + Profile */}
+      {/* Tin nhắn */}
+      <Tabs.Screen
+        name="social"
+        options={{
+          title: 'Tin nhắn',
+          tabBarIcon: ({ color }) => <MessageCircle size={26} color={color} />,
+        }}
+      />
+
+
+      {/* Tài khoản */}
       <Tabs.Screen
         name="me"
         options={{
-          title: 'Tôi',
-          tabBarIcon: ({ color, size }) => <User size={26} color={color} />,
+          title: 'Tài khoản',
+          tabBarIcon: ({ color }) => <User size={26} color={color} />,
         }}
       />
     </Tabs>
