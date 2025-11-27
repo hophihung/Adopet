@@ -1,6 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import {
-  ActivityIndicator,
   Image,
   ScrollView,
   StyleSheet,
@@ -8,6 +7,7 @@ import {
   TouchableOpacity,
   View,
   Platform,
+  RefreshControl,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter, usePathname } from 'expo-router';
@@ -22,6 +22,8 @@ import { useAuth } from '@/contexts/AuthContext';
 import { PetService } from '@/src/features/pets/services/pet.service';
 import { PetCard } from '@/src/features/pets/components';
 import { formatPetLocation } from '@/src/features/pets/utils/location';
+import { SkeletonGrid } from '@/src/components/Skeleton';
+import { colors } from '@/src/theme/colors';
 
 interface Pet {
   id: string;
@@ -51,6 +53,7 @@ export default function ExploreScreen() {
   const insets = useSafeAreaInsets();
   const [pets, setPets] = useState<Pet[]>([]);
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
   const [selectedFilter, setSelectedFilter] = useState<string>('all');
   const [activeTopTab, setActiveTopTab] = useState<'match' | 'explore'>(
     'explore'
@@ -61,9 +64,40 @@ export default function ExploreScreen() {
   const tabBarMarginBottom = Platform.OS === 'ios' ? 25 : 16;
   const bottomPadding = tabBarHeight + tabBarMarginBottom + insets.bottom + 10;
 
+  const loadPets = useCallback(
+    async (mode: 'initial' | 'refresh' = 'initial') => {
+      try {
+        if (mode === 'initial') {
+          setLoading(true);
+        } else {
+          setRefreshing(true);
+        }
+        const availablePets = await PetService.getAvailablePets(user?.id);
+        const parsedPets = availablePets.map((pet: any) => ({
+          ...pet,
+          images: Array.isArray(pet.images)
+            ? pet.images
+            : typeof pet.images === 'string'
+            ? JSON.parse(pet.images)
+            : [],
+        }));
+        setPets(parsedPets);
+      } catch (error) {
+        console.error('Failed to load explore pets:', error);
+      } finally {
+        if (mode === 'initial') {
+          setLoading(false);
+        } else {
+          setRefreshing(false);
+        }
+      }
+    },
+    [user?.id]
+  );
+
   useEffect(() => {
-    loadPets();
-  }, []);
+    loadPets('initial');
+  }, [loadPets]);
 
   useEffect(() => {
     if (!pathname) return;
@@ -74,24 +108,9 @@ export default function ExploreScreen() {
     }
   }, [pathname]);
 
-  const loadPets = async () => {
-    try {
-      setLoading(true);
-      const availablePets = await PetService.getAvailablePets(user?.id);
-      const parsedPets = availablePets.map((pet: any) => ({
-        ...pet,
-        images: Array.isArray(pet.images)
-          ? pet.images
-          : typeof pet.images === 'string'
-          ? JSON.parse(pet.images)
-          : [],
-      }));
-      setPets(parsedPets);
-    } catch (error) {
-      console.error('Failed to load explore pets:', error);
-    } finally {
-      setLoading(false);
-    }
+
+  const handleRefresh = () => {
+    loadPets('refresh');
   };
 
   const navigateTopTab = useCallback(
@@ -175,6 +194,13 @@ export default function ExploreScreen() {
       <ScrollView
         contentContainerStyle={[styles.scrollContent, { paddingBottom: bottomPadding }]}
         showsVerticalScrollIndicator={false}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={handleRefresh}
+            tintColor={colors.primary}
+          />
+        }
       >
         <LinearGradient colors={['#FFE4EC', '#FFF7F9']} style={styles.heroCard}>
           <View style={styles.heroCopy}>
@@ -227,8 +253,7 @@ export default function ExploreScreen() {
 
         {loading ? (
           <View style={styles.loaderContainer}>
-            <ActivityIndicator size="large" color="#FF5A75" />
-            <Text style={styles.loaderText}>Đang khám phá thú cưng...</Text>
+            <SkeletonGrid items={6} height={220} />
           </View>
         ) : (
           <View style={styles.grid}>
@@ -408,13 +433,7 @@ const styles = StyleSheet.create({
     color: '#fff',
   },
   loaderContainer: {
-    alignItems: 'center',
-    marginTop: 60,
-  },
-  loaderText: {
-    marginTop: 14,
-    fontSize: 15,
-    color: '#667085',
+    marginTop: 40,
   },
   grid: {
     flexDirection: 'row',

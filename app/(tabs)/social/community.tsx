@@ -28,6 +28,7 @@ import { supabase } from '@/lib/supabase';
 import { PostCommentService } from '@/src/features/posts/services/PostComment.Service';
 import { LinearGradient } from 'expo-linear-gradient';
 import { colors } from '@/src/theme/colors';
+import { SkeletonList } from '@/src/components/Skeleton';
 
 /* ============================================================
    🧩 1. Kiểu dữ liệu
@@ -121,9 +122,13 @@ const CommunityScreen: React.FC = () => {
   const [loadingComments, setLoadingComments] = useState(false);
 
   // 🔄 Lấy posts
-  const fetchPosts = async (): Promise<void> => {
+  const fetchPosts = async (mode: 'initial' | 'refresh' = 'initial'): Promise<void> => {
     try {
-      setLoading(true);
+      if (mode === 'initial') {
+        setLoading(true);
+      } else {
+        setRefreshing(true);
+      }
       const { data, error } = await supabase
         .from('posts')
         .select(
@@ -145,8 +150,11 @@ const CommunityScreen: React.FC = () => {
     } catch (err) {
       console.error('❌ Lỗi tải bài viết:', err);
     } finally {
-      setLoading(false);
-      setRefreshing(false);
+      if (mode === 'initial') {
+        setLoading(false);
+      } else {
+        setRefreshing(false);
+      }
     }
   };
 
@@ -279,7 +287,7 @@ const CommunityScreen: React.FC = () => {
       if (user) setCurrentUserId(user.id);
     };
     getCurrentUser();
-    fetchPosts();
+    fetchPosts('initial');
 
     // 🟢 Realtime posts
     const postsChannel = supabase
@@ -289,7 +297,7 @@ const CommunityScreen: React.FC = () => {
         { event: 'INSERT', schema: 'public', table: 'posts' },
         (payload) => {
           console.log('✅ New post:', payload.new);
-          void fetchPosts();
+          void fetchPosts('refresh');
         }
       )
       .on(
@@ -493,7 +501,7 @@ const CommunityScreen: React.FC = () => {
           refreshControl={
             <RefreshControl
               refreshing={refreshing}
-              onRefresh={() => void fetchPosts()}
+              onRefresh={() => fetchPosts('refresh')}
             />
           }
           removeClippedSubviews={true}

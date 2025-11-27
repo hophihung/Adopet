@@ -15,6 +15,7 @@ import {
   Alert,
   Animated,
   Easing,
+  RefreshControl,
 } from 'react-native';
 import { Heart, MessageCircle, Share2, Plus, Send, X, Music, Video, Image as ImageIcon, User } from 'lucide-react-native';
 import { Video as ExpoVideo, AVPlaybackStatus } from 'expo-av';
@@ -36,6 +37,7 @@ export default function ReelScreen() {
   const { user } = useAuth();
   const [reels, setReels] = useState<Reel[]>([]);
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [likedReels, setLikedReels] = useState<Set<string>>(new Set());
   const [commentModalVisible, setCommentModalVisible] = useState(false);
@@ -145,9 +147,9 @@ export default function ReelScreen() {
   }, []);
 
   useEffect(() => {
-    loadReels();
+    loadReels('initial');
     loadLikedReels();
-  }, []);
+  }, [loadReels]);
 
   // Load products for reels
   useEffect(() => {
@@ -318,16 +320,31 @@ export default function ReelScreen() {
     };
   }, [audioSound]);
 
-  const loadReels = async () => {
-    try {
-      setLoading(true);
-      const data = await ReelService.getAll(50);
-      setReels(data);
-    } catch (error: any) {
-      // Silently handle error - user will see empty state
-    } finally {
-      setLoading(false);
-    }
+  const loadReels = useCallback(
+    async (mode: 'initial' | 'refresh' = 'initial') => {
+      try {
+        if (mode === 'initial') {
+          setLoading(true);
+        } else {
+          setRefreshing(true);
+        }
+        const data = await ReelService.getAll(50);
+        setReels(data);
+      } catch (error: any) {
+        // Silently handle error - user will see empty state
+      } finally {
+        if (mode === 'initial') {
+          setLoading(false);
+        } else {
+          setRefreshing(false);
+        }
+      }
+    },
+    []
+  );
+
+  const handleRefresh = () => {
+    loadReels('refresh');
   };
 
   const loadLikedReels = async () => {
@@ -1209,6 +1226,13 @@ export default function ReelScreen() {
         keyExtractor={(item) => item.id}
         pagingEnabled
         showsVerticalScrollIndicator={false}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={handleRefresh}
+            tintColor={colors.primary}
+          />
+        }
         snapToInterval={SCREEN_HEIGHT}
         decelerationRate="fast"
         onViewableItemsChanged={handleViewChange}
