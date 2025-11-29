@@ -93,7 +93,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     return () => subscription.unsubscribe();
   }, []);
 
-  const fetchProfile = async (userId: string) => {
+  const fetchProfile = async (userId: string, skipLoadingReset = false) => {
     try {
       const { data, error } = await supabase
         .from('profiles')
@@ -124,7 +124,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       console.error('Error fetching profile:', error);
       setProfile(null);
     } finally {
-      setLoading(false);
+      if (!skipLoadingReset) {
+        setLoading(false);
+      }
     }
   };
 
@@ -143,14 +145,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     console.log('🔵 Sign-in data:', data);
     console.log('🔵 Sign-in error:', error);
 
-    if (error) throw error;
+    if (error) {
+      setLoading(false);
+      throw error;
+    }
 
-    // Nếu muốn phản hồi UI ngay khi đăng nhập thành công:
+    // Let the auth state change listener handle profile fetching and navigation
+    // This prevents race conditions and allows the layout to handle routing logic
     if (data?.session?.user) {
       setSession(data.session);
       setUser(data.session.user);
-      await fetchProfile(data.session.user.id);
-      router.replace('/(tabs)');
+      await fetchProfile(data.session.user.id, true);
     }
 
     setLoading(false);
