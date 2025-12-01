@@ -31,6 +31,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { ReelService } from '@/src/features/reels/services/reel.service';
 import { ProfileService } from '@/src/features/posts/services/Profile.service';
 import { LazyImage } from '@/src/components/LazyImage';
+import { MoreOptionsMenu } from '@/src/components/MoreOptionsMenu';
 import { supabase } from '@/lib/supabase';
 import { colors } from '@/src/theme/colors';
 
