@@ -18,6 +18,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { ProductService, Product } from '@/src/features/products/services/product.service';
 import { colors } from '@/src/theme/colors';
 import { supabase } from '@/lib/supabase';
+import { CurrencyConverter } from '@/src/utils/currency';
 
 export default function ManageProductsScreen() {
   const router = useRouter();
@@ -131,10 +132,7 @@ export default function ManageProductsScreen() {
   };
 
   const formatPrice = (price: number) => {
-    return new Intl.NumberFormat('vi-VN', {
-      style: 'currency',
-      currency: 'VND',
-    }).format(price);
+    return CurrencyConverter.format(price, 'VND');
   };
 
   const renderProduct = ({ item }: { item: Product }) => {

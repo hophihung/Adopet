@@ -17,6 +17,7 @@ import { formatPetLocation } from '@/src/features/pets/utils/location';
 import { colors } from '@/src/theme/colors';
 import { SkeletonGrid } from '@/src/components/Skeleton';
 import { DiscoverHeader } from '@/src/components/DiscoverHeader';
+import { Header } from '@/src/components/Header';
 
 const FALLBACK_IMAGE = 'https://images.pexels.com/photos/4587993/pexels-photo-4587993.jpeg';
 
@@ -105,7 +106,7 @@ export default function ExploreScreen() {
 
   return (
     <View style={styles.container}>
-      <DiscoverHeader />
+      <Header showBack={true} title="Khám phá" />
       
       <ScrollView
         contentContainerStyle={styles.scrollContent}

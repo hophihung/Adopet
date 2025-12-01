@@ -12,6 +12,7 @@ import { useAuth } from '../../contexts/AuthContext';
 import { router } from 'expo-router';
 import { paymentService, SubscriptionPlan } from '../../src/services/payment.service';
 import { useSubscription } from '../../contexts/SubscriptionContext';
+import { CurrencyConverter } from '../../src/utils/currency';
 
 export default function SubscriptionScreen() {
   const { user, profile } = useAuth();
@@ -106,11 +107,7 @@ export default function SubscriptionScreen() {
 
   const formatPrice = (amount: number) => {
     if (amount === 0) return 'Miễn phí';
-    return new Intl.NumberFormat('vi-VN', {
-      style: 'currency',
-      currency: 'VND',
-      minimumFractionDigits: 0,
-    }).format(amount);
+    return CurrencyConverter.format(amount, 'VND');
   };
 
   const getPriceText = (plan: SubscriptionPlan) => {

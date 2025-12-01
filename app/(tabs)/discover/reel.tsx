@@ -28,6 +28,8 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { ProductService, ReelProduct } from '@/src/features/products/services/product.service';
 import { ProductTag } from '@/src/features/products/components/ProductTag';
 import { supabase } from '@/lib/supabase';
+import { AvatarImage } from '@/src/components/AvatarImage';
+import { ReportButton } from '@/src/components/ReportButton';
 
 const { height: SCREEN_HEIGHT, width: SCREEN_WIDTH } = Dimensions.get('window');
 
@@ -832,19 +834,12 @@ export default function ReelScreen() {
               }}
               activeOpacity={0.8}
             >
-              {profile?.avatar_url && profile.avatar_url.trim() !== '' ? (
-                <Image
-                  source={{ uri: profile.avatar_url }}
-                  style={styles.userAvatar}
-                  onError={(e) => {
-                    console.error('Error loading avatar:', profile.avatar_url, e.nativeEvent.error);
-                  }}
-                />
-              ) : (
-                <View style={[styles.userAvatar, styles.userAvatarPlaceholder]}>
-                  <User size={16} color="#fff" />
-                </View>
-              )}
+              <AvatarImage
+                uri={profile?.avatar_url}
+                size={32}
+                style={styles.userAvatar}
+                placeholderColor="rgba(255, 255, 255, 0.2)"
+              />
               <Text style={styles.username}>
                 @{profile?.full_name?.toLowerCase().replace(/\s+/g, '_') || 'user'}
               </Text>
@@ -992,6 +987,18 @@ export default function ReelScreen() {
               </View>
             </TouchableOpacity>
 
+            {/* Report Button */}
+            <View style={styles.actionButton}>
+              <ReportButton
+                targetType="reel"
+                targetId={item.id}
+                targetName={item.caption?.substring(0, 30) + '...' || 'Reel'}
+                size={28}
+                color="#fff"
+                containerStyle={styles.actionIconContainer}
+              />
+            </View>
+
             {/* Music Disc - Rotating animation like TikTok */}
             {item.music_tracks && (
               <TouchableOpacity 
@@ -1053,7 +1060,7 @@ export default function ReelScreen() {
         <View style={styles.header}>
           <TouchableOpacity
             style={styles.backButton}
-            onPress={() => router.push('/')}
+            onPress={() => router.replace('/(tabs)/discover/match')}
             activeOpacity={0.7}
           >
             <ArrowLeft size={24} color="#fff" />
@@ -1096,7 +1103,7 @@ export default function ReelScreen() {
         <View style={styles.header}>
           <TouchableOpacity
             style={styles.backButton}
-            onPress={() => router.push('/')}
+            onPress={() => router.replace('/(tabs)/discover/match')}
             activeOpacity={0.7}
           >
             <ArrowLeft size={24} color="#fff" />

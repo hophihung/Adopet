@@ -5,6 +5,7 @@ import { Video as ExpoVideo } from 'expo-av';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Reel } from '../services/reel.service';
 import { colors } from '@/src/theme/colors';
+import { AvatarImage } from '@/src/components/AvatarImage';
 
 interface ReelItemProps {
   item: Reel;
@@ -90,9 +91,11 @@ export const ReelItem = memo<ReelItemProps>(
               onPress={() => onUserPress(item.user_id)}
               activeOpacity={0.8}
             >
-              {profile?.avatar_url && (
-                <Image source={{ uri: profile.avatar_url }} style={styles.userAvatar} />
-              )}
+              <AvatarImage
+                uri={profile?.avatar_url}
+                size={32}
+                style={styles.userAvatar}
+              />
               <Text style={styles.username}>
                 @{profile?.full_name?.toLowerCase().replace(/\s+/g, '_') || 'user'}
               </Text>
@@ -126,9 +129,12 @@ export const ReelItem = memo<ReelItemProps>(
           {/* Actions */}
           <View style={styles.actionsContainer}>
             {/* Avatar */}
-            {profile?.avatar_url ? (
-              <TouchableOpacity onPress={() => onUserPress(item.user_id)} activeOpacity={0.8}>
-                <Image source={{ uri: profile.avatar_url }} style={styles.actionAvatar} />
+            <TouchableOpacity onPress={() => onUserPress(item.user_id)} activeOpacity={0.8}>
+              <AvatarImage
+                uri={profile?.avatar_url}
+                size={40}
+                style={styles.actionAvatar}
+              />
                 <View style={styles.followButton}>
                   <Plus size={14} color="#fff" />
                 </View>

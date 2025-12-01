@@ -190,52 +190,114 @@ export default function ProfileScreen() {
 
         {/* Menu Items */}
         <View style={styles.menuContainer}>
+          {/* Common Menu */}
           <TouchableOpacity style={styles.menuItem}>
             <Text style={styles.menuText}>Edit Profile</Text>
           </TouchableOpacity>
-          {isSeller && (
+          <TouchableOpacity
+            style={styles.menuItem}
+            onPress={() => router.push('/(tabs)/pets/my-pets' as any)}
+          >
+            <Text style={styles.menuText}>My Pets</Text>
+          </TouchableOpacity>
+
+          {/* Seller Section */}
+          {isSeller ? (
             <>
+              <View style={styles.sectionDivider} />
+              <Text style={styles.menuSectionLabel}>🏪 Seller Tools</Text>
+              
+              {/* Quick Actions */}
+              <View style={styles.quickActionsContainer}>
+                <TouchableOpacity
+                  style={styles.quickActionButton}
+                  onPress={() => router.push('/products/create' as any)}
+                >
+                  <View style={styles.quickActionIcon}>
+                    <Text style={styles.quickActionIconText}>+</Text>
+                  </View>
+                  <Text style={styles.quickActionText}>Tạo sản phẩm</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={styles.quickActionButton}
+                  onPress={() => router.push('/(tabs)/me/dashboard' as any)}
+                >
+                  <View style={[styles.quickActionIcon, { backgroundColor: colors.primaryLight + '20' }]}>
+                    <Text style={[styles.quickActionIconText, { color: colors.primary }]}>📊</Text>
+                  </View>
+                  <Text style={styles.quickActionText}>Dashboard</Text>
+                </TouchableOpacity>
+              </View>
+
+              {/* Commission Tier Card */}
               <View style={styles.commissionCardContainer}>
                 <CommissionTierCard
                   reputationPoints={profile?.reputation_points || 0}
                   showNextTier={true}
                 />
               </View>
+
+              {/* Seller Menu Items */}
               <TouchableOpacity
                 style={styles.menuItem}
                 onPress={() => router.push('/products/manage' as any)}
               >
-                <Text style={styles.menuText}>Quản lý sản phẩm</Text>
+                <View style={styles.menuRow}>
+                  <Text style={styles.menuText}>Quản lý sản phẩm</Text>
+                  <Text style={styles.menuSubtext}>Xem, sửa, xóa sản phẩm</Text>
+                </View>
               </TouchableOpacity>
               <TouchableOpacity
                 style={styles.menuItem}
                 onPress={() => router.push('/orders/manage' as any)}
               >
-                <Text style={styles.menuText}>Quản lý đơn hàng</Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={styles.menuItem}
-                onPress={() => router.push('/(tabs)/me/dashboard' as any)}
-              >
-                <Text style={styles.menuText}>Thống kê bán hàng</Text>
+                <View style={styles.menuRow}>
+                  <Text style={styles.menuText}>Quản lý đơn hàng</Text>
+                  <Text style={styles.menuSubtext}>Xử lý đơn hàng của bạn</Text>
+                </View>
               </TouchableOpacity>
               <TouchableOpacity
                 style={styles.menuItem}
                 onPress={() => router.push('/(tabs)/me/bank-accounts' as any)}
               >
-                <Text style={styles.menuText}>Tài khoản ngân hàng</Text>
+                <View style={styles.menuRow}>
+                  <Text style={styles.menuText}>Tài khoản ngân hàng</Text>
+                  <Text style={styles.menuSubtext}>Nhận thanh toán</Text>
+                </View>
               </TouchableOpacity>
-              <TouchableOpacity style={styles.menuItem}>
-                <Text style={styles.menuText}>My Pets</Text>
+            </>
+          ) : (
+            <>
+              {/* User Section */}
+              <View style={styles.sectionDivider} />
+              <Text style={styles.menuSectionLabel}>👤 User Features</Text>
+              <TouchableOpacity
+                style={styles.menuItem}
+                onPress={() => router.push('/(tabs)/me/rewards' as any)}
+              >
+                <View style={styles.menuRow}>
+                  <Text style={styles.menuText}>Điểm thưởng</Text>
+                  <Text style={styles.menuSubtext}>Tích điểm và đổi quà</Text>
+                </View>
               </TouchableOpacity>
             </>
           )}
-          <TouchableOpacity
-            style={styles.menuItem}
-            onPress={() => setShowSubscriptionModal(true)}
-          >
-            <Text style={styles.menuText}>Subscription</Text>
-          </TouchableOpacity>
+          {/* Common Features */}
+          <View style={styles.sectionDivider} />
+          <Text style={styles.menuSectionLabel}>⚙️ Settings</Text>
+          
+          {isSeller && (
+            <TouchableOpacity
+              style={styles.menuItem}
+              onPress={() => setShowSubscriptionModal(true)}
+            >
+              <View style={styles.menuRow}>
+                <Text style={styles.menuText}>Subscription</Text>
+                <Text style={styles.menuSubtext}>Quản lý gói đăng ký</Text>
+              </View>
+            </TouchableOpacity>
+          )}
+          
           <TouchableOpacity
             style={styles.menuItem}
             onPress={() => router.push('/(tabs)/me/notifications' as any)}
@@ -253,14 +315,14 @@ export default function ProfileScreen() {
               )}
             </View>
           </TouchableOpacity>
-          <TouchableOpacity style={styles.menuItem}>
-            <Text style={styles.menuText}>Favorites</Text>
-          </TouchableOpacity>
           <TouchableOpacity
             style={styles.menuItem}
-            onPress={() => router.push('/(tabs)/me/rewards' as any)}
+            onPress={() => router.push('/(tabs)/me/settings')}
           >
-            <Text style={styles.menuText}>Điểm thưởng</Text>
+            <View style={styles.menuRow}>
+              <Text style={styles.menuText}>Cài đặt</Text>
+              <Text style={styles.menuSubtext}>Ngôn ngữ, tiền tệ, v.v.</Text>
+            </View>
           </TouchableOpacity>
           {isAdmin && (
             <>
@@ -511,10 +573,59 @@ const styles = StyleSheet.create({
     marginBottom: 8,
     textTransform: 'uppercase',
   },
-  menuRow: {
+  sectionDivider: {
+    height: 1,
+    backgroundColor: '#f0f0f0',
+    marginVertical: 16,
+  },
+  quickActionsContainer: {
     flexDirection: 'row',
+    gap: 12,
+    marginBottom: 16,
+  },
+  quickActionButton: {
+    flex: 1,
+    backgroundColor: '#fff',
+    borderRadius: 12,
+    padding: 16,
     alignItems: 'center',
-    justifyContent: 'space-between',
+    borderWidth: 1,
+    borderColor: '#f0f0f0',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 4,
+    elevation: 2,
+  },
+  quickActionIcon: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    backgroundColor: colors.primaryLight + '20',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 8,
+  },
+  quickActionIconText: {
+    fontSize: 24,
+    color: colors.primary,
+    fontWeight: '700',
+  },
+  quickActionText: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: '#333',
+    textAlign: 'center',
+  },
+  menuRow: {
+    flexDirection: 'column',
+    alignItems: 'flex-start',
+    justifyContent: 'flex-start',
+  },
+  menuSubtext: {
+    fontSize: 12,
+    color: '#999',
+    marginTop: 4,
   },
   menuBadge: {
     backgroundColor: '#FF3B30',

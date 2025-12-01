@@ -29,6 +29,8 @@ import { PostCommentService } from '@/src/features/posts/services/PostComment.Se
 import { LinearGradient } from 'expo-linear-gradient';
 import { colors } from '@/src/theme/colors';
 import { SkeletonList } from '@/src/components/Skeleton';
+import { Header } from '@/src/components/Header';
+import { MoreOptionsMenu } from '@/src/components/MoreOptionsMenu';
 
 /* ============================================================
    🧩 1. Kiểu dữ liệu
@@ -415,6 +417,12 @@ const CommunityScreen: React.FC = () => {
               {new Date(item.created_at).toLocaleDateString('vi-VN')}
             </Text>
           </View>
+          <MoreOptionsMenu
+            targetType="post"
+            targetId={item.id}
+            targetName={item.content?.substring(0, 30) + '...'}
+            showReport={true}
+          />
         </View>
 
         {item.image_url && (
@@ -453,40 +461,39 @@ const CommunityScreen: React.FC = () => {
 
   return (
     <View style={styles.container}>
-      <View style={styles.headerGradient}>
-        <View style={styles.headerRow}>
-          <View style={styles.headerTabsContainer}>
-            <TouchableOpacity
-              style={styles.headerTab}
-              onPress={() => handleTabChange('community')}
-              activeOpacity={0.7}
-            >
-              <Text style={[styles.headerTabText, activeTab === 'community' && styles.headerTabTextActive]}>
-                Cộng đồng
-              </Text>
-              {activeTab === 'community' && <View style={styles.headerTabIndicator} />}
-            </TouchableOpacity>
-            <View style={styles.headerTabDivider} />
-            <TouchableOpacity
-              style={styles.headerTab}
-              onPress={() => handleTabChange('chat')}
-              activeOpacity={0.7}
-            >
-              <Text style={[styles.headerTabText, activeTab === 'chat' && styles.headerTabTextActive]}>
-                Tin nhắn
-              </Text>
-              {activeTab === 'chat' && <View style={styles.headerTabIndicator} />}
-            </TouchableOpacity>
-          </View>
+      {/* Header with Tabs */}
+      <View style={styles.headerContainer}>
+        <Header showBack={true} title="Cộng đồng" />
+        <View style={styles.tabsContainer}>
           <TouchableOpacity
-            style={styles.fab}
-            onPress={() => router.push('/post/create-post')}
-            activeOpacity={0.8}
+            style={styles.tab}
+            onPress={() => handleTabChange('community')}
+            activeOpacity={0.7}
           >
-            <Plus color="#FFFFFF" size={20} strokeWidth={2.5} />
+            <Text style={[styles.tabText, activeTab === 'community' && styles.tabTextActive]}>
+              Cộng đồng
+            </Text>
+            {activeTab === 'community' && <View style={styles.tabIndicator} />}
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={styles.tab}
+            onPress={() => handleTabChange('chat')}
+            activeOpacity={0.7}
+          >
+            <Text style={[styles.tabText, activeTab === 'chat' && styles.tabTextActive]}>
+              Tin nhắn
+            </Text>
+            {activeTab === 'chat' && <View style={styles.tabIndicator} />}
           </TouchableOpacity>
         </View>
       </View>
+      <TouchableOpacity
+        style={styles.fab}
+        onPress={() => router.push('/post/create-post')}
+        activeOpacity={0.8}
+      >
+        <Plus color="#FFFFFF" size={20} strokeWidth={2.5} />
+      </TouchableOpacity>
 
       {loading ? (
         <View style={styles.skeletonContainer}>
@@ -608,68 +615,42 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#F5F7FA',
   },
-  headerGradient: {
-    paddingTop: Platform.OS === 'ios' ? 60 : 40,
-    paddingBottom: 16,
-    paddingHorizontal: 20,
-    zIndex: 10,
-    backgroundColor: '#FFFFFF',
-    borderBottomWidth: 0.5,
-    borderBottomColor: 'rgba(0, 0, 0, 0.08)',
+  headerContainer: {
+    backgroundColor: colors.background,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.borderLight,
   },
-  headerRow: {
+  tabsContainer: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
+    paddingHorizontal: 16,
+    paddingBottom: 8,
+    gap: 24,
   },
-  headerLeft: {
-    flexDirection: 'row',
+  tab: {
     alignItems: 'center',
-    gap: 12,
-  },
-  headerTabsContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 20,
-    flex: 1,
-  },
-  headerTab: {
-    alignItems: 'center',
-    paddingVertical: 6,
-    paddingHorizontal: 4,
+    paddingVertical: 12,
     position: 'relative',
+    minWidth: 80,
   },
-  headerTabDivider: {
-    width: 1,
-    height: 16,
-    backgroundColor: 'rgba(255, 255, 255, 0.3)',
-  },
-  headerTabText: {
-    fontSize: 15,
+  tabText: {
+    fontSize: 16,
     fontWeight: '600',
-    color: 'rgba(0, 0, 0, 0.5)',
-    letterSpacing: 0.2,
+    color: colors.textSecondary,
   },
-  headerTabTextActive: {
-    color: '#000000',
+  tabTextActive: {
+    color: colors.primary,
     fontWeight: '700',
-    fontSize: 15,
-    letterSpacing: 0.2,
+    fontSize: 17,
   },
-  headerTabIndicator: {
+  tabIndicator: {
     position: 'absolute',
     bottom: 0,
     left: '50%',
-    transform: [{ translateX: -15 }],
-    width: 30,
-    height: 2,
-    backgroundColor: '#000000',
-    borderRadius: 1,
-  },
-  header: {
-    fontSize: 24,
-    fontWeight: '700',
-    color: '#fff',
+    transform: [{ translateX: -20 }],
+    width: 40,
+    height: 3,
+    backgroundColor: colors.primary,
+    borderRadius: 2,
   },
   card: {
     backgroundColor: '#fff',

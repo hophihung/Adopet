@@ -23,6 +23,10 @@ import { OrderService, CreateOrderInput } from '@/src/features/products/services
 import { ReviewsList } from '@/src/features/reviews/components/ReviewsList';
 import { colors } from '@/src/theme/colors';
 import { supabase } from '@/lib/supabase';
+import { PaymentMethodSelector } from '@/src/components/PaymentMethodSelector';
+import { PaymentMethodConfig } from '@/src/features/payment/services/paymentMethods.service';
+import { CurrencyConverter } from '@/src/utils/currency';
+import { MoreOptionsMenu } from '@/src/components/MoreOptionsMenu';
 
 export default function ProductDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -34,6 +38,7 @@ export default function ProductDetailScreen() {
   const [showCheckout, setShowCheckout] = useState(false);
   const [ordering, setOrdering] = useState(false);
   const [quantity, setQuantity] = useState(1);
+  const [selectedPaymentMethod, setSelectedPaymentMethod] = useState<PaymentMethodConfig | null>(null);
 
   const [shippingInfo, setShippingInfo] = useState({
     name: '',
@@ -125,6 +130,11 @@ export default function ProductDetailScreen() {
     try {
       setOrdering(true);
 
+      if (!selectedPaymentMethod) {
+        Alert.alert('Lỗi', 'Vui lòng chọn phương thức thanh toán');
+        return;
+      }
+
       const orderInput: CreateOrderInput = {
         product_id: product.id,
         quantity,
@@ -135,7 +145,7 @@ export default function ProductDetailScreen() {
         shipping_district: shippingInfo.district || undefined,
         shipping_ward: shippingInfo.ward || undefined,
         shipping_note: shippingInfo.note || undefined,
-        payment_method: 'cod',
+        payment_method: selectedPaymentMethod.id,
       };
 
       await OrderService.create(orderInput, user.id);
@@ -162,10 +172,7 @@ export default function ProductDetailScreen() {
   };
 
   const formatPrice = (price: number) => {
-    return new Intl.NumberFormat('vi-VN', {
-      style: 'currency',
-      currency: 'VND',
-    }).format(price);
+    return CurrencyConverter.format(price, 'VND');
   };
 
   const hasDiscount = product?.original_price && product.original_price > product.price;
@@ -198,7 +205,14 @@ export default function ProductDetailScreen() {
             <ArrowLeft size={24} color="#fff" />
           </TouchableOpacity>
           <Text style={styles.headerTitle}>Chi tiết sản phẩm</Text>
-          <View style={{ width: 40 }} />
+          {product && (
+            <MoreOptionsMenu
+              targetType="product"
+              targetId={product.id}
+              targetName={product.name}
+              showReport={true}
+            />
+          )}
         </View>
       </LinearGradient>
 
@@ -363,6 +377,15 @@ export default function ProductDetailScreen() {
                   </Text>
                 </View>
               </View>
+            </View>
+
+            {/* Payment Method */}
+            <View style={styles.checkoutSection}>
+              <PaymentMethodSelector
+                selectedMethod={selectedPaymentMethod?.id}
+                onSelect={setSelectedPaymentMethod}
+                disabled={ordering}
+              />
             </View>
 
             {/* Shipping Info */}

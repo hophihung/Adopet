@@ -14,6 +14,7 @@ import { useRouter, useLocalSearchParams } from 'expo-router';
 import { PetService } from '../../src/features/pets/services/pet.service';
 import { formatPetLocation } from '../../src/features/pets/utils/location';
 import { useAuth } from '../../contexts/AuthContext';
+import { MoreOptionsMenu } from '@/src/components/MoreOptionsMenu';
 import { ArrowLeft, Edit2, Heart, MapPin, Calendar, DollarSign, MessageCircle, Scale, Palette, Activity, Shield, Syringe, Users, Baby, Zap, AlertCircle, Phone, Mail } from 'lucide-react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -200,11 +201,21 @@ export default function PetDetailScreen() {
         <TouchableOpacity onPress={() => router.back()} style={styles.backButtonHeader}>
           <ArrowLeft size={24} color="#fff" />
         </TouchableOpacity>
-        {isOwner && (
-          <TouchableOpacity onPress={handleEdit} style={styles.editButton}>
-            <Edit2 size={20} color="#fff" />
-          </TouchableOpacity>
-        )}
+        <View style={styles.headerRight}>
+          {isOwner && (
+            <TouchableOpacity onPress={handleEdit} style={styles.editButton}>
+              <Edit2 size={20} color="#fff" />
+            </TouchableOpacity>
+          )}
+          {pet && !isOwner && (
+            <MoreOptionsMenu
+              targetType="pet"
+              targetId={pet.id}
+              targetName={pet.name || 'Pet'}
+              showReport={true}
+            />
+          )}
+        </View>
       </View>
 
       <ScrollView 

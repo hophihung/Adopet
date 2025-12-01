@@ -13,3 +13,6 @@ export { Skeleton, SkeletonGrid, SkeletonList, SkeletonCard } from './Skeleton';
 // Export discover header
 export { DiscoverHeader } from './DiscoverHeader';
 
+// Export Header component
+export { Header } from './Header';
+

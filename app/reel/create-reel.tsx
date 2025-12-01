@@ -12,6 +12,7 @@ import {
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useAuth } from '@/contexts/AuthContext';
+import { CurrencyConverter } from '@/src/utils/currency';
 import * as ImagePicker from 'expo-image-picker';
 import * as FileSystem from 'expo-file-system/legacy';
 import { supabase } from '@/lib/supabase';
@@ -712,7 +713,7 @@ export default function CreateReelScreen() {
                         {product.name}
                       </Text>
                       <Text style={styles.selectedProductPrice}>
-                        {new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(product.price)}
+                        {CurrencyConverter.format(product.price, 'VND')}
                       </Text>
                     </View>
                     <TouchableOpacity

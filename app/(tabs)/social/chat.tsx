@@ -15,6 +15,7 @@ import { useRouter, usePathname } from 'expo-router';
 import { ChatScreen, ChatList } from '@/src/components';
 import { Conversation, ChatService } from '@/src/features/chat';
 import { colors } from '@/src/theme/colors';
+import { Header } from '@/src/components/Header';
 
 
 export default function ChatTabScreen() {
@@ -60,39 +61,37 @@ export default function ChatTabScreen() {
   }
 
   return (
-    <SafeAreaView style={styles.container} edges={['top']}>
-      {/* Header with Gradient */}
-      <View style={styles.headerGradient}>
-        <View style={styles.headerRow}>
-          <View style={styles.headerTabsContainer}>
-            <TouchableOpacity
-              style={styles.headerTab}
-              onPress={() => handleTabChange('community')}
-              activeOpacity={0.7}
-            >
-              <Text style={[styles.headerTabText, activeTab === 'community' && styles.headerTabTextActive]}>
-                Cộng đồng
-              </Text>
-              {activeTab === 'community' && <View style={styles.headerTabIndicator} />}
-            </TouchableOpacity>
-            <View style={styles.headerTabDivider} />
-            <TouchableOpacity
-              style={styles.headerTab}
-              onPress={() => handleTabChange('chat')}
-              activeOpacity={0.7}
-            >
-              <Text style={[styles.headerTabText, activeTab === 'chat' && styles.headerTabTextActive]}>
-                Tin nhắn
-              </Text>
-              {activeTab === 'chat' && <View style={styles.headerTabIndicator} />}
-            </TouchableOpacity>
-          </View>
+    <View style={styles.container}>
+      {/* Header with Tabs */}
+      <View style={styles.headerContainer}>
+        <Header showBack={true} title="Tin nhắn" />
+        <View style={styles.tabsContainer}>
+          <TouchableOpacity
+            style={styles.tab}
+            onPress={() => handleTabChange('community')}
+            activeOpacity={0.7}
+          >
+            <Text style={[styles.tabText, activeTab === 'community' && styles.tabTextActive]}>
+              Cộng đồng
+            </Text>
+            {activeTab === 'community' && <View style={styles.tabIndicator} />}
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={styles.tab}
+            onPress={() => handleTabChange('chat')}
+            activeOpacity={0.7}
+          >
+            <Text style={[styles.tabText, activeTab === 'chat' && styles.tabTextActive]}>
+              Tin nhắn
+            </Text>
+            {activeTab === 'chat' && <View style={styles.tabIndicator} />}
+          </TouchableOpacity>
         </View>
       </View>
 
       {/* Chat List */}
       <ChatList onConversationSelect={handleConversationSelect} />
-    </SafeAreaView>
+    </View>
   );
 }
 
@@ -101,74 +100,41 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: colors.background,
   },
-  headerGradient: {
-    paddingTop: Platform.OS === 'ios' ? 60 : 40,
-    paddingBottom: 16,
-    paddingHorizontal: 20,
-    backgroundColor: '#FFFFFF',
-    borderBottomWidth: 0.5,
-    borderBottomColor: 'rgba(0, 0, 0, 0.08)',
+  headerContainer: {
+    backgroundColor: colors.background,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.borderLight,
   },
-  headerRow: {
+  tabsContainer: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
+    paddingHorizontal: 16,
+    paddingBottom: 8,
+    gap: 24,
   },
-  headerLeft: {
-    flexDirection: 'row',
+  tab: {
     alignItems: 'center',
-    gap: 12,
-  },
-  headerTabsContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 20,
-    flex: 1,
-  },
-  headerTab: {
-    alignItems: 'center',
-    paddingVertical: 6,
-    paddingHorizontal: 4,
+    paddingVertical: 12,
     position: 'relative',
+    minWidth: 80,
   },
-  headerTabDivider: {
-    width: 1,
-    height: 16,
-    backgroundColor: 'rgba(255, 255, 255, 0.3)',
-  },
-  headerTabText: {
+  tabText: {
     fontSize: 16,
     fontWeight: '600',
-    color: 'rgba(255, 255, 255, 0.75)',
-    textShadowColor: 'rgba(0, 0, 0, 0.2)',
-    textShadowOffset: { width: 0, height: 1 },
-    textShadowRadius: 2,
+    color: colors.textSecondary,
   },
-  headerTabTextActive: {
-    color: '#FFFFFF',
+  tabTextActive: {
+    color: colors.primary,
     fontWeight: '700',
     fontSize: 17,
-    textShadowColor: 'rgba(0, 0, 0, 0.3)',
-    textShadowOffset: { width: 0, height: 1 },
-    textShadowRadius: 3,
   },
-  headerTabIndicator: {
+  tabIndicator: {
     position: 'absolute',
-    bottom: 2,
+    bottom: 0,
     left: '50%',
-    transform: [{ translateX: -15 }],
-    width: 30,
+    transform: [{ translateX: -20 }],
+    width: 40,
     height: 3,
-    backgroundColor: '#fff',
+    backgroundColor: colors.primary,
     borderRadius: 2,
-    shadowColor: '#fff',
-    shadowOffset: { width: 0, height: 0 },
-    shadowOpacity: 0.5,
-    shadowRadius: 3,
-  },
-  headerTitle: {
-    fontSize: 24,
-    fontWeight: '700',
-    color: '#fff',
   },
 });

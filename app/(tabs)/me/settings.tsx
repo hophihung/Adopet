@@ -17,6 +17,8 @@ import { useAuth } from '../../../contexts/AuthContext';
 import { useProfile } from '../../../src/features/profile/context/ProfileContext';
 import { nearbyPetsService } from '../../../src/services/nearby-pets.service';
 import { colors } from '@/src/theme/colors';
+import { LanguageSelector } from '@/src/components/LanguageSelector';
+import { CurrencySelector } from '@/src/components/CurrencySelector';
 
 export default function SettingsScreen() {
   const router = useRouter();
@@ -74,6 +76,16 @@ export default function SettingsScreen() {
       </View>
 
       <ScrollView style={styles.scrollView} contentContainerStyle={styles.content}>
+        {/* Language Section */}
+        <View style={styles.section}>
+          <LanguageSelector />
+        </View>
+
+        {/* Currency Section */}
+        <View style={styles.section}>
+          <CurrencySelector />
+        </View>
+
         {/* Search Radius Section */}
         <View style={styles.section}>
           <View style={styles.sectionHeader}>

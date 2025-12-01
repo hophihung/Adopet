@@ -19,6 +19,7 @@ import { SubscriptionModal } from '../../../src/components/SubscriptionModal';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Plus, Edit2, Trash2, PawPrint } from 'lucide-react-native';
 import { colors } from '@/src/theme/colors';
+import { Header } from '@/src/components/Header';
 
 export default function MyPetsScreen() {
   const router = useRouter();
@@ -127,50 +128,43 @@ export default function MyPetsScreen() {
 
   return (
     <View style={styles.container}>
-      {/* Header with Gradient */}
-      <LinearGradient
-        colors={[colors.primary, colors.primaryDark]}
-        style={styles.headerGradient}
-        start={{ x: 0, y: 0 }}
-        end={{ x: 1, y: 0 }}
-      >
-        <View style={styles.headerRow}>
-          <View style={styles.headerTabsContainer}>
-            <TouchableOpacity
-              style={styles.headerTab}
-              onPress={() => handleTabChange('my-pets')}
-              activeOpacity={0.7}
-            >
-              <Text style={[styles.headerTabText, activeTab === 'my-pets' && styles.headerTabTextActive]}>
-                Pets của tôi
-              </Text>
-              {activeTab === 'my-pets' && <View style={styles.headerTabIndicator} />}
-            </TouchableOpacity>
-            <View style={styles.headerTabDivider} />
-            <TouchableOpacity
-              style={styles.headerTab}
-              onPress={() => handleTabChange('virtual-pet')}
-              activeOpacity={0.7}
-            >
-              <Text style={[styles.headerTabText, activeTab === 'virtual-pet' && styles.headerTabTextActive]}>
-                Pet ảo
-              </Text>
-              {activeTab === 'virtual-pet' && <View style={styles.headerTabIndicator} />}
-            </TouchableOpacity>
-          </View>
+      {/* Header with Tabs */}
+      <View style={styles.headerContainer}>
+        <Header showBack={true} title="Thú cưng" />
+        <View style={styles.tabsContainer}>
           <TouchableOpacity
-            style={[
-              styles.createButton,
-              !petLimitInfo?.canCreate && styles.createButtonDisabled,
-            ]}
-            onPress={handleCreatePet}
-            disabled={!petLimitInfo?.canCreate}
-            activeOpacity={0.8}
+            style={styles.tab}
+            onPress={() => handleTabChange('my-pets')}
+            activeOpacity={0.7}
           >
-            <Plus size={20} color="#FFFFFF" strokeWidth={2.5} />
+            <Text style={[styles.tabText, activeTab === 'my-pets' && styles.tabTextActive]}>
+              Pets của tôi
+            </Text>
+            {activeTab === 'my-pets' && <View style={styles.tabIndicator} />}
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={styles.tab}
+            onPress={() => handleTabChange('virtual-pet')}
+            activeOpacity={0.7}
+          >
+            <Text style={[styles.tabText, activeTab === 'virtual-pet' && styles.tabTextActive]}>
+              Pet ảo
+            </Text>
+            {activeTab === 'virtual-pet' && <View style={styles.tabIndicator} />}
           </TouchableOpacity>
         </View>
-      </LinearGradient>
+      </View>
+      <TouchableOpacity
+        style={[
+          styles.createButton,
+          !petLimitInfo?.canCreate && styles.createButtonDisabled,
+        ]}
+        onPress={handleCreatePet}
+        disabled={!petLimitInfo?.canCreate}
+        activeOpacity={0.8}
+      >
+        <Plus size={20} color="#FFFFFF" strokeWidth={2.5} />
+      </TouchableOpacity>
 
       {/* Pet Limit Banner */}
       {petLimitInfo && (
@@ -381,6 +375,9 @@ const styles = StyleSheet.create({
     color: '#fff',
   },
   createButton: {
+    position: 'absolute',
+    bottom: Platform.OS === 'ios' ? 110 : 90,
+    right: 20,
     backgroundColor: '#000000',
     width: 40,
     height: 40,

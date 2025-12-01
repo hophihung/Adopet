@@ -13,6 +13,7 @@ import {
 import { X, ShoppingBag, Plus } from 'lucide-react-native';
 import { ProductService, Product } from '../services/product.service';
 import { colors } from '@/src/theme/colors';
+import { CurrencyConverter } from '@/src/utils/currency';
 
 interface ProductPickerProps {
   visible: boolean;
@@ -72,10 +73,7 @@ export function ProductPicker({
   };
 
   const formatPrice = (price: number) => {
-    return new Intl.NumberFormat('vi-VN', {
-      style: 'currency',
-      currency: 'VND',
-    }).format(price);
+    return CurrencyConverter.format(price, 'VND');
   };
 
   const renderProduct = ({ item }: { item: Product }) => {

@@ -20,6 +20,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { useAuth } from '@/contexts/AuthContext';
 import { OrderService, Order } from '@/src/features/products/services/order.service';
 import { colors } from '@/src/theme/colors';
+import { CurrencyConverter } from '@/src/utils/currency';
 import { supabase } from '@/lib/supabase';
 
 type OrderStatus = 'pending' | 'confirmed' | 'processing' | 'shipped' | 'delivered' | 'cancelled';
@@ -126,10 +127,7 @@ export default function ManageOrdersScreen() {
   };
 
   const formatPrice = (price: number) => {
-    return new Intl.NumberFormat('vi-VN', {
-      style: 'currency',
-      currency: 'VND',
-    }).format(price);
+    return CurrencyConverter.format(price, 'VND');
   };
 
   const getStatusColor = (status: OrderStatus) => {

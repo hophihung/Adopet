@@ -492,9 +492,12 @@ export default function ReelProfileScreen() {
               <TouchableOpacity style={styles.shareButton}>
                 <Share2 size={20} color="#FFF" />
               </TouchableOpacity>
-              <TouchableOpacity style={styles.moreButtonSmall}>
-                <MoreVertical size={20} color="#FFF" />
-              </TouchableOpacity>
+              <MoreOptionsMenu
+                targetType="user"
+                targetId={id || ''}
+                targetName={profile?.full_name || 'Người dùng'}
+                showReport={!isOwnProfile}
+              />
             </View>
           )}
 
