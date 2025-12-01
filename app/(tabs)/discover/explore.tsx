@@ -6,24 +6,19 @@ import {
   Text,
   TouchableOpacity,
   View,
-  Platform,
   RefreshControl,
+  Platform,
 } from 'react-native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { useRouter, usePathname } from 'expo-router';
-import { LinearGradient } from 'expo-linear-gradient';
-import {
-  PawPrint,
-  MapPin,
-  Sparkles,
-  SlidersHorizontal,
-} from 'lucide-react-native';
+import { useRouter } from 'expo-router';
+import { MapPin } from 'lucide-react-native';
 import { useAuth } from '@/contexts/AuthContext';
 import { PetService } from '@/src/features/pets/services/pet.service';
-import { PetCard } from '@/src/features/pets/components';
 import { formatPetLocation } from '@/src/features/pets/utils/location';
-import { SkeletonGrid } from '@/src/components/Skeleton';
 import { colors } from '@/src/theme/colors';
+import { SkeletonGrid } from '@/src/components/Skeleton';
+import { DiscoverHeader } from '@/src/components/DiscoverHeader';
+
+const FALLBACK_IMAGE = 'https://images.pexels.com/photos/4587993/pexels-photo-4587993.jpeg';
 
 interface Pet {
   id: string;
@@ -34,9 +29,6 @@ interface Pet {
   energy_level?: string;
   images: string[];
 }
-
-const FALLBACK_IMAGE =
-  'https://images.pexels.com/photos/4587993/pexels-photo-4587993.jpeg';
 
 const FILTERS = [
   { label: 'All', value: 'all' },
@@ -49,20 +41,10 @@ const FILTERS = [
 export default function ExploreScreen() {
   const { user } = useAuth();
   const router = useRouter();
-  const pathname = usePathname();
-  const insets = useSafeAreaInsets();
   const [pets, setPets] = useState<Pet[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [selectedFilter, setSelectedFilter] = useState<string>('all');
-  const [activeTopTab, setActiveTopTab] = useState<'match' | 'explore'>(
-    'explore'
-  );
-  
-  // Tab bar height + marginBottom + safe area bottom + extra padding
-  const tabBarHeight = Platform.OS === 'ios' ? 85 : 70;
-  const tabBarMarginBottom = Platform.OS === 'ios' ? 25 : 16;
-  const bottomPadding = tabBarHeight + tabBarMarginBottom + insets.bottom + 10;
 
   const loadPets = useCallback(
     async (mode: 'initial' | 'refresh' = 'initial') => {
@@ -99,31 +81,9 @@ export default function ExploreScreen() {
     loadPets('initial');
   }, [loadPets]);
 
-  useEffect(() => {
-    if (!pathname) return;
-    if (pathname.includes('/explore')) {
-      setActiveTopTab('explore');
-    } else {
-      setActiveTopTab('match');
-    }
-  }, [pathname]);
-
-
   const handleRefresh = () => {
     loadPets('refresh');
   };
-
-  const navigateTopTab = useCallback(
-    (destination: 'match' | 'explore') => {
-      setActiveTopTab(destination);
-      if (destination === 'match') {
-        router.replace('/(tabs)/discover/match');
-      } else {
-        router.replace('/(tabs)/discover/explore');
-      }
-    },
-    [router]
-  );
 
   const filteredPets = useMemo(() => {
     if (selectedFilter === 'all') return pets;
@@ -145,54 +105,10 @@ export default function ExploreScreen() {
 
   return (
     <View style={styles.container}>
-      <View style={styles.header}>
-        <View style={styles.brand}>
-          <PawPrint size={32} color="#FF6B6B" />
-          <Text style={styles.brandText}>Adopet</Text>
-        </View>
-
-        <View style={styles.topNav}>
-          <TouchableOpacity
-            style={[
-              styles.topNavButton,
-              activeTopTab === 'match' && styles.topNavButtonActive,
-            ]}
-            onPress={() => navigateTopTab('match')}
-          >
-            <Text
-              style={[
-                styles.topNavText,
-                activeTopTab === 'match' && styles.topNavTextActive,
-              ]}
-            >
-              Match
-            </Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={[
-              styles.topNavButton,
-              activeTopTab === 'explore' && styles.topNavButtonActive,
-            ]}
-            onPress={() => navigateTopTab('explore')}
-          >
-            <Text
-              style={[
-                styles.topNavText,
-                activeTopTab === 'explore' && styles.topNavTextActive,
-              ]}
-            >
-              Explore
-            </Text>
-          </TouchableOpacity>
-        </View>
-
-        <TouchableOpacity style={styles.headerActionButton} onPress={loadPets}>
-          <SlidersHorizontal size={20} color="#FF3B5C" />
-        </TouchableOpacity>
-      </View>
-
+      <DiscoverHeader />
+      
       <ScrollView
-        contentContainerStyle={[styles.scrollContent, { paddingBottom: bottomPadding }]}
+        contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
         refreshControl={
           <RefreshControl
@@ -202,29 +118,7 @@ export default function ExploreScreen() {
           />
         }
       >
-        <LinearGradient colors={['#FFE4EC', '#FFF7F9']} style={styles.heroCard}>
-          <View style={styles.heroCopy}>
-            <Text style={styles.heroTitle}>Khám phá thú cưng nổi bật</Text>
-            <Text style={styles.heroSubtitle}>
-              Tìm kiếm người bạn mới từ bộ sưu tập được tuyển chọn bởi cộng đồng
-              Adopet.
-            </Text>
-            <TouchableOpacity
-              style={styles.heroButton}
-              onPress={() => setSelectedFilter('active')}
-            >
-              <Sparkles size={16} color="#FF3B5C" />
-              <Text style={styles.heroButtonText}>Gợi ý năng động</Text>
-            </TouchableOpacity>
-          </View>
-          <Image
-            source={{
-              uri: 'https://images.pexels.com/photos/5732476/pexels-photo-5732476.jpeg',
-            }}
-            style={styles.heroImage}
-          />
-        </LinearGradient>
-
+        {/* Filters */}
         <ScrollView
           horizontal
           showsHorizontalScrollIndicator={false}
@@ -251,9 +145,10 @@ export default function ExploreScreen() {
           ))}
         </ScrollView>
 
+        {/* Grid */}
         {loading ? (
           <View style={styles.loaderContainer}>
-            <SkeletonGrid items={6} height={220} />
+            <SkeletonGrid count={6} />
           </View>
         ) : (
           <View style={styles.grid}>
@@ -268,36 +163,23 @@ export default function ExploreScreen() {
                   style={styles.petImage}
                 />
                 <View style={styles.petInfo}>
-                  <View style={styles.petHeader}>
-                    <Text style={styles.petName}>{pet.name}</Text>
-                    {pet.type && (
-                      <View style={styles.typeBadge}>
-                        <Text style={styles.typeText}>{pet.type}</Text>
-                      </View>
-                    )}
-                  </View>
+                  <Text style={styles.petName}>{pet.name}</Text>
                   {pet.breed && <Text style={styles.petMeta}>{pet.breed}</Text>}
                   <View style={styles.petMetaRow}>
-                    <MapPin size={14} color="#FF3B5C" />
+                    <MapPin size={12} color="#FF6B6B" />
                     <Text style={styles.petMetaText}>
                       {formatPetLocation(pet.location)}
                     </Text>
                   </View>
-                  {pet.energy_level && (
-                    <View style={styles.petMetaRow}>
-                      <Sparkles size={14} color="#FFB800" />
-                      <Text style={styles.petMetaText}>{pet.energy_level}</Text>
-                    </View>
-                  )}
                 </View>
               </TouchableOpacity>
             ))}
 
             {filteredPets.length === 0 && !loading && (
               <View style={styles.emptyState}>
-                <Text style={styles.emptyTitle}>Chưa có thú cưng phù hợp</Text>
+                <Text style={styles.emptyTitle}>Chưa có thú cưng</Text>
                 <Text style={styles.emptySubtitle}>
-                  Hãy thử bộ lọc khác hoặc quay lại sau nhé.
+                  Hãy thử bộ lọc khác nhé
                 </Text>
               </View>
             )}

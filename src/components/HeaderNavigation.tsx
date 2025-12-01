@@ -1,6 +1,6 @@
 import React from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, Platform } from 'react-native';
-import { useRouter, usePathname } from 'expo-router';
+import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
+import { useRouter, useSegments } from 'expo-router';
 import { Compass, Users, PawPrint, User, MessageCircle } from 'lucide-react-native';
 import { colors } from '@/src/theme/colors';
 
@@ -12,7 +12,7 @@ interface TabItem {
 }
 
 const TABS: TabItem[] = [
-  { id: 'discover', label: 'Khám phá', icon: Compass, route: '/(tabs)/discover/reel' },
+  { id: 'discover', label: 'Khám phá', icon: Compass, route: '/(tabs)/discover/match' },
   { id: 'social', label: 'Cộng đồng', icon: Users, route: '/(tabs)/social/community' },
   { id: 'chat', label: 'Tin nhắn', icon: MessageCircle, route: '/(tabs)/social/chat' },
   { id: 'pets', label: 'Pets', icon: PawPrint, route: '/(tabs)/pets/my-pets' },
@@ -21,24 +21,19 @@ const TABS: TabItem[] = [
 
 export function HeaderNavigation() {
   const router = useRouter();
-  const pathname = usePathname();
+  const segments = useSegments();
 
   const getActiveTab = (): string => {
-    if (pathname?.includes('/discover') || pathname?.includes('/reel') || pathname?.includes('/match') || pathname?.includes('/explore')) {
-      return 'discover';
+    const currentSegment = segments[1]; // Get main tab segment
+    
+    if (currentSegment === 'discover') return 'discover';
+    if (currentSegment === 'social') {
+      // Check if it's chat or community
+      return segments[2] === 'chat' ? 'chat' : 'social';
     }
-    if (pathname?.includes('/chat')) {
-      return 'chat';
-    }
-    if (pathname?.includes('/community')) {
-      return 'social';
-    }
-    if (pathname?.includes('/pets')) {
-      return 'pets';
-    }
-    if (pathname?.includes('/me') || pathname?.includes('/profile') || pathname?.includes('/reminders')) {
-      return 'me';
-    }
+    if (currentSegment === 'pets') return 'pets';
+    if (currentSegment === 'me') return 'me';
+    
     return 'discover';
   };
 

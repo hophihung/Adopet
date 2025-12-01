@@ -30,6 +30,7 @@ import { SubscriptionManager } from '../../../src/components/SubscriptionManager
 import { useRouter, usePathname } from 'expo-router';
 import { colors } from '@/src/theme/colors';
 import { useNotifications } from '@/src/features/notifications/hooks/useNotifications';
+import { CommissionTierCard } from '@/src/features/subscription/components/CommissionTierCard';
 
 export default function ProfileScreen() {
   const router = useRouter();
@@ -194,6 +195,12 @@ export default function ProfileScreen() {
           </TouchableOpacity>
           {isSeller && (
             <>
+              <View style={styles.commissionCardContainer}>
+                <CommissionTierCard
+                  reputationPoints={profile?.reputation_points || 0}
+                  showNextTier={true}
+                />
+              </View>
               <TouchableOpacity
                 style={styles.menuItem}
                 onPress={() => router.push('/products/manage' as any)}
@@ -205,6 +212,12 @@ export default function ProfileScreen() {
                 onPress={() => router.push('/orders/manage' as any)}
               >
                 <Text style={styles.menuText}>Quản lý đơn hàng</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={styles.menuItem}
+                onPress={() => router.push('/(tabs)/me/dashboard' as any)}
+              >
+                <Text style={styles.menuText}>Thống kê bán hàng</Text>
               </TouchableOpacity>
               <TouchableOpacity
                 style={styles.menuItem}
@@ -513,6 +526,10 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontSize: 12,
     fontWeight: '700',
+  },
+  commissionCardContainer: {
+    marginHorizontal: 0,
+    marginVertical: 8,
   },
   signOutButton: {
     marginTop: 10,

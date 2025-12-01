@@ -12,13 +12,14 @@ import {
   Platform,
 } from 'react-native';
 import { useAuth } from '@/contexts/AuthContext';
-import { Heart, X, RotateCcw, Star, Send, PawPrint, Video, Home, MapPin } from 'lucide-react-native';
-import { useRouter, usePathname } from 'expo-router';
+import { Heart, X, RotateCcw, Star, Send, MapPin } from 'lucide-react-native';
+import { useRouter } from 'expo-router';
 import Swiper from 'react-native-deck-swiper';
 import { PetService } from '@/src/features/pets/services/pet.service';
 import { formatPetLocation } from '@/src/features/pets/utils/location';
 import { colors } from '@/src/theme/colors';
 import { PetCardNew } from '@/src/features/pets/components';
+import { DiscoverHeader } from '@/src/components/DiscoverHeader';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
@@ -52,13 +53,11 @@ const USE_NEW_CARD_DESIGN = true;
 export default function MatchScreen() {
   const { user } = useAuth();
   const router = useRouter();
-  const pathname = usePathname();
   const [currentIndex, setCurrentIndex] = useState<number>(0);
   const [imageIndices, setImageIndices] = useState<{ [key: string]: number }>({});
   const [pets, setPets] = useState<Pet[]>([]);
   const [loading, setLoading] = useState(true);
   const [likedPets, setLikedPets] = useState<Set<string>>(new Set());
-  const [activeTopTab, setActiveTopTab] = useState<'match' | 'explore'>('match');
   const swiperRef = useRef<any>(null);
 
   const imageAnimations = useRef<{ [key: string]: Animated.Value }>({});
@@ -74,30 +73,7 @@ export default function MatchScreen() {
     loadPets();
   }, []);
 
-  useEffect(() => {
-    if (!pathname) return;
-    if (pathname.includes('/explore')) {
-      setActiveTopTab('explore');
-    } else {
-      setActiveTopTab('match');
-    }
-  }, [pathname]);
 
-  const navigateTopTab = useCallback(
-    (destination: 'match' | 'explore') => {
-      setActiveTopTab(destination);
-      if (destination === 'match') {
-        router.replace('/(tabs)/discover/match');
-      } else {
-        router.replace('/(tabs)/discover/explore');
-      }
-    },
-    [router]
-  );
-
-  const handleOpenReel = useCallback(() => {
-    router.push('/(tabs)/discover/reel');
-  }, [router]);
 
   const loadPets = async () => {
     try {
@@ -252,51 +228,7 @@ export default function MatchScreen() {
 
   return (
     <View style={styles.container}>
-      <View style={styles.header}>
-        <View style={styles.brand}>
-          <PawPrint size={32} color="#FF6B6B" />
-          <Text style={styles.brandText}>Adopet</Text>
-        </View>
-
-        <View style={styles.topNav}>
-          <TouchableOpacity
-            style={[
-              styles.topNavButton,
-              activeTopTab === 'match' && styles.topNavButtonActive,
-            ]}
-            onPress={() => navigateTopTab('match')}
-          >
-            <Text
-              style={[
-                styles.topNavText,
-                activeTopTab === 'match' && styles.topNavTextActive,
-              ]}>
-              Match
-            </Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={[
-              styles.topNavButton,
-              activeTopTab === 'explore' && styles.topNavButtonActive,
-            ]}
-            onPress={() => navigateTopTab('explore')}
-          >
-            <Text
-              style={[
-                styles.topNavText,
-                activeTopTab === 'explore' && styles.topNavTextActive,
-              ]}>
-              Explore
-            </Text>
-          </TouchableOpacity>
-        </View>
-
-        <View style={styles.headerActions}>
-          <TouchableOpacity style={styles.headerActionButton} onPress={handleOpenReel}>
-            <Video size={22} color="#FF3B5C" />
-          </TouchableOpacity>
-        </View>
-      </View>
+      <DiscoverHeader />
 
       <View style={styles.cardContainer}>
         <Swiper

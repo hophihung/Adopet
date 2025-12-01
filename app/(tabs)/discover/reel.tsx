@@ -17,9 +17,9 @@ import {
   Easing,
   RefreshControl,
 } from 'react-native';
-import { Heart, MessageCircle, Share2, Plus, Send, X, Music, Video, Image as ImageIcon, User } from 'lucide-react-native';
+import { Heart, MessageCircle, Share2, Plus, Send, X, Music, Video, Image as ImageIcon, User, ArrowLeft } from 'lucide-react-native';
 import { Video as ExpoVideo, AVPlaybackStatus } from 'expo-av';
-import { useRouter, usePathname } from 'expo-router';
+import { useRouter } from 'expo-router';
 import { useAuth } from '@/contexts/AuthContext';
 import { ReelService, Reel, ReelComment } from '@/src/features/reels/services/reel.service';
 import { colors } from '@/src/theme/colors';
@@ -33,7 +33,6 @@ const { height: SCREEN_HEIGHT, width: SCREEN_WIDTH } = Dimensions.get('window');
 
 export default function ReelScreen() {
   const router = useRouter();
-  const pathname = usePathname();
   const { user } = useAuth();
   const [reels, setReels] = useState<Reel[]>([]);
   const [loading, setLoading] = useState(true);
@@ -54,7 +53,6 @@ export default function ReelScreen() {
   const [currentPlayingReelId, setCurrentPlayingReelId] = useState<string | null>(null);
   const [currentVideoId, setCurrentVideoId] = useState<string | null>(null);
   const [videoOrientations, setVideoOrientations] = useState<Map<string, 'landscape' | 'portrait' | 'square' | 'wide'>>(new Map());
-  const [activeTab, setActiveTab] = useState<'match' | 'explore'>('explore');
   const [expandedCaptions, setExpandedCaptions] = useState<Set<string>>(new Set()); // Track expanded captions
   const [reelProducts, setReelProducts] = useState<Map<string, ReelProduct[]>>(new Map()); // Map reel_id -> products
   const [videoCurrentTime, setVideoCurrentTime] = useState<Map<string, number>>(new Map()); // Track video time
@@ -70,15 +68,7 @@ export default function ReelScreen() {
   const actionButtonsOpacity = useRef(new Animated.Value(0)).current;
   const actionButtonsTranslateY = useRef(new Animated.Value(50)).current;
   
-  // Navigate between match and explore screens
-  const handleTabChange = (tab: 'match' | 'explore') => {
-    setActiveTab(tab);
-    if (tab === 'match') {
-      router.replace('/(tabs)/discover/match');
-    } else {
-      router.replace('/(tabs)/discover/reel');
-    }
-  };
+
 
   // Start music disc rotation animation
   useEffect(() => {
@@ -173,14 +163,7 @@ export default function ReelScreen() {
     }
   }, [reels]);
 
-  // Update active tab based on current pathname
-  useEffect(() => {
-    if (pathname?.includes('/match')) {
-      setActiveTab('match');
-    } else if (pathname?.includes('/reel') || pathname?.includes('/explore')) {
-      setActiveTab('explore');
-    }
-  }, [pathname]);
+
 
   useEffect(() => {
     // Subscribe to realtime updates for reels
@@ -1068,29 +1051,13 @@ export default function ReelScreen() {
     return (
       <View style={styles.container}>
         <View style={styles.header}>
-          <View style={styles.tabsContainer}>
-            <TouchableOpacity
-              style={styles.tab}
-              onPress={() => handleTabChange('match')}
-              activeOpacity={0.7}
-            >
-              <Text style={[styles.tabText, activeTab === 'match' && styles.tabTextActive]}>
-                Match
-              </Text>
-              {activeTab === 'match' && <View style={styles.tabIndicator} />}
-            </TouchableOpacity>
-            <View style={styles.tabDivider} />
-            <TouchableOpacity
-              style={styles.tab}
-              onPress={() => handleTabChange('explore')}
-              activeOpacity={0.7}
-            >
-              <Text style={[styles.tabText, activeTab === 'explore' && styles.tabTextActive]}>
-                Khám phá
-              </Text>
-              {activeTab === 'explore' && <View style={styles.tabIndicator} />}
-            </TouchableOpacity>
-          </View>
+          <TouchableOpacity
+            style={styles.backButton}
+            onPress={() => router.push('/')}
+            activeOpacity={0.7}
+          >
+            <ArrowLeft size={24} color="#fff" />
+          </TouchableOpacity>
           <View style={styles.headerRight}>
             <TouchableOpacity
               style={styles.addButton}
@@ -1127,29 +1094,13 @@ export default function ReelScreen() {
     return (
       <View style={styles.container}>
         <View style={styles.header}>
-          <View style={styles.tabsContainer}>
-            <TouchableOpacity
-              style={styles.tab}
-              onPress={() => handleTabChange('match')}
-              activeOpacity={0.7}
-            >
-              <Text style={[styles.tabText, activeTab === 'match' && styles.tabTextActive]}>
-                Match
-              </Text>
-              {activeTab === 'match' && <View style={styles.tabIndicator} />}
-            </TouchableOpacity>
-            <View style={styles.tabDivider} />
-            <TouchableOpacity
-              style={styles.tab}
-              onPress={() => handleTabChange('explore')}
-              activeOpacity={0.7}
-            >
-              <Text style={[styles.tabText, activeTab === 'explore' && styles.tabTextActive]}>
-                Khám phá
-              </Text>
-              {activeTab === 'explore' && <View style={styles.tabIndicator} />}
-            </TouchableOpacity>
-          </View>
+          <TouchableOpacity
+            style={styles.backButton}
+            onPress={() => router.push('/')}
+            activeOpacity={0.7}
+          >
+            <ArrowLeft size={24} color="#fff" />
+          </TouchableOpacity>
           <View style={styles.headerRight}>
             <TouchableOpacity
               style={styles.addButton}
@@ -1184,31 +1135,15 @@ export default function ReelScreen() {
 
   return (
     <View style={styles.container}>
-      {/* Transparent header with tabs like TikTok */}
+      {/* Transparent header with back and add buttons */}
       <View style={styles.header}>
-        <View style={styles.tabsContainer}>
-          <TouchableOpacity
-            style={styles.tab}
-            onPress={() => handleTabChange('match')}
-            activeOpacity={0.7}
-          >
-            <Text style={[styles.tabText, activeTab === 'match' && styles.tabTextActive]}>
-              Match
-            </Text>
-            {activeTab === 'match' && <View style={styles.tabIndicator} />}
-          </TouchableOpacity>
-          <View style={styles.tabDivider} />
-          <TouchableOpacity
-            style={styles.tab}
-            onPress={() => handleTabChange('explore')}
-            activeOpacity={0.7}
-          >
-            <Text style={[styles.tabText, activeTab === 'explore' && styles.tabTextActive]}>
-              Khám phá
-            </Text>
-            {activeTab === 'explore' && <View style={styles.tabIndicator} />}
-          </TouchableOpacity>
-        </View>
+        <TouchableOpacity
+          style={styles.backButton}
+          onPress={() => router.push('/')}
+          activeOpacity={0.7}
+        >
+          <ArrowLeft size={24} color="#fff" />
+        </TouchableOpacity>
         <View style={styles.headerRight}>
           <TouchableOpacity
             style={styles.addButton}
@@ -1370,8 +1305,21 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     backgroundColor: 'transparent',
     flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  backButton: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: 'rgba(0, 0, 0, 0.3)',
     justifyContent: 'center',
     alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 3.84,
+    elevation: 5,
   },
   tabsContainer: {
     flexDirection: 'row',
@@ -1381,8 +1329,8 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   headerRight: {
-    position: 'absolute',
-    right: 16,
+    flexDirection: 'row',
+    alignItems: 'center',
   },
   tab: {
     alignItems: 'center',
